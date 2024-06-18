@@ -26,6 +26,8 @@ public class SMSTemplateProvider {
     String defaultTemplate = templateId;
     if (StringUtils.isNotBlank(templateId) && JsonKey.NIC.equalsIgnoreCase(SMS_PROVIDER)) {
       defaultTemplate = templateId + "_nic";
+    } else if (StringUtils.isNotBlank(templateId) && JsonKey.GCP.equalsIgnoreCase(SMS_PROVIDER)) {
+      defaultTemplate = templateId + "_gcp";
     }
     return emailTemplateDao.getTemplate(defaultTemplate, context);
   }
