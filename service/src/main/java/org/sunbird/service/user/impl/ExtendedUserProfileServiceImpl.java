@@ -57,6 +57,6 @@ public class ExtendedUserProfileServiceImpl implements ExtendedUserProfileServic
                         .append(" ");
             }
         }
-        return modifiedFirstName.toString();
+        return modifiedFirstName.toString().trim();
     }
 }
