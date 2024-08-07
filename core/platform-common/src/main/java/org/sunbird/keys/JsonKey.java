@@ -655,5 +655,9 @@ public final class JsonKey {
   public static final String PHONE_CAPS = "Phone";
   public static final String EMAIL_CAPS = "Email";
   public static final String GCP = "GCP";
+  public static final String MENTORING_ROLES = "mentoring.roles";
+  public static final String MENTORING = "mentoring";
+  public static final String USERID= "userid";
+  
   private JsonKey() {}
 }
