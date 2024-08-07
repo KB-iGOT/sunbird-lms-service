@@ -3,6 +3,7 @@ package org.sunbird.notification.utils;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.notification.sms.provider.ISmsProvider;
 import org.sunbird.notification.sms.provider.ISmsProviderFactory;
+import org.sunbird.notification.sms.providerimpl.GcpGatewaySmsProviderFactory;
 import org.sunbird.notification.sms.providerimpl.Msg91SmsProviderFactory;
 import org.sunbird.notification.sms.providerimpl.NICGatewaySmsProviderFactory;
 import org.sunbird.util.ProjectUtil;
@@ -29,6 +30,9 @@ public class SMSFactory {
       return factory.create();
     } else if (JsonKey.NIC.equalsIgnoreCase(SMS_PROVIDER)) {
       ISmsProviderFactory factory = new NICGatewaySmsProviderFactory();
+      return factory.create();
+    } else if (JsonKey.GCP.equalsIgnoreCase(SMS_PROVIDER)) {
+      ISmsProviderFactory factory = new GcpGatewaySmsProviderFactory();
       return factory.create();
     } else {
       ISmsProviderFactory factory = new Msg91SmsProviderFactory();
