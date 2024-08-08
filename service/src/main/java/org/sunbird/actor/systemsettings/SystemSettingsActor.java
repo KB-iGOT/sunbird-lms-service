@@ -1,5 +1,6 @@
 package org.sunbird.actor.systemsettings;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.Map;
 import org.sunbird.actor.core.BaseActor;
 import org.sunbird.keys.JsonKey;
@@ -24,6 +25,9 @@ public class SystemSettingsActor extends BaseActor {
         break;
       case "setSystemSetting":
         setSystemSetting(request);
+        break;
+      case "getSystemSettingV2":
+        getSystemSettingV2(request);
         break;
       default:
         onReceiveUnsupportedOperation();
@@ -50,6 +54,16 @@ public class SystemSettingsActor extends BaseActor {
   private void setSystemSetting(Request actorMessage) {
     Map<String, Object> request = actorMessage.getRequest();
     Response response = service.setSystemSettings(request, actorMessage.getRequestContext());
+    sender().tell(response, self());
+  }
+
+  private void getSystemSettingV2(Request actorMessage) {
+    JsonNode setting =
+        service.getSystemSettingV2ByKey(
+            (String) actorMessage.getContext().get(JsonKey.FIELD),
+            actorMessage.getRequestContext());
+    Response response = new Response();
+    response.put(JsonKey.RESPONSE, setting);
     sender().tell(response, self());
   }
 }

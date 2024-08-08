@@ -1,14 +1,19 @@
 package org.sunbird.service.systemsettings;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections.MapUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.sunbird.dao.systemsettings.impl.SystemSettingDaoImpl;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
+import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.model.systemsettings.SystemSetting;
 import org.sunbird.request.RequestContext;
@@ -17,8 +22,10 @@ import org.sunbird.util.DataCacheHandler;
 
 public class SystemSettingsService {
 
+  private static final Logger log = LoggerFactory.getLogger(SystemSettingsService.class);
   private final LoggerUtil logger = new LoggerUtil(SystemSettingsService.class);
   private final SystemSettingDaoImpl systemSettingDaoImpl = new SystemSettingDaoImpl();
+  private static final ObjectMapper objectMapper = new ObjectMapper();
 
   public SystemSetting getSystemSettingByKey(String key, RequestContext context) {
     String value = DataCacheHandler.getConfigSettings().get(key);
@@ -80,6 +87,46 @@ public class SystemSettingsService {
             e);
       }
     }
+    return null;
+  }
+
+
+
+
+  public JsonNode getSystemSettingV2ByKey(String key, RequestContext context) {
+    logger.info("......................");
+    try {
+      DataCacheHandler.getConfigSettings().get(key);
+      String value = DataCacheHandler.getConfigSettings().get(key);
+      SystemSetting setting = new SystemSetting();
+      JsonNode responseJson = objectMapper.createObjectNode();
+      if (value != null) {
+//      setting = new SystemSetting(key, key, value);
+        ((ObjectNode) responseJson).put(JsonKey.ID, key);
+        ((ObjectNode) responseJson).put(JsonKey.FIELD, key);
+        ((ObjectNode) responseJson).put(JsonKey.VALUE, objectMapper.readTree(value));
+      } else {
+        setting = systemSettingDaoImpl.readByField(key, context);
+        ((ObjectNode) responseJson).put(JsonKey.ID, key);
+        ((ObjectNode) responseJson).put(JsonKey.FIELD, key);
+        ((ObjectNode) responseJson).put(JsonKey.VALUE, objectMapper.readTree(setting.getValue()));
+        if (null == setting) {
+          throw new ProjectCommonException(
+              ResponseCode.resourceNotFound,
+              ResponseCode.resourceNotFound.getErrorMessage(),
+              ResponseCode.RESOURCE_NOT_FOUND.getResponseCode());
+        }
+        DataCacheHandler.getConfigSettings().put(key, setting.getValue());
+      }
+      return responseJson;
+    }catch (Exception e){
+      logger.error(
+          context,
+          "Error occured during : "
+              + e.getMessage(),
+          e);
+    }
+
     return null;
   }
 }
