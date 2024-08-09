@@ -108,7 +108,7 @@ public class NetCoreGatewaySmsProvider implements ISmsProvider {
     public static boolean init() {
         baseUrl = System.getenv("netcore_sms_gateway_provider_base_url");
         if (JsonUtil.isStringNullOREmpty(baseUrl)) {
-            baseUrl = PropertiesCache.getInstance().getProperty("gcp_sms_gateway_provider_base_url");
+            baseUrl = PropertiesCache.getInstance().getProperty("netcore_sms_gateway_provider_base_url");
         }
         feedId = System.getenv("netcore_sms_gateway_provider_feedid");
         if (JsonUtil.isStringNullOREmpty(feedId)) {
