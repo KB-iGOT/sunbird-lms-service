@@ -29,7 +29,7 @@ public class NetCoreGatewaySmsProvider implements ISmsProvider {
 
     static {
         boolean response = init();
-        logger.info("NetCoreGatewaySmsProvider:: SMS configuration values are set using GCP : " + response);
+        logger.info("NetCoreGatewaySmsProvider:: SMS configuration values are set using NetCore : " + response);
     }
 
     @Override
