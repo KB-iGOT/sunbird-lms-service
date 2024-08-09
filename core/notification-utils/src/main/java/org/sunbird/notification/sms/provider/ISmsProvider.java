@@ -11,6 +11,7 @@ public interface ISmsProvider {
   String MSG_91_PROVIDER = JsonKey.MSG_91;
   String NIC_PROVIDER = JsonKey.NIC;
   String GCP_PROVIDER = JsonKey.GCP;
+  String NETCORE_PROVIDER = JsonKey.NETCORE;
 
   default String getTemplateId(String sms, String provider) {
     Map<String, Map<String, String>> smsTemplateConfig = SmsTemplateUtil.getSmsTemplateConfigMap();
