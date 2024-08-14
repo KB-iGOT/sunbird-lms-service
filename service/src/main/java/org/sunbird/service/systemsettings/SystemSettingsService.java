@@ -91,38 +91,30 @@ public class SystemSettingsService {
   }
 
 
-
-
   public JsonNode getSystemSettingV2ByKey(String key, RequestContext context) {
-    logger.info("......................");
     try {
       DataCacheHandler.getConfigSettings().get(key);
       String value = DataCacheHandler.getConfigSettings().get(key);
-      SystemSetting setting = new SystemSetting();
       JsonNode responseJson = objectMapper.createObjectNode();
       if (value != null) {
-//      setting = new SystemSetting(key, key, value);
         ((ObjectNode) responseJson).put(JsonKey.ID, key);
         ((ObjectNode) responseJson).put(JsonKey.FIELD, key);
         ((ObjectNode) responseJson).put(JsonKey.VALUE, objectMapper.readTree(value));
       } else {
-        setting = systemSettingDaoImpl.readByField(key, context);
+        SystemSetting setting = systemSettingDaoImpl.readByField(key, context);
+        if (null == setting) {
+          ProjectCommonException.throwResourceNotFoundException();
+        }
         ((ObjectNode) responseJson).put(JsonKey.ID, key);
         ((ObjectNode) responseJson).put(JsonKey.FIELD, key);
         ((ObjectNode) responseJson).put(JsonKey.VALUE, objectMapper.readTree(setting.getValue()));
-        if (null == setting) {
-          throw new ProjectCommonException(
-              ResponseCode.resourceNotFound,
-              ResponseCode.resourceNotFound.getErrorMessage(),
-              ResponseCode.RESOURCE_NOT_FOUND.getResponseCode());
-        }
         DataCacheHandler.getConfigSettings().put(key, setting.getValue());
       }
       return responseJson;
-    }catch (Exception e){
+    } catch (Exception e) {
       logger.error(
           context,
-          "Error occured during : "
+          "Failed to read system setting key: " + key
               + e.getMessage(),
           e);
     }
