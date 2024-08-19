@@ -10,6 +10,7 @@ import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.sunbird.actor.core.BaseActor;
 import org.sunbird.keys.JsonKey;
+import org.sunbird.logging.LoggerUtil;
 import org.sunbird.mail.SendEmail;
 import org.sunbird.mail.SendgridConnection;
 import org.sunbird.operations.ActorOperations;
@@ -21,6 +22,7 @@ import org.sunbird.util.ProjectUtil;
 
 public class EmailServiceActor extends BaseActor {
 
+  public final LoggerUtil logger = new LoggerUtil(EmailServiceActor.class);
   private final NotificationService notificationService = new NotificationService();
   private final SendgridConnection connection = new SendgridConnection();
   private final String resetInterval =
@@ -98,6 +100,7 @@ public class EmailServiceActor extends BaseActor {
       List<String> emails,
       String template,
       RequestContext requestContext) {
+    long startTime = System.currentTimeMillis();
     try {
       SendEmail sendEmail = new SendEmail();
       Velocity.init();
@@ -126,6 +129,7 @@ public class EmailServiceActor extends BaseActor {
           "EmailServiceActor:sendMail: Exception occurred with message = " + e.getMessage(),
           e);
     }
+    logger.info("Email Sent. Time taken (in ms): " + (System.currentTimeMillis() - startTime));
   }
 
   private void resetConnection(RequestContext context) {
