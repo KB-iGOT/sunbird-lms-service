@@ -123,7 +123,7 @@ public class UserRoleActor extends UserBaseActor {
         InstructionEventGenerator.mentorshipUserUpdateEvent("", topic, userDetails);
         logger.info("kafka_mentorship_user_update_topic event pushed after role change");
       }catch (Exception e){
-        logger.info("error while generating mentorship event");
+        logger.error("error while generating mentorship event :", e);
       }
     }
     generateTelemetryEvent(
