@@ -137,4 +137,5 @@ DELETE  /v1/location/delete/:locationId         @controllers.location.LocationCo
 GET     /v1/system/settings/get/:field          @controllers.systemsettings.SystemSettingsController.getSystemSetting(field:String, request: play.mvc.Http.Request)
 GET     /v1/system/settings/list                @controllers.systemsettings.SystemSettingsController.getAllSystemSettings(request: play.mvc.Http.Request)
 POST    /v1/system/settings/set                 @controllers.systemsettings.SystemSettingsController.setSystemSetting(request: play.mvc.Http.Request)
+GET     /v2/system/settings/get/:field          @controllers.systemsettings.SystemSettingsController.getSystemSettingV2(field:String, request: play.mvc.Http.Request)
 
