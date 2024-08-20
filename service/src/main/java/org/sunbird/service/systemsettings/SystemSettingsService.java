@@ -93,7 +93,6 @@ public class SystemSettingsService {
 
   public JsonNode getSystemSettingV2ByKey(String key, RequestContext context) {
     try {
-      DataCacheHandler.getConfigSettings().get(key);
       String value = DataCacheHandler.getConfigSettings().get(key);
       JsonNode responseJson = objectMapper.createObjectNode();
       if (value != null) {
