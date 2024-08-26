@@ -658,5 +658,6 @@ public final class JsonKey {
   public static final String MENTORING_ROLES = "mentoring.roles";
   public static final String MENTORING = "mentoring";
   public static final String USERID= "userid";
+  public static final String NETCORE = "NetCore";
   private JsonKey() {}
 }

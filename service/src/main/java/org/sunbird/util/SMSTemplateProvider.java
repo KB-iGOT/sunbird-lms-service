@@ -28,6 +28,8 @@ public class SMSTemplateProvider {
       defaultTemplate = templateId + "_nic";
     } else if (StringUtils.isNotBlank(templateId) && JsonKey.GCP.equalsIgnoreCase(SMS_PROVIDER)) {
       defaultTemplate = templateId + "_gcp";
+    } else if (StringUtils.isNotBlank(templateId) && JsonKey.NETCORE.equalsIgnoreCase(SMS_PROVIDER)) {
+      defaultTemplate = templateId + "_netcore";
     }
     return emailTemplateDao.getTemplate(defaultTemplate, context);
   }
