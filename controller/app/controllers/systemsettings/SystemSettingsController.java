@@ -81,4 +81,23 @@ public class SystemSettingsController extends BaseController {
           createCommonExceptionResponse(exception, httpRequest));
     }
   }
+
+  public CompletionStage<Result> getSystemSettingV2(String field, Http.Request httpRequest) {
+    try {
+      return handleRequest(
+          systemSettingsActor,
+          ActorOperations.GET_SYSTEM_SETTING_V2.getValue(),
+          field,
+          JsonKey.FIELD,
+          httpRequest);
+    } catch (Exception e) {
+      ProjectCommonException exception =
+          new ProjectCommonException(
+              (ProjectCommonException) e,
+              ActorOperations.getOperationCodeByActorOperation(
+                  ActorOperations.GET_SYSTEM_SETTING_V2.getValue()));
+      return CompletableFuture.completedFuture(
+          createCommonExceptionResponse(exception, httpRequest));
+    }
+  }
 }
