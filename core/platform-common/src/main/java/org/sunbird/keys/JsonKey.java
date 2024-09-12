@@ -656,5 +656,12 @@ public final class JsonKey {
   public static final String EMAIL_CAPS = "Email";
   public static final String GCP = "GCP";
   public static final String NETCORE = "NetCore";
+  public static final String OTP_EMAIL_SERVER_HOST = "sunbird_otp_mail_server_host";
+  public static final String OTP_EMAIL_SERVER_PASSWORD = "sunbird_otp_mail_server_password";
+  public static final String OTP_EMAIL_SERVER_PORT = "sunbird_otp_mail_server_port";
+  public static final String OTP_EMAIL_SERVER_USERNAME = "sunbird_otp_mail_server_username";
+  public static final String OTP_EMAIL_SERVER_FROM = "sunbird_otp_mail_server_from_email";
+  public static final String OTP_EMAIL_PROTOCOL = "sunbird_otp_mail_protocol";
+
   private JsonKey() {}
 }
