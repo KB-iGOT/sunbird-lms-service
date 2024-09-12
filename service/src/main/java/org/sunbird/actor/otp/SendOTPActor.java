@@ -22,8 +22,8 @@ public class SendOTPActor extends BaseActor {
   private final LogMaskServiceImpl logMaskService = new LogMaskServiceImpl();
 
   @Inject
-  @Named("email_service_actor")
-  private ActorRef emailServiceActor;
+  @Named("otp_email_service_actor")
+  private ActorRef otpEmailServiceActor;
 
   @Override
   public void onReceive(Request request) throws Throwable {
@@ -80,7 +80,7 @@ public class SendOTPActor extends BaseActor {
         "SendOTPActor:sendOTPViaEmail : Calling EmailServiceActor for Key = "
             + logMaskService.maskEmail(key));
     try {
-      emailServiceActor.tell(emailRequest, self());
+      otpEmailServiceActor.tell(emailRequest, self());
     } catch (Exception ex) {
       logger.error(context, "Exception while sending OTP via email", ex);
     }

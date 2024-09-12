@@ -10,6 +10,7 @@ import org.sunbird.actor.location.LocationBackgroundActor;
 import org.sunbird.actor.notes.NotesManagementActor;
 import org.sunbird.actor.notification.BackGroundNotificationActor;
 import org.sunbird.actor.notification.EmailServiceActor;
+import org.sunbird.actor.notification.OTPEmailServiceActor;
 import org.sunbird.actor.notification.SendNotificationActor;
 import org.sunbird.actor.organisation.OrganisationBackgroundActor;
 import org.sunbird.actor.organisation.OrganisationManagementActor;
@@ -101,7 +102,9 @@ public enum ACTORS {
   USER_TNC_ACTOR(UserTnCActor.class, "user_tnc_actor"),
   USER_TYPE_ACTOR(UserTypeActor.class, "user_type_actor"),
   USER_UPDATE_ACTOR(UserUpdateActor.class, "user_update_actor"),
-  BACKGROUND_JOB_MANAGER_ACTOR(BackgroundJobManager.class, "background_job_manager_actor");
+  BACKGROUND_JOB_MANAGER_ACTOR(BackgroundJobManager.class, "background_job_manager_actor"),
+  // OTP Notification Actor
+  OTP_EMAIL_SERVICE_ACTOR(OTPEmailServiceActor.class, "otp_email_service_actor"),;
 
   ACTORS(Class clazz, String name) {
     actorClass = clazz;
