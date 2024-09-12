@@ -39,6 +39,7 @@ public class Organisation implements Serializable {
   private List<Map<String, String>> orgLocation;
   private String frameworkId;
   private String imgUrl;
+  private String cqfId;
 
   public String getId() {
     return id;
@@ -209,4 +210,8 @@ public class Organisation implements Serializable {
   public void setImgUrl(String imgUrl) {
     this.imgUrl = imgUrl;
   }
+
+  public String getCqfId() { return cqfId; }
+
+  public void setCqfId(String cqfId) { this.cqfId = cqfId; }
 }
