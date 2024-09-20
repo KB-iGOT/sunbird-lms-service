@@ -478,7 +478,7 @@ public class ElasticSearchHelper {
   private static RangeQueryBuilder createRangeQuery(
       String name, Map<String, Object> rangeOperation, Float boost) {
 
-    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(name + RAW_APPEND);
+    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery(name).includeLower(false);
     for (Map.Entry<String, Object> it : rangeOperation.entrySet()) {
       switch (it.getKey()) {
         case LTE:
