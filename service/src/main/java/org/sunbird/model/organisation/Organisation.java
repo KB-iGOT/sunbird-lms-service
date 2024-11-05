@@ -40,6 +40,8 @@ public class Organisation implements Serializable {
   private String frameworkId;
   private String imgUrl;
   private String cqfId;
+  private String registration_link;
+  private String qr_registration_link;
 
   public String getId() {
     return id;
@@ -214,4 +216,20 @@ public class Organisation implements Serializable {
   public String getCqfId() { return cqfId; }
 
   public void setCqfId(String cqfId) { this.cqfId = cqfId; }
+
+  public String getRegistration_link() {
+    return registration_link;
+  }
+
+  public void setRegistration_link(String registration_link) {
+    this.registration_link = registration_link;
+  }
+
+  public String getQr_registration_link() {
+    return qr_registration_link;
+  }
+
+  public void setQr_registration_link(String qr_registration_link) {
+    this.qr_registration_link = qr_registration_link;
+  }
 }
