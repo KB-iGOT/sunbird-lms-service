@@ -45,6 +45,8 @@ public class Organisation implements Serializable {
   private String registrationStartDate;
   private String registrationEndDate;
   private String logo;
+  private String startDateRegistration;
+  private String endDateRegistration;
 
   public String getId() {
     return id;
@@ -254,5 +256,21 @@ public class Organisation implements Serializable {
 
   public void setLogo(String logo) {
     this.logo = logo;
+  }
+
+  public String getEndDateRegistration() {
+    return endDateRegistration;
+  }
+
+  public void setEndDateRegistration(String endDateRegistration) {
+    this.endDateRegistration = endDateRegistration;
+  }
+
+  public String getStartDateRegistration() {
+    return startDateRegistration;
+  }
+
+  public void setStartDateRegistration(String startDateRegistration) {
+    this.startDateRegistration = startDateRegistration;
   }
 }
