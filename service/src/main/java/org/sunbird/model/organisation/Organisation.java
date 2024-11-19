@@ -42,8 +42,8 @@ public class Organisation implements Serializable {
   private String cqfId;
   private String registrationLink;
   private String qrRegistrationLink;
-  private Long registrationStartDate;
-  private Long registrationEndDate;
+  private String registrationStartDate;
+  private String registrationEndDate;
   private String logo;
 
   public String getId() {
@@ -232,19 +232,19 @@ public class Organisation implements Serializable {
     this.qrRegistrationLink = qrRegistrationLink;
   }
 
-  public Long getRegistrationStartDate() {
+  public String getRegistrationStartDate() {
     return registrationStartDate;
   }
 
-  public void setRegistrationStartDate(Long registrationStartDate) {
+  public void setRegistrationStartDate(String registrationStartDate) {
     this.registrationStartDate = registrationStartDate;
   }
 
-  public Long getRegistrationEndDate() {
+  public String getRegistrationEndDate() {
     return registrationEndDate;
   }
 
-  public void setRegistrationEndDate(Long registrationEndDate) {
+  public void setRegistrationEndDate(String registrationEndDate) {
     this.registrationEndDate = registrationEndDate;
   }
 
