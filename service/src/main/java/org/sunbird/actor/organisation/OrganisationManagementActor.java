@@ -388,8 +388,10 @@ public class OrganisationManagementActor extends BaseActor {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
         String formattedRegistrationStartDate = registrationStartDateLong.format(formatter);
         String formattedRegistrationEndDate = registrationEndDateLong.format(formatter);
-        updateOrgDao.put(JsonKey.REGISTRATION_START_DATE, formattedRegistrationStartDate);
-        updateOrgDao.put(JsonKey.REGISTRATION_END_DATE, formattedRegistrationEndDate);
+        updateOrgDao.remove(JsonKey.REGISTRATION_START_DATE);
+        updateOrgDao.remove(JsonKey.REGISTRATION_END_DATE);
+        updateOrgDao.put(JsonKey.START_DATE_REGISTRATION, formattedRegistrationStartDate);
+        updateOrgDao.put(JsonKey.END_DATE_REGISTRATION, formattedRegistrationEndDate);
         logger.info("OrganisationManagementActor : orgUpdate: Organisation Formatted registration dates: " + formattedRegistrationStartDate + " " + formattedRegistrationEndDate);
       }
       Organisation org = mapper.convertValue(updateOrgDao, Organisation.class);

@@ -667,5 +667,7 @@ public final class JsonKey {
   public static final String OTP_EMAIL_PROTOCOL = "sunbird_otp_mail_protocol";
   public static final String REGISTRATION_START_DATE = "registrationStartDate";
   public static final String REGISTRATION_END_DATE = "registrationEndDate";
+  public static final String START_DATE_REGISTRATION = "startDateRegistration";
+  public static final String END_DATE_REGISTRATION = "endDateRegistration";
   private JsonKey() {}
 }
