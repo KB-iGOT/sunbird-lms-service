@@ -380,6 +380,9 @@ public class OrganisationManagementActor extends BaseActor {
       ObjectMapper mapper = new ObjectMapper();
       String registrationStartDate = (String) MapUtils.getObject(updateOrgDao, JsonKey.REGISTRATION_START_DATE);
       String registrationEndDate = (String) MapUtils.getObject(updateOrgDao, JsonKey.REGISTRATION_END_DATE);
+      String ministryStateName = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_NAME);
+      String ministryStateType = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_TYPE);
+      String deptName = (String) MapUtils.getObject(updateOrgDao, JsonKey.DEPT_NAME);
       if (StringUtils.isNotEmpty(registrationStartDate) && StringUtils.isNotEmpty(registrationEndDate)) {
         logger.info("OrganisationManagementActor : orgUpdate: Organisation registration dates: " + registrationStartDate + " " + registrationEndDate);
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
@@ -393,6 +396,15 @@ public class OrganisationManagementActor extends BaseActor {
         updateOrgDao.put(JsonKey.START_DATE_REGISTRATION, formattedRegistrationStartDate);
         updateOrgDao.put(JsonKey.END_DATE_REGISTRATION, formattedRegistrationEndDate);
         logger.info("OrganisationManagementActor : orgUpdate: Organisation Formatted registration dates: " + formattedRegistrationStartDate + " " + formattedRegistrationEndDate);
+      }
+      if(StringUtils.isNotEmpty(ministryStateName) ){
+        updateOrgDao.put(JsonKey.MINISTRY_STATE_NAME, ministryStateName);
+      }
+      if(StringUtils.isNotEmpty(ministryStateType)){
+        updateOrgDao.put(JsonKey.MINISTRY_STATE_TYPE, ministryStateType);
+      }
+      if(StringUtils.isNotEmpty(deptName)){
+        updateOrgDao.put(JsonKey.DEPT_NAME, deptName);
       }
       Organisation org = mapper.convertValue(updateOrgDao, Organisation.class);
       updateOrgDao = mapper.convertValue(org, Map.class);

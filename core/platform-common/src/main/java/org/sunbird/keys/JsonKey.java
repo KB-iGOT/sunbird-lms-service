@@ -669,5 +669,9 @@ public final class JsonKey {
   public static final String REGISTRATION_END_DATE = "registrationEndDate";
   public static final String START_DATE_REGISTRATION = "startDateRegistration";
   public static final String END_DATE_REGISTRATION = "endDateRegistration";
+  public static final String MINISTRY_STATE_NAME = "ministryOrStateName";
+  public static final String MINISTRY_STATE_TYPE = "ministryOrStateType";
+  public static final String DEPT_NAME = "deptName";
+
   private JsonKey() {}
 }

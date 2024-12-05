@@ -48,6 +48,9 @@ public class Organisation implements Serializable {
   private String startDateRegistration;
   private String endDateRegistration;
   private String settings;
+  private String ministryOrStateName;
+  private String ministryOrStateType;
+  private String deptName;
 
   public String getId() {
     return id;
@@ -281,5 +284,29 @@ public class Organisation implements Serializable {
 
   public void setSettings(String settings) {
     this.settings = settings;
+  }
+
+  public String getDeptName() {
+    return deptName;
+  }
+
+  public void setDeptName(String deptName) {
+    this.deptName = deptName;
+  }
+
+  public String getMinistryOrStateType() {
+    return ministryOrStateType;
+  }
+
+  public void setMinistryOrStateType(String ministryOrStateType) {
+    this.ministryOrStateType = ministryOrStateType;
+  }
+
+  public String getMinistryOrStateName() {
+    return ministryOrStateName;
+  }
+
+  public void setMinistryOrStateName(String ministryOrStateName) {
+    this.ministryOrStateName = ministryOrStateName;
   }
 }
