@@ -40,6 +40,17 @@ public class Organisation implements Serializable {
   private String frameworkId;
   private String imgUrl;
   private String cqfId;
+  private String registrationLink;
+  private String qrRegistrationLink;
+  private String registrationStartDate;
+  private String registrationEndDate;
+  private String logo;
+  private String startDateRegistration;
+  private String endDateRegistration;
+  private String settings;
+  private String ministryOrStateName;
+  private String ministryOrStateType;
+  private String deptName;
 
   public String getId() {
     return id;
@@ -214,4 +225,88 @@ public class Organisation implements Serializable {
   public String getCqfId() { return cqfId; }
 
   public void setCqfId(String cqfId) { this.cqfId = cqfId; }
+
+  public String getRegistrationLink() { return registrationLink; }
+
+  public void setRegistrationLink(String registrationLink) {
+    this.registrationLink = registrationLink;
+  }
+
+  public String getQrRegistrationLink() { return qrRegistrationLink; }
+
+  public void setQrRegistrationLink(String qrRegistrationLink) {
+    this.qrRegistrationLink = qrRegistrationLink;
+  }
+
+  public String getRegistrationStartDate() {
+    return registrationStartDate;
+  }
+
+  public void setRegistrationStartDate(String registrationStartDate) {
+    this.registrationStartDate = registrationStartDate;
+  }
+
+  public String getRegistrationEndDate() {
+    return registrationEndDate;
+  }
+
+  public void setRegistrationEndDate(String registrationEndDate) {
+    this.registrationEndDate = registrationEndDate;
+  }
+
+  public String getLogo() {
+    return logo;
+  }
+
+  public void setLogo(String logo) {
+    this.logo = logo;
+  }
+
+  public String getEndDateRegistration() {
+    return endDateRegistration;
+  }
+
+  public void setEndDateRegistration(String endDateRegistration) {
+    this.endDateRegistration = endDateRegistration;
+  }
+
+  public String getStartDateRegistration() {
+    return startDateRegistration;
+  }
+
+  public void setStartDateRegistration(String startDateRegistration) {
+    this.startDateRegistration = startDateRegistration;
+  }
+
+  public String getSettings() {
+    return settings;
+  }
+
+  public void setSettings(String settings) {
+    this.settings = settings;
+  }
+
+  public String getDeptName() {
+    return deptName;
+  }
+
+  public void setDeptName(String deptName) {
+    this.deptName = deptName;
+  }
+
+  public String getMinistryOrStateType() {
+    return ministryOrStateType;
+  }
+
+  public void setMinistryOrStateType(String ministryOrStateType) {
+    this.ministryOrStateType = ministryOrStateType;
+  }
+
+  public String getMinistryOrStateName() {
+    return ministryOrStateName;
+  }
+
+  public void setMinistryOrStateName(String ministryOrStateName) {
+    this.ministryOrStateName = ministryOrStateName;
+  }
 }

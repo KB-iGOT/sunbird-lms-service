@@ -3,10 +3,11 @@ package org.sunbird.actor.organisation;
 import akka.actor.ActorRef;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.MapUtils;
@@ -377,7 +378,34 @@ public class OrganisationManagementActor extends BaseActor {
         }
       }
       ObjectMapper mapper = new ObjectMapper();
-      // This will remove all extra unnecessary parameter from request
+      String registrationStartDate = (String) MapUtils.getObject(updateOrgDao, JsonKey.REGISTRATION_START_DATE);
+      String registrationEndDate = (String) MapUtils.getObject(updateOrgDao, JsonKey.REGISTRATION_END_DATE);
+      String ministryStateName = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_NAME);
+      String ministryStateType = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_TYPE);
+      String deptName = (String) MapUtils.getObject(updateOrgDao, JsonKey.DEPT_NAME);
+      if (StringUtils.isNotEmpty(registrationStartDate) && StringUtils.isNotEmpty(registrationEndDate)) {
+        logger.info("OrganisationManagementActor : orgUpdate: Organisation registration dates: " + registrationStartDate + " " + registrationEndDate);
+        ZoneId zoneId = ZoneId.of("Asia/Kolkata");
+        ZonedDateTime registrationStartDateLong = Instant.ofEpochMilli(Long.parseLong(registrationStartDate)).atZone(zoneId);
+        ZonedDateTime registrationEndDateLong = Instant.ofEpochMilli(Long.parseLong(registrationEndDate)).atZone(zoneId);
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+        String formattedRegistrationStartDate = registrationStartDateLong.format(formatter);
+        String formattedRegistrationEndDate = registrationEndDateLong.format(formatter);
+        updateOrgDao.remove(JsonKey.REGISTRATION_START_DATE);
+        updateOrgDao.remove(JsonKey.REGISTRATION_END_DATE);
+        updateOrgDao.put(JsonKey.START_DATE_REGISTRATION, formattedRegistrationStartDate);
+        updateOrgDao.put(JsonKey.END_DATE_REGISTRATION, formattedRegistrationEndDate);
+        logger.info("OrganisationManagementActor : orgUpdate: Organisation Formatted registration dates: " + formattedRegistrationStartDate + " " + formattedRegistrationEndDate);
+      }
+      if(StringUtils.isNotEmpty(ministryStateName) ){
+        updateOrgDao.put(JsonKey.MINISTRY_STATE_NAME, ministryStateName);
+      }
+      if(StringUtils.isNotEmpty(ministryStateType)){
+        updateOrgDao.put(JsonKey.MINISTRY_STATE_TYPE, ministryStateType);
+      }
+      if(StringUtils.isNotEmpty(deptName)){
+        updateOrgDao.put(JsonKey.DEPT_NAME, deptName);
+      }
       Organisation org = mapper.convertValue(updateOrgDao, Organisation.class);
       updateOrgDao = mapper.convertValue(org, Map.class);
       Response response =

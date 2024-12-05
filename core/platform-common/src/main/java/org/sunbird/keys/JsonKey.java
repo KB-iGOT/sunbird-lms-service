@@ -665,6 +665,13 @@ public final class JsonKey {
   public static final String OTP_EMAIL_SERVER_USERNAME = "sunbird_otp_mail_server_username";
   public static final String OTP_EMAIL_SERVER_FROM = "sunbird_otp_mail_server_from_email";
   public static final String OTP_EMAIL_PROTOCOL = "sunbird_otp_mail_protocol";
+  public static final String REGISTRATION_START_DATE = "registrationStartDate";
+  public static final String REGISTRATION_END_DATE = "registrationEndDate";
+  public static final String START_DATE_REGISTRATION = "startDateRegistration";
+  public static final String END_DATE_REGISTRATION = "endDateRegistration";
+  public static final String MINISTRY_STATE_NAME = "ministryOrStateName";
+  public static final String MINISTRY_STATE_TYPE = "ministryOrStateType";
+  public static final String DEPT_NAME = "deptName";
 
   private JsonKey() {}
 }
