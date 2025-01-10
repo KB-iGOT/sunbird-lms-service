@@ -1,15 +1,15 @@
 package org.sunbird.actor.role;
 
 import akka.actor.ActorRef;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.UserBaseActor;
+import org.sunbird.common.ElasticSearchHelper;
+import org.sunbird.dto.SearchDTO;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.kafka.InstructionEventGenerator;
@@ -19,8 +19,11 @@ import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.service.role.RoleService;
+import org.sunbird.service.user.UserProfileReadService;
 import org.sunbird.service.user.UserRoleService;
+import org.sunbird.service.user.UserService;
 import org.sunbird.service.user.impl.UserRoleServiceImpl;
+import org.sunbird.service.user.impl.UserServiceImpl;
 import org.sunbird.telemetry.dto.TelemetryEnvKey;
 import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.ProjectUtil;
@@ -30,7 +33,8 @@ import org.sunbird.util.Util;
 public class UserRoleActor extends UserBaseActor {
 
   private final UserRoleService userRoleService = UserRoleServiceImpl.getInstance();
-
+  private final UserProfileReadService profileReadService = new UserProfileReadService();
+  private final UserService userService = UserServiceImpl.getInstance();
   @Inject
   @Named("user_role_background_actor")
   private ActorRef userRoleBackgroundActor;
@@ -70,6 +74,43 @@ public class UserRoleActor extends UserBaseActor {
     Map<String, Object> requestMap = actorMessage.getRequest();
     requestMap.put(JsonKey.REQUESTED_BY, actorMessage.getContext().get(JsonKey.USER_ID));
 
+    String userId = (String) requestMap.get(JsonKey.USER_ID);
+    actorMessage.getContext().put(JsonKey.USER_ID, userId);
+    Response userProfileDataResponse = profileReadService.getUserProfileData(actorMessage);
+    Map<String, Object> userProfileDataMap = (Map<String, Object>) userProfileDataResponse.get(JsonKey.RESPONSE);
+    String orgId = ((List<Map<String, Object>>) userProfileDataMap.get(JsonKey.ORGANISATIONS))
+            .stream()
+            .findFirst()
+            .map(org -> (String) org.get(JsonKey.ORGANISATION_ID))
+            .orElse(null);
+    if (StringUtils.isNotEmpty(orgId) && !orgId.equalsIgnoreCase((String) requestMap.get(JsonKey.ORGANISATION_ID))) {
+      logger.info(actorMessage.getRequestContext(), "User and org is not same");
+      Response response = new Response();
+      response.put(JsonKey.RESPONSE, "User Organisation Id and Assigner organisation Id mismatch");
+      sender().tell(response, self());
+      return;
+    }
+    Map<String, Object> requestMaps = new HashMap<>();
+    Map<String, Object> filtersMap = new HashMap<>();
+    filtersMap.put(JsonKey.ROOT_ORG_ID, requestMap.get(JsonKey.ORGANISATION_ID));
+    filtersMap.put(JsonKey.STATUS, 1);
+    List<String> rolesList = new ArrayList<>();
+    rolesList.add(JsonKey.MDO_LEADER);
+    filtersMap.put(JsonKey.ORGANISATION_ROLES, rolesList);
+    requestMaps.put(JsonKey.FILTERS, filtersMap);
+    modifySearchQueryReqForNewRoleStructure(requestMaps);
+    SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(requestMaps);
+    searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
+    Map<String, Object> result = userService.searchUser(searchDto, actorMessage.getRequestContext());
+    Number count = (Number) result.get(JsonKey.COUNT);
+
+    if (count.longValue() >= 1) {
+      logger.info(actorMessage.getRequestContext(), "MDO Leader already exist in org");
+      Response response = new Response();
+      response.put(JsonKey.RESPONSE, "MDO Leader already exist in org");
+      sender().tell(response, self());
+      return;
+    }
     if (actorMessage.getOperation().equals(ActorOperations.ASSIGN_ROLES.getValue())) {
       requestMap.put(JsonKey.ROLE_OPERATION, "assignRole");
       List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
@@ -183,5 +224,13 @@ public class UserRoleActor extends UserBaseActor {
                                 e);
                       }
                     });
+  }
+
+  private void modifySearchQueryReqForNewRoleStructure(Map<String, Object> searchQueryMap) {
+    Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+    Object roles = filterMap.remove(JsonKey.ORGANISATIONS + "." + JsonKey.ROLES);
+    if (null != roles) {
+      filterMap.put(JsonKey.ROLES + "." + JsonKey.ROLE, roles);
+    }
   }
 }

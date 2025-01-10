@@ -672,6 +672,8 @@ public final class JsonKey {
   public static final String MINISTRY_STATE_NAME = "ministryOrStateName";
   public static final String MINISTRY_STATE_TYPE = "ministryOrStateType";
   public static final String DEPT_NAME = "deptName";
+  public static final String MDO_LEADER = "MDO_LEADER";
+  public static final String ORGANISATION_ROLES="organisations.roles";
 
   private JsonKey() {}
 }
