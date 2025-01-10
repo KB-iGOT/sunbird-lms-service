@@ -115,7 +115,7 @@ public class SSOUserServiceImpl implements SSOUserService {
     String requestedChannel = (String) userMap.get(JsonKey.CHANNEL);
     String fetchedRootOrgIdByChannel = "";
     if (StringUtils.isNotBlank(requestedChannel)) {
-      fetchedRootOrgIdByChannel = orgService.getRootOrgIdFromChannel(requestedChannel, context);
+      fetchedRootOrgIdByChannel = orgService.getRootOrgIdFromChannelV2(requestedChannel, context);
       if (StringUtils.isBlank(fetchedRootOrgIdByChannel)) {
         throw new ProjectCommonException(
             ResponseCode.invalidParameterValue,

@@ -344,4 +344,36 @@ public class OrgServiceImpl implements OrgService {
             ProjectUtil.OrgStatus.BLOCKED.getValue(),
             ProjectUtil.OrgStatus.RETIRED.getValue()));
   }
+
+  @Override
+  public String getRootOrgIdFromChannelV2(String channel, RequestContext context) {
+    Map<String, Object> filters = new HashMap<>();
+    filters.put(JsonKey.IS_TENANT, true);
+    filters.put(JsonKey.CHANNEL, channel);
+    filters.put(JsonKey.STATUS, 1);
+
+    SearchDTO searchDTO = new SearchDTO();
+    searchDTO.getAdditionalProperties().put(JsonKey.FILTERS, filters);
+    Future<Map<String, Object>> esResultF = orgDao.search(searchDTO, context);
+    Map<String, Object> esResult =
+            (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(esResultF);
+    if (MapUtils.isNotEmpty(esResult)
+            && CollectionUtils.isNotEmpty((List) esResult.get(JsonKey.CONTENT))) {
+      Map<String, Object> esContent =
+              ((List<Map<String, Object>>) esResult.get(JsonKey.CONTENT)).get(0);
+      if (null == esContent.get(JsonKey.STATUS) || (1 != (int) esContent.get(JsonKey.STATUS))) {
+        ProjectCommonException.throwClientErrorException(
+                ResponseCode.errorInactiveOrg,
+                ProjectUtil.formatMessage(
+                        ResponseCode.errorInactiveOrg.getErrorMessage(), JsonKey.CHANNEL, channel));
+      }
+      return (String) esContent.get(JsonKey.ID);
+    } else {
+      throw new ProjectCommonException(
+              ResponseCode.invalidParameterValue,
+              ProjectUtil.formatMessage(
+                      ResponseCode.invalidParameterValue.getErrorMessage(), channel, JsonKey.CHANNEL),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
+  }
 }
