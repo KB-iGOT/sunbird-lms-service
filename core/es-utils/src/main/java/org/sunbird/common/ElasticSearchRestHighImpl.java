@@ -373,15 +373,19 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
 
     // apply simple query string
     if (!StringUtils.isBlank(searchDTO.getQuery())) {
-      SimpleQueryStringBuilder sqsb = QueryBuilders.simpleQueryStringQuery(searchDTO.getQuery());
-      query.must(sqsb);
-      if (CollectionUtils.isNotEmpty(searchDTO.getQueryFields())) {
-        Map<String, Float> searchFields =
-            searchDTO
-                .getQueryFields()
-                .stream()
-                .collect(Collectors.<String, String, Float>toMap(s -> s, v -> 1.0f));
-        query.must(sqsb.fields(searchFields));
+      if (searchDTO.getQuery().contains("@")) {
+        query.must(QueryBuilders.termQuery(JsonKey.PROFILE_PRIMARY_EMAIL_FIELD, searchDTO.getQuery()));
+      } else {
+        SimpleQueryStringBuilder sqsb = QueryBuilders.simpleQueryStringQuery(searchDTO.getQuery());
+        query.must(sqsb);
+        if (CollectionUtils.isNotEmpty(searchDTO.getQueryFields())) {
+          Map<String, Float> searchFields =
+              searchDTO
+                  .getQueryFields()
+                  .stream()
+                  .collect(Collectors.<String, String, Float>toMap(s -> s, v -> 1.0f));
+          query.must(sqsb.fields(searchFields));
+        }
       }
     }
     // apply the sorting
