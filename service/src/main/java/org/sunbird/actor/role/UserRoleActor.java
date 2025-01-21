@@ -6,6 +6,7 @@ import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.UserBaseActor;
 import org.sunbird.common.ElasticSearchHelper;
@@ -90,26 +91,29 @@ public class UserRoleActor extends UserBaseActor {
       sender().tell(response, self());
       return;
     }
-    Map<String, Object> requestMaps = new HashMap<>();
-    Map<String, Object> filtersMap = new HashMap<>();
-    filtersMap.put(JsonKey.ROOT_ORG_ID, requestMap.get(JsonKey.ORGANISATION_ID));
-    filtersMap.put(JsonKey.STATUS, 1);
-    List<String> rolesList = new ArrayList<>();
-    rolesList.add(JsonKey.MDO_LEADER);
-    filtersMap.put(JsonKey.ORGANISATION_ROLES, rolesList);
-    requestMaps.put(JsonKey.FILTERS, filtersMap);
-    modifySearchQueryReqForNewRoleStructure(requestMaps);
-    SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(requestMaps);
-    searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
-    Map<String, Object> result = userService.searchUser(searchDto, actorMessage.getRequestContext());
-    Number count = (Number) result.get(JsonKey.COUNT);
+    List<String> assignRoles = (List<String>) requestMap.get(JsonKey.ROLES);
+    if (CollectionUtils.isNotEmpty(assignRoles) && assignRoles.stream().anyMatch(JsonKey.MDO_LEADER::equals)) {
+      Map<String, Object> requestMaps = new HashMap<>();
+      Map<String, Object> filtersMap = new HashMap<>();
+      filtersMap.put(JsonKey.ROOT_ORG_ID, requestMap.get(JsonKey.ORGANISATION_ID));
+      filtersMap.put(JsonKey.STATUS, 1);
+      List<String> rolesList = new ArrayList<>();
+      rolesList.add(JsonKey.MDO_LEADER);
+      filtersMap.put(JsonKey.ORGANISATION_ROLES, rolesList);
+      requestMaps.put(JsonKey.FILTERS, filtersMap);
+      modifySearchQueryReqForNewRoleStructure(requestMaps);
+      SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(requestMaps);
+      searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
+      Map<String, Object> result = userService.searchUser(searchDto, actorMessage.getRequestContext());
+      Number count = (Number) result.get(JsonKey.COUNT);
 
-    if (count.longValue() >= 1) {
-      logger.info(actorMessage.getRequestContext(), "MDO Leader already exist in org");
-      Response response = new Response();
-      response.put(JsonKey.RESPONSE, "MDO Leader already exist in org");
-      sender().tell(response, self());
-      return;
+      if (count.longValue() >= 1) {
+        logger.info(actorMessage.getRequestContext(), "MDO Leader already exist in org");
+        Response response = new Response();
+        response.put(JsonKey.RESPONSE, "MDO Leader already exist in org");
+        sender().tell(response, self());
+        return;
+      }
     }
     if (actorMessage.getOperation().equals(ActorOperations.ASSIGN_ROLES.getValue())) {
       requestMap.put(JsonKey.ROLE_OPERATION, "assignRole");
