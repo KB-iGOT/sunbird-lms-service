@@ -2,13 +2,11 @@ package org.sunbird.actor.user;
 
 import akka.actor.ActorRef;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import java.text.MessageFormat;
 import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
@@ -84,9 +82,9 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void createUserV5(Request actorMessage) {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     actorMessage.toLower();
-    System.out.println(actorMessage.getContext().get("url"));
+    System.out.println(actorMessage.getContext().get(JsonKey.URL));
     Map<String, Object> userMap = actorMessage.getRequest();
-    switch ((String) actorMessage.getContext().get("url")) {
+    switch ((String) actorMessage.getContext().get(JsonKey.URL)) {
       case "/v1/cb/user/self/register":
         userMap.put(JsonKey.SOURCE_CREATION_TYPE, "selfRegisterUser");
         break;

@@ -68,9 +68,7 @@ public class User implements Serializable {
   private String profileLocation;
   private String profileUserTypes;
   private String profileDetails;
-
   private String sourceCreationType;
-
 
   public Map<String, String> getAllTncAccepted() {
     return allTncAccepted;

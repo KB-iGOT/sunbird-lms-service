@@ -682,10 +682,5 @@ public final class JsonKey {
   public static final String PRIMARY_EMAIL="primaryEmail";
   public static final String EMPLOYMENT_DETAILS="employmentDetails";
 
-
-
-
-
-
   private JsonKey() {}
 }
