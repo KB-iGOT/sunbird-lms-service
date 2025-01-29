@@ -96,6 +96,7 @@ public enum ActorOperations {
   CREATE_USER_V3("createUserV3", "USRCRT"),
   CREATE_SSU_USER("createSSUUser", "USRCRT"),
   CREATE_USER_V4("createUserV4", "USRCRT"),
+  CREATE_USER_V5("createUserV5", "USRCRT"),
   CREATE_MANAGED_USER("createManagedUser", "USRCRT"),
 
   V2_NOTIFICATION("v2Notification", "NOTI"),

@@ -11,6 +11,7 @@ import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
+import org.sunbird.util.ExcelFileUtil;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.validator.BaseRequestValidator;
 import play.mvc.Http;
@@ -155,6 +156,23 @@ public class UserController extends BaseController {
         true,
         httpRequest);
   }
+
+    public CompletionStage<Result> createUserV5(Http.Request httpRequest) {
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.CREATE_USER_V5.getValue(),
+                httpRequest.body().asJson(),
+                req -> {
+                    Request request = (Request) req;
+                    new UserRequestValidator().validateUserCreateV4(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
 
   public CompletionStage<Result> updateUser(Http.Request httpRequest) {
 

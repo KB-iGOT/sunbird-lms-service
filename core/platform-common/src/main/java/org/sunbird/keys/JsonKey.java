@@ -674,6 +674,18 @@ public final class JsonKey {
   public static final String DEPT_NAME = "deptName";
   public static final String MDO_LEADER = "MDO_LEADER";
   public static final String ORGANISATION_ROLES="organisations.roles";
+  public static final String SOURCE_CREATION_TYPE="sourceCreationType";
+  public static final String PROFILE_GROUP_STATUS="profileGroupStatus";
+  public static final String PROFILE_DESIGNATION_STATUS="profileDesignationStatus";
+  public static final String PROFILE_STATUS="profileStatus";
+  public static final String DEPARTMENT_NAME="departmentName";
+  public static final String PRIMARY_EMAIL="primaryEmail";
+  public static final String EMPLOYMENT_DETAILS="employmentDetails";
+
+
+
+
+
 
   private JsonKey() {}
 }

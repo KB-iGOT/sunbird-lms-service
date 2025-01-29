@@ -2,21 +2,27 @@ package org.sunbird.actor.user;
 
 import akka.actor.ActorRef;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.text.MessageFormat;
+import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
+import org.sunbird.common.ElasticSearchHelper;
+import org.sunbird.dto.SearchDTO;
+import org.sunbird.exception.ProjectCommonException;
+import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.model.user.User;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
+import org.sunbird.service.organisation.OrgService;
+import org.sunbird.service.organisation.impl.OrgServiceImpl;
 import org.sunbird.service.user.AssociationMechanism;
 import org.sunbird.service.user.SSOUserService;
 import org.sunbird.service.user.UserRoleService;
@@ -38,6 +44,8 @@ public class SSOUserCreateActor extends UserBaseActor {
   private final ObjectMapper mapper = new ObjectMapper();
   private final UserRoleService userRoleService = UserRoleServiceImpl.getInstance();
   private final SSOUserService ssoUserService = SSOUserServiceImpl.getInstance();
+  private final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
+  private final OrgService orgService = OrgServiceImpl.getInstance();
 
   @Inject
   @Named("user_profile_update_actor")
@@ -60,6 +68,8 @@ public class SSOUserCreateActor extends UserBaseActor {
       case "createSSOUser":
         createSSOUser(request);
         break;
+      case "createUserV5":
+        createUserV5(request);
       default:
         onReceiveUnsupportedOperation();
     }
@@ -70,6 +80,35 @@ public class SSOUserCreateActor extends UserBaseActor {
    *
    * @param actorMessage Request
    */
+
+  private void createUserV5(Request actorMessage) {
+    logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
+    actorMessage.toLower();
+    System.out.println(actorMessage.getContext().get("url"));
+    Map<String, Object> userMap = actorMessage.getRequest();
+    switch ((String) actorMessage.getContext().get("url")) {
+      case "/v1/cb/user/self/register":
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "selfRegisterUser");
+        break;
+      case "/v1/cb/user/custom/register":
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "customRegisterUser");
+        break;
+      case "/v1/cb/user/create":
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "singleUserCreate");
+        break;
+      case "/v1/cb/user/bulkcreate ":
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "bulkUserCreate");
+        break;
+      case "/v1/cb/user/parichay/create":
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "parichayUserCreate");
+        break;
+    }
+    String rootOrgId = findRootOrgId(userMap, actorMessage);
+    populateRoles(userMap, actorMessage, rootOrgId);
+    createBasisProfileDetails(userMap);
+    createSSOUser(actorMessage);
+  }
+
   private void createSSOUser(Request actorMessage) {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createSSOUser: starts : ");
     actorMessage.toLower();
@@ -215,4 +254,95 @@ public class SSOUserCreateActor extends UserBaseActor {
       logger.error(context, "Exception while sending notification", ex);
     }
   }
+
+  private void modifySearchQueryReqForNewRoleStructure(Map<String, Object> searchQueryMap) {
+    Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+    Object roles = filterMap.remove(JsonKey.ORGANISATIONS + "." + JsonKey.ROLES);
+    if (null != roles) {
+      filterMap.put(JsonKey.ROLES + "." + JsonKey.ROLE, roles);
+    }
+  }
+
+  private String findRootOrgId(Map<String, Object> userMap, Request actorMessage) {
+    String rootOrgId = "";
+    if (userMap.get(JsonKey.CHANNEL) != null) {
+      rootOrgId = orgService.getRootOrgIdFromChannel((String) userMap.get(JsonKey.CHANNEL), actorMessage.getRequestContext());
+      if (StringUtils.isBlank(rootOrgId)) {
+        throw new ProjectCommonException(
+                ResponseCode.invalidParameterValue,
+                ProjectUtil.formatMessage(
+                        ResponseCode.invalidParameterValue.getErrorMessage(),
+                        userMap.get(JsonKey.CHANNEL),
+                        JsonKey.CHANNEL),
+                ResponseCode.CLIENT_ERROR.getResponseCode());
+      }
+    } else {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.invalidParameter,
+              MessageFormat.format(
+                      ResponseCode.invalidParameter.getErrorMessage(),
+                      JsonKey.CHANNEL));
+    }
+    return rootOrgId;
+  }
+
+  private void populateRoles(Map<String, Object> userMap, Request actorMessage, String rootOrgId ) {
+    if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
+      userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+    } else {
+      checkIfMDOLeaderExist(userMap, actorMessage, rootOrgId);
+    }
+  }
+
+  private void createBasisProfileDetails(Map<String, Object> userMap) {
+    Map<String, Object> profileDetails = new HashMap<>();
+
+    profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
+
+    Map<String, Object> employmentDetails = new HashMap<>();
+    employmentDetails.put(JsonKey.DEPARTMENT_NAME, userMap.get(JsonKey.CHANNEL));
+
+    Map<String, Object> personalDetails = new HashMap<>();
+    personalDetails.put(JsonKey.FIRST_NAME,userMap.get(JsonKey.FIRST_NAME) );
+    personalDetails.put(JsonKey.PRIMARY_EMAIL, userMap.get(JsonKey.EMAIL));
+    personalDetails.put(JsonKey.MOBILE, userMap.get(JsonKey.PHONE));
+
+    profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
+
+    profileDetails.put(JsonKey.EMPLOYMENT_DETAILS, employmentDetails);
+    profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
+
+    userMap.put(JsonKey.PROFILE_DETAILS, profileDetails.toString());
+  }
+
+  private void checkIfMDOLeaderExist(Map<String,Object> userMap, Request actorMessage, String rootOrgId){
+    List<String> roles = (List<String>) userMap.get(JsonKey.ROLES);
+    if (roles.contains(JsonKey.MDO_LEADER)) {
+      System.out.println("Role MDO_LEADER is present");
+      Map<String, Object> requestMaps = new HashMap<>();
+      Map<String, Object> filtersMap = new HashMap<>();
+      filtersMap.put(JsonKey.ROOT_ORG_ID, rootOrgId);
+      filtersMap.put(JsonKey.STATUS, 1);
+      List<String> rolesList = new ArrayList<>();
+      rolesList.add(JsonKey.MDO_LEADER);
+      filtersMap.put(JsonKey.ORGANISATION_ROLES, rolesList);
+      requestMaps.put(JsonKey.FILTERS, filtersMap);
+      modifySearchQueryReqForNewRoleStructure(requestMaps);
+      SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(requestMaps);
+      searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
+      Map<String, Object> result = userService.searchUser(searchDto, actorMessage.getRequestContext());
+      Number count = (Number) result.get(JsonKey.COUNT);
+
+      if (count.longValue() >= 1) {
+        logger.info(actorMessage.getRequestContext(), "MDO Leader already exist in org");
+        throw new ProjectCommonException(
+                ResponseCode.dataTypeError,
+                ProjectUtil.formatMessage(
+                        "MDO Leader already exist in org", JsonKey.ROLES, JsonKey.LIST),
+                ERROR_CODE);        }
+    }
+  }
+
 }
