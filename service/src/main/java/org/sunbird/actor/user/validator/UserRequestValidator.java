@@ -1010,11 +1010,7 @@ public class UserRequestValidator extends BaseRequestValidator {
   }
 
   private void validateSourceCreationType(Request userRequest) {
-    // Assuming userRequest is already available, e.g., from request or context.
-
     String sourceCreationType = (String) userRequest.get(JsonKey.SOURCE_CREATION_TYPE);
-
-    // Switch statement to handle different source creation types
     switch (sourceCreationType) {
       case "selfRegisterUser":
         break;
@@ -1035,8 +1031,6 @@ public class UserRequestValidator extends BaseRequestValidator {
                 )
         );
     }
-
-    // Further processing of userMap if needed, e.g., updating request context or validating.
   }
 
 }
