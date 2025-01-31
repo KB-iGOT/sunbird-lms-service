@@ -161,6 +161,11 @@ public class UserRequestValidator extends BaseRequestValidator {
     validateFrameworkDetails(userRequest);
   }
 
+  public void validateUserCreateV5(Request userRequest) {
+    validateUserCreateV4(userRequest);
+    validateSourceCreationType(userRequest);
+  }
+
   public void validateUserLookupRequest(Request request) {
     checkMandatoryFieldsPresent(request.getRequest(), JsonKey.VALUE, JsonKey.KEY);
     List<String> types =
@@ -1003,4 +1008,29 @@ public class UserRequestValidator extends BaseRequestValidator {
           ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
+
+  private void validateSourceCreationType(Request userRequest) {
+    String sourceCreationType = (String) userRequest.get(JsonKey.SOURCE_CREATION_TYPE);
+    switch (sourceCreationType) {
+      case JsonKey.SELF_REGISTER_USER:
+        break;
+      case JsonKey.CUSTOM_REGISTER_USER:
+        break;
+      case JsonKey.SINGLE_USER_CREATE:
+        break;
+      case JsonKey.BULK_USER_CREATE:
+        break;
+      case JsonKey.PARICHAY_USER_CREATE:
+        break;
+      default:
+        ProjectCommonException.throwClientErrorException(
+                ResponseCode.invalidParameter,
+                MessageFormat.format(
+                        ResponseCode.invalidParameter.getErrorMessage(),
+                        StringFormatter.joinByDot(JsonKey.SOURCE_CREATION_TYPE)
+                )
+        );
+    }
+  }
+
 }

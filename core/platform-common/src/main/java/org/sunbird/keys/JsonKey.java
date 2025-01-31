@@ -674,6 +674,15 @@ public final class JsonKey {
   public static final String DEPT_NAME = "deptName";
   public static final String MDO_LEADER = "MDO_LEADER";
   public static final String ORGANISATION_ROLES="organisations.roles";
+  public static final String SOURCE_CREATION_TYPE="sourceCreationType";
+  public static final String PROFILE_GROUP_STATUS="profileGroupStatus";
+  public static final String PROFILE_DESIGNATION_STATUS="profileDesignationStatus";
+  public static final String PROFILE_STATUS="profileStatus";
+  public static final String SINGLE_USER_CREATE="singleUserCreate";
+  public static final String SELF_REGISTER_USER="selfRegisterUser";
+  public static final String CUSTOM_REGISTER_USER="customRegisterUser";
+  public static final String BULK_USER_CREATE="bulkUserCreate";
+  public static final String PARICHAY_USER_CREATE="parichayUserCreate";
 
   private JsonKey() {}
 }

@@ -68,6 +68,7 @@ public class User implements Serializable {
   private String profileLocation;
   private String profileUserTypes;
   private String profileDetails;
+  private String sourceCreationType;
 
   public Map<String, String> getAllTncAccepted() {
     return allTncAccepted;
@@ -459,5 +460,13 @@ public class User implements Serializable {
         logger.error("User Exception ", e);
       }
     }
+  }
+
+  public String getSourceCreationType() {
+    return sourceCreationType;
+  }
+
+  public void setSourceCreationType(String sourceCreationType) {
+    this.sourceCreationType = sourceCreationType;
   }
 }
