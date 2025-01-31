@@ -161,6 +161,11 @@ public class UserRequestValidator extends BaseRequestValidator {
     validateFrameworkDetails(userRequest);
   }
 
+  public void validateUserCreateV5(Request userRequest) {
+    validateUserCreateV4(userRequest);
+    validateSourceCreationType(userRequest);
+  }
+
   public void validateUserLookupRequest(Request request) {
     checkMandatoryFieldsPresent(request.getRequest(), JsonKey.VALUE, JsonKey.KEY);
     List<String> types =
@@ -1003,4 +1008,35 @@ public class UserRequestValidator extends BaseRequestValidator {
           ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
+
+  private void validateSourceCreationType(Request userRequest) {
+    // Assuming userRequest is already available, e.g., from request or context.
+
+    String sourceCreationType = (String) userRequest.get(JsonKey.SOURCE_CREATION_TYPE);
+
+    // Switch statement to handle different source creation types
+    switch (sourceCreationType) {
+      case "selfRegisterUser":
+        break;
+      case "customRegisterUser":
+        break;
+      case "singleUserCreate":
+        break;
+      case "bulkUserCreate":
+        break;
+      case "parichayUserCreate":
+        break;
+      default:
+        ProjectCommonException.throwClientErrorException(
+                ResponseCode.invalidParameter,
+                MessageFormat.format(
+                        ResponseCode.invalidParameter.getErrorMessage(),
+                        StringFormatter.joinByDot(JsonKey.SOURCE_CREATION_TYPE)
+                )
+        );
+    }
+
+    // Further processing of userMap if needed, e.g., updating request context or validating.
+  }
+
 }

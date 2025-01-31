@@ -67,6 +67,10 @@ public class SSOUserCreateActor extends UserBaseActor {
         createSSOUser(request);
         break;
       case "createUserV5":
+      case "selfRegisterUserV5":
+      case "customRegisterUserV5":
+      case "bulkCreateUserV5":
+      case "parichayCreateUserV5":
         createUserV5(request);
       default:
         onReceiveUnsupportedOperation();
@@ -82,25 +86,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void createUserV5(Request actorMessage) {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     actorMessage.toLower();
-    System.out.println(actorMessage.getContext().get(JsonKey.URL));
     Map<String, Object> userMap = actorMessage.getRequest();
-    switch ((String) actorMessage.getContext().get(JsonKey.URL)) {
-      case "/v1/cb/user/self/register":
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "selfRegisterUser");
-        break;
-      case "/v1/cb/user/custom/register":
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "customRegisterUser");
-        break;
-      case "/v1/cb/user/create":
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "singleUserCreate");
-        break;
-      case "/v1/cb/user/bulkcreate ":
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "bulkUserCreate");
-        break;
-      case "/v1/cb/user/parichay/create":
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "parichayUserCreate");
-        break;
-    }
     String rootOrgId = findRootOrgId(userMap, actorMessage);
     populateRoles(userMap, actorMessage, rootOrgId);
     createBasisProfileDetails(userMap);
@@ -294,24 +280,10 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createBasisProfileDetails(Map<String, Object> userMap) {
     Map<String, Object> profileDetails = new HashMap<>();
-
     profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
-
-    Map<String, Object> employmentDetails = new HashMap<>();
-    employmentDetails.put(JsonKey.DEPARTMENT_NAME, userMap.get(JsonKey.CHANNEL));
-
-    Map<String, Object> personalDetails = new HashMap<>();
-    personalDetails.put(JsonKey.FIRST_NAME,userMap.get(JsonKey.FIRST_NAME) );
-    personalDetails.put(JsonKey.PRIMARY_EMAIL, userMap.get(JsonKey.EMAIL));
-    personalDetails.put(JsonKey.MOBILE, userMap.get(JsonKey.PHONE));
-
     profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
-
-    profileDetails.put(JsonKey.EMPLOYMENT_DETAILS, employmentDetails);
-    profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
-
     userMap.put(JsonKey.PROFILE_DETAILS, profileDetails.toString());
   }
 

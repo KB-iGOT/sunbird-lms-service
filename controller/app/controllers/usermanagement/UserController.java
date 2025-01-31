@@ -1,6 +1,7 @@
 package controllers.usermanagement;
 
 import akka.actor.ActorRef;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import controllers.BaseController;
 import controllers.usermanagement.validator.UserGetRequestValidator;
 import java.util.HashMap;
@@ -13,10 +14,14 @@ import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.validator.BaseRequestValidator;
+import play.api.libs.json.Json;
 import play.mvc.Http;
 import play.mvc.Result;
 import util.Attrs;
 import util.Common;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 
 public class UserController extends BaseController {
 
@@ -156,14 +161,20 @@ public class UserController extends BaseController {
         httpRequest);
   }
 
-    public CompletionStage<Result> createUserV5(Http.Request httpRequest) {
+    public CompletionStage<Result> createUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "singleUserCreate");
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
                 ssoUserCreateActor,
                 ActorOperations.CREATE_USER_V5.getValue(),
-                httpRequest.body().asJson(),
+                requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
-                    new UserRequestValidator().validateUserCreateV4(request);
+                    new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
                 },
@@ -172,6 +183,99 @@ public class UserController extends BaseController {
                 true,
                 httpRequest);
     }
+
+    public CompletionStage<Result> selfRegisterUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "selfRegisterUser");
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.SELF_REGISTER_USERS_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    new UserRequestValidator().validateUserCreateV5(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
+
+    public CompletionStage<Result> customRegisterUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "customRegisterUser");
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.CUSTOM_REGISTER_USER_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    new UserRequestValidator().validateUserCreateV5(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
+
+    public CompletionStage<Result> bulkCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "bulkUserCreate");
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.BULK_CREATE_USER_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    new UserRequestValidator().validateUserCreateV5(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
+
+    public CompletionStage<Result> parichayCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "parichayUserCreate");
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.PARICHAY_CREATE_USER_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    new UserRequestValidator().validateUserCreateV5(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
+
 
   public CompletionStage<Result> updateUser(Http.Request httpRequest) {
 
