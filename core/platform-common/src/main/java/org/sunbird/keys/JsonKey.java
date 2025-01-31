@@ -678,9 +678,11 @@ public final class JsonKey {
   public static final String PROFILE_GROUP_STATUS="profileGroupStatus";
   public static final String PROFILE_DESIGNATION_STATUS="profileDesignationStatus";
   public static final String PROFILE_STATUS="profileStatus";
-  public static final String DEPARTMENT_NAME="departmentName";
-  public static final String PRIMARY_EMAIL="primaryEmail";
-  public static final String EMPLOYMENT_DETAILS="employmentDetails";
+  public static final String SINGLE_USER_CREATE="singleUserCreate";
+  public static final String SELF_REGISTER_USER="selfRegisterUser";
+  public static final String CUSTOM_REGISTER_USER="customRegisterUser";
+  public static final String BULK_USER_CREATE="bulkUserCreate";
+  public static final String PARICHAY_USER_CREATE="parichayUserCreate";
 
   private JsonKey() {}
 }

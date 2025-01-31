@@ -165,7 +165,7 @@ public class UserController extends BaseController {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "singleUserCreate");
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SINGLE_USER_CREATE);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
@@ -188,7 +188,7 @@ public class UserController extends BaseController {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "selfRegisterUser");
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SELF_REGISTER_USER);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
@@ -211,7 +211,7 @@ public class UserController extends BaseController {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "customRegisterUser");
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.CUSTOM_REGISTER_USER);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
@@ -234,7 +234,7 @@ public class UserController extends BaseController {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "bulkUserCreate");
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.BULK_USER_CREATE);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
@@ -257,7 +257,7 @@ public class UserController extends BaseController {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, "parichayUserCreate");
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.PARICHAY_USER_CREATE);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(

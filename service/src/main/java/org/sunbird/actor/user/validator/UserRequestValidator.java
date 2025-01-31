@@ -1012,15 +1012,15 @@ public class UserRequestValidator extends BaseRequestValidator {
   private void validateSourceCreationType(Request userRequest) {
     String sourceCreationType = (String) userRequest.get(JsonKey.SOURCE_CREATION_TYPE);
     switch (sourceCreationType) {
-      case "selfRegisterUser":
+      case JsonKey.SELF_REGISTER_USER:
         break;
-      case "customRegisterUser":
+      case JsonKey.CUSTOM_REGISTER_USER:
         break;
-      case "singleUserCreate":
+      case JsonKey.SINGLE_USER_CREATE:
         break;
-      case "bulkUserCreate":
+      case JsonKey.BULK_USER_CREATE:
         break;
-      case "parichayUserCreate":
+      case JsonKey.PARICHAY_USER_CREATE:
         break;
       default:
         ProjectCommonException.throwClientErrorException(
