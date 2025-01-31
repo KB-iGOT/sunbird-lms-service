@@ -85,11 +85,8 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createUserV5(Request actorMessage) {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
-    actorMessage.toLower();
-    Map<String, Object> userMap = actorMessage.getRequest();
-    String rootOrgId = findRootOrgId(userMap, actorMessage);
-    populateRoles(userMap, actorMessage, rootOrgId);
-    createBasisProfileDetails(userMap);
+    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    createBasisProfileDetails(actorMessage);
     createSSOUser(actorMessage);
   }
 
@@ -247,7 +244,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     }
   }
 
-  private String findRootOrgId(Map<String, Object> userMap, Request actorMessage) {
+  private String findRootOrgId(Request actorMessage) {
+    Map<String, Object> userMap = actorMessage.getRequest();
     String rootOrgId = "";
     if (userMap.get(JsonKey.CHANNEL) != null) {
       rootOrgId = orgService.getRootOrgIdFromChannel((String) userMap.get(JsonKey.CHANNEL), actorMessage.getRequestContext());
@@ -270,7 +268,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     return rootOrgId;
   }
 
-  private void populateRoles(Map<String, Object> userMap, Request actorMessage, String rootOrgId ) {
+  private void populateRoles(Request actorMessage, String rootOrgId ) {
+    Map<String, Object> userMap = actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
     } else {
@@ -278,7 +277,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     }
   }
 
-  private void createBasisProfileDetails(Map<String, Object> userMap) {
+  private void createBasisProfileDetails(Request actorMessage) {
+    Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetails = new HashMap<>();
     profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
