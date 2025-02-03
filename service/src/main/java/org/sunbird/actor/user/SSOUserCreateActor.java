@@ -1,6 +1,7 @@
 package org.sunbird.actor.user;
 
 import akka.actor.ActorRef;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
@@ -83,7 +84,7 @@ public class SSOUserCreateActor extends UserBaseActor {
    * @param actorMessage Request
    */
 
-  private void createUserV5(Request actorMessage) {
+  private void createUserV5(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     populateRoles(actorMessage, findRootOrgId(actorMessage));
     createBasisProfileDetails(actorMessage);
@@ -277,14 +278,16 @@ public class SSOUserCreateActor extends UserBaseActor {
     }
   }
 
-  private void createBasisProfileDetails(Request actorMessage) {
+  private void createBasisProfileDetails(Request actorMessage) throws JsonProcessingException {
     Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetails = new HashMap<>();
     profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
-    userMap.put(JsonKey.PROFILE_DETAILS, profileDetails.toString());
+    ObjectMapper objectMapper = new ObjectMapper();
+    String profileDetailsJson = objectMapper.writeValueAsString(profileDetails);
+    userMap.put(JsonKey.PROFILE_DETAILS, profileDetailsJson);
   }
 
   private void checkIfMDOLeaderExist(Map<String,Object> userMap, Request actorMessage, String rootOrgId){
