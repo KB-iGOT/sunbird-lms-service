@@ -74,14 +74,22 @@ public final class UserUtility {
   }
 
   public static Map<String, Object> decryptUserDataFrmES(Map<String, Object> userMap) {
+    return decryptUserDataFrmES(userMap, false);
+  }
+
+  public static Map<String, Object> decryptUserDataFrmES(Map<String, Object> userMap, boolean isMasked) {
     DecryptionService service = ServiceFactory.getDecryptionServiceInstance();
     // Decrypt user basic info
     for (String key : userKeyToDecrypt) {
       if (userMap.containsKey(key)) {
-        if (userKeysToMasked.contains(key)) {
-          userMap.put(key, maskEmailOrPhone((String) userMap.get(key), key));
-        } else {
+        if (isMasked) {
           userMap.put(key, service.decryptData((String) userMap.get(key), null));
+        } else {
+          if (userKeysToMasked.contains(key)) {
+            userMap.put(key, maskEmailOrPhone((String) userMap.get(key), key));
+          } else {
+            userMap.put(key, service.decryptData((String) userMap.get(key), null));
+          }
         }
       }
     }
