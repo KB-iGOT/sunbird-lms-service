@@ -7,6 +7,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -25,7 +27,6 @@ import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.service.organisation.OrgService;
 import org.sunbird.service.organisation.impl.OrgServiceImpl;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.sunbird.service.user.UserService;
 import org.sunbird.service.user.impl.UserServiceImpl;
 import org.sunbird.telemetry.dto.TelemetryEnvKey;
@@ -288,17 +289,16 @@ public class SearchHandlerActor extends BaseActor {
     }
     String queryText = (String) searchQueryMap.get(JsonKey.QUERY);
     if (StringUtils.isNotEmpty(queryText)) {
-      Map<String, Object> matchPhrasePrefix = new HashMap<>();
-      matchPhrasePrefix.put("query", queryText);
-      Map<String, Object> matchPhraseQuery = new HashMap<>();
-      matchPhraseQuery.put("match_phrase_prefix", Collections.singletonMap("orgName.raw", matchPhrasePrefix));
       try {
-        // Convert matchPhraseQuery to JSON String
-        ObjectMapper objectMapper = new ObjectMapper();
-        String matchPhraseQueryString = objectMapper.writeValueAsString(matchPhraseQuery);
-        searchQueryMap.put(JsonKey.QUERY, matchPhraseQueryString);
-      }  catch (Exception ex) {
-        logger.error("Exception while Convert matchPhraseQuery to JSON String", ex);
+        JsonObject matchPhrasePrefix = new JsonObject();
+        matchPhrasePrefix.addProperty(JsonKey.QUERY, queryText);
+        JsonObject matchPhrasePrefixWrapper = new JsonObject();
+        matchPhrasePrefixWrapper.add(JsonKey.ORGNAME_RAW, matchPhrasePrefix);
+        JsonObject matchPhraseQuery = new JsonObject();
+        matchPhraseQuery.add(JsonKey.MATCH_PHRASE_PREFIX, matchPhrasePrefixWrapper);
+        searchQueryMap.put(JsonKey.QUERY, new Gson().toJson(matchPhraseQuery));
+      } catch (Exception ex) {
+        logger.error("Error converting matchPhraseQuery to JSON String", ex);
       }
     }
     SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(searchQueryMap);

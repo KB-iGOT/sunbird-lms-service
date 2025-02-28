@@ -368,10 +368,9 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
           ElasticSearchHelper.createMatchQuery(
               JsonKey.CHANNEL, channel, constraintsMap.get(JsonKey.CHANNEL)));
     }
-
     // apply simple query string
     if (!StringUtils.isBlank(searchDTO.getQuery())) {
-      if (searchDTO.getQuery().contains("match_phrase_prefix")) {
+      if (searchDTO.getQuery().contains(JsonKey.MATCH_PHRASE_PREFIX)) {
         try {
           JSONObject queryJson = new JSONObject(searchDTO.getQuery());  // Parse JSON query
           QueryBuilder matchPhrasePrefixQuery = QueryBuilders.wrapperQuery(queryJson.toString());
