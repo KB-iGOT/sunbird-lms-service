@@ -16,6 +16,13 @@ POST    /v2/manageduser/create		            @controllers.usermanagement.UserCont
 POST    /v1/user/signup                         @controllers.usermanagement.UserController.createUserV3(request: play.mvc.Http.Request)
 POST    /v2/user/signup                         @controllers.usermanagement.UserController.createSSUUser(request: play.mvc.Http.Request)
 
+# CB user creation
+POST    /v5/cb/user/self/register               @controllers.usermanagement.UserController.selfRegisterUserV5(request: play.mvc.Http.Request)
+POST    /v5/cb/user/custom/register             @controllers.usermanagement.UserController.customRegisterUserV5(request: play.mvc.Http.Request)
+POST    /v5/cb/user/create                      @controllers.usermanagement.UserController.createUserV5(request: play.mvc.Http.Request)
+POST    /v5/cb/user/bulkcreate                  @controllers.usermanagement.UserController.bulkCreateUserV5(request: play.mvc.Http.Request)
+POST    /v5/cb/user/parichay/create             @controllers.usermanagement.UserController.parichayCreateUserV5(request: play.mvc.Http.Request)
+
 PATCH   /v1/user/update					        @controllers.usermanagement.UserController.updateUser(request: play.mvc.Http.Request)
 PATCH   /v2/user/update                         @controllers.usermanagement.UserController.updateUserV2(request: play.mvc.Http.Request)
 PATCH   /v3/user/update                         @controllers.usermanagement.UserController.updateUserV3(request: play.mvc.Http.Request)
