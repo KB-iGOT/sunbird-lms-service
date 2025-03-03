@@ -1,12 +1,14 @@
 package org.sunbird.actor.user;
 
 import akka.actor.ActorRef;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
@@ -83,7 +85,7 @@ public class SSOUserCreateActor extends UserBaseActor {
    * @param actorMessage Request
    */
 
-  private void createUserV5(Request actorMessage) {
+  private void createUserV5(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     populateRoles(actorMessage, findRootOrgId(actorMessage));
     createBasisProfileDetails(actorMessage);
@@ -269,7 +271,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void populateRoles(Request actorMessage, String rootOrgId ) {
-    Map<String, Object> userMap = actorMessage.getRequest();
+    Map<String, Object> userMap = (Map<String, Object>) actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
     } else {
@@ -277,14 +279,46 @@ public class SSOUserCreateActor extends UserBaseActor {
     }
   }
 
-  private void createBasisProfileDetails(Request actorMessage) {
+  private void createBasisProfileDetails(Request actorMessage) throws JsonProcessingException {
     Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetails = new HashMap<>();
-    profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
-    profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
-    profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
-    profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
-    userMap.put(JsonKey.PROFILE_DETAILS, profileDetails.toString());
+    Map<String, Object> employmentDetails = Map.of(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
+    Map<String, Object> additionalProperties = new HashMap<>();
+    List<Map<String, Object>> professionalDetailsList = new ArrayList<>();
+    Map<String, Object> professionalDetails = new HashMap<>();
+
+    Map<String, Object> personalDetailsRequest = (Map<String, Object>) actorMessage.get(JsonKey.PERSONAL_DETAILS);
+    Map<String, Object> personalDetails = new HashMap<>(Map.of(
+            JsonKey.MOBILE, userMap.getOrDefault(JsonKey.PHONE, ""),
+            JsonKey.PRIMARY_EMAIL, userMap.getOrDefault(JsonKey.EMAIL, ""),
+            JsonKey.FIRST_NAME, userMap.getOrDefault(JsonKey.FIRST_NAME, "")
+    ));
+
+    personalDetails.put(JsonKey.ROLES, userMap.getOrDefault(JsonKey.ROLES, new ArrayList<>()));
+
+    if (MapUtils.isNotEmpty(personalDetailsRequest)) {
+      personalDetails.putAll(personalDetailsRequest);
+
+      additionalProperties.put(JsonKey.TAGS, personalDetails.remove(JsonKey.TAGS));
+      professionalDetails.put(JsonKey.DESIGNATION, personalDetails.remove(JsonKey.DESIGNATION));
+      professionalDetails.put(JsonKey.GROUP, personalDetails.remove(JsonKey.GROUP));
+    }
+
+    professionalDetailsList.add(professionalDetails.isEmpty() ?
+            Map.of(JsonKey.DESIGNATION, "", JsonKey.GROUP, "") : professionalDetails);
+
+    profileDetails.putAll(Map.of(
+            JsonKey.PERSONAL_DETAILS, personalDetails,
+            JsonKey.ADDITIONAL_PROPERTIES, additionalProperties,
+            JsonKey.EMPLOYMENT_DETAILS, employmentDetails,
+            JsonKey.PROFESSIONAL_DETAILS, professionalDetailsList,
+            JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED",
+            JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED",
+            JsonKey.PROFILE_STATUS, "NOT-VERIFIED",
+            JsonKey.MANDATORY_FIELDS_EXISTS, false
+    ));
+
+    userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
   private void checkIfMDOLeaderExist(Map<String,Object> userMap, Request actorMessage, String rootOrgId){
