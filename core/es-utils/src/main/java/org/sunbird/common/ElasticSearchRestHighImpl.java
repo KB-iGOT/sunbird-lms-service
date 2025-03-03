@@ -27,15 +27,13 @@ import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
-import org.elasticsearch.index.query.BoolQueryBuilder;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.index.query.SimpleQueryStringBuilder;
-import org.elasticsearch.index.query.TermQueryBuilder;
+import org.elasticsearch.index.query.*;
 import org.elasticsearch.search.aggregations.AggregationBuilders;
 import org.elasticsearch.search.aggregations.bucket.histogram.DateHistogramInterval;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.FieldSortBuilder;
 import org.elasticsearch.search.sort.SortMode;
+import org.json.JSONObject;
 import org.sunbird.common.inf.ElasticSearchService;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.exception.ResponseCode;
@@ -370,18 +368,27 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
           ElasticSearchHelper.createMatchQuery(
               JsonKey.CHANNEL, channel, constraintsMap.get(JsonKey.CHANNEL)));
     }
-
     // apply simple query string
     if (!StringUtils.isBlank(searchDTO.getQuery())) {
-      SimpleQueryStringBuilder sqsb = QueryBuilders.simpleQueryStringQuery(searchDTO.getQuery());
-      query.must(sqsb);
-      if (CollectionUtils.isNotEmpty(searchDTO.getQueryFields())) {
-        Map<String, Float> searchFields =
-            searchDTO
-                .getQueryFields()
-                .stream()
-                .collect(Collectors.<String, String, Float>toMap(s -> s, v -> 1.0f));
-        query.must(sqsb.fields(searchFields));
+      if (searchDTO.getQuery().contains(JsonKey.MATCH_PHRASE_PREFIX)) {
+        try {
+          JSONObject queryJson = new JSONObject(searchDTO.getQuery());  // Parse JSON query
+          QueryBuilder matchPhrasePrefixQuery = QueryBuilders.wrapperQuery(queryJson.toString());
+          query.must(matchPhrasePrefixQuery);
+        } catch (Exception e) {
+          logger.error("Error parsing match_phrase_prefix query", e);
+        }
+      } else {
+        SimpleQueryStringBuilder sqsb = QueryBuilders.simpleQueryStringQuery(searchDTO.getQuery());
+        query.must(sqsb);
+        if (CollectionUtils.isNotEmpty(searchDTO.getQueryFields())) {
+          Map<String, Float> searchFields =
+                  searchDTO
+                          .getQueryFields()
+                          .stream()
+                          .collect(Collectors.<String, String, Float>toMap(s -> s, v -> 1.0f));
+          query.must(sqsb.fields(searchFields));
+        }
       }
     }
     // apply the sorting
