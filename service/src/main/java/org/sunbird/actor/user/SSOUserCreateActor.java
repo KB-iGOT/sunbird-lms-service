@@ -286,44 +286,54 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> additionalProperties = new HashMap<>();
     List<Map<String, Object>> professionalDetailsList = new ArrayList<>();
     Map<String, Object> professionalDetails = new HashMap<>();
+    Map<String, Object> personalDetails = new HashMap<>();
 
-    Map<String, Object> personalDetailsRequest = (Map<String, Object>) actorMessage.get(JsonKey.PERSONAL_DETAILS);
-    Map<String, Object> personalDetails = new HashMap<>(Map.of(
-            JsonKey.MOBILE, userMap.getOrDefault(JsonKey.PHONE, ""),
-            JsonKey.PRIMARY_EMAIL, userMap.getOrDefault(JsonKey.EMAIL, ""),
-            JsonKey.FIRST_NAME, userMap.getOrDefault(JsonKey.FIRST_NAME, "")
-    ));
+    Map<String, Object> personalDetailsRequest = (Map<String, Object>) userMap.getOrDefault(JsonKey.PERSONAL_DETAILS, Map.of());
+    if (!personalDetailsRequest.isEmpty()) {
+      personalDetailsRequest.forEach((key, value) -> addIfNotEmpty(personalDetails, key, value));
 
-    personalDetails.put(JsonKey.ROLES, userMap.getOrDefault(JsonKey.ROLES, new ArrayList<>()));
+      Object tags = personalDetails.remove(JsonKey.TAGS);
+      if (tags instanceof List && !((List<?>) tags).isEmpty()) {
+        additionalProperties.put(JsonKey.TAGS, tags);
+      }
 
-    if (MapUtils.isNotEmpty(personalDetailsRequest)) {
-      personalDetails.putAll(personalDetailsRequest);
-
-      additionalProperties.put(JsonKey.TAGS, personalDetails.remove(JsonKey.TAGS));
-      professionalDetails.put(JsonKey.DESIGNATION, personalDetails.remove(JsonKey.DESIGNATION));
-      professionalDetails.put(JsonKey.GROUP, personalDetails.remove(JsonKey.GROUP));
+      addIfNotEmpty(professionalDetails, JsonKey.DESIGNATION, personalDetails.remove(JsonKey.DESIGNATION));
+      addIfNotEmpty(professionalDetails, JsonKey.GROUP, personalDetails.remove(JsonKey.GROUP));
     }
 
     if (!professionalDetails.isEmpty()) {
       professionalDetailsList.add(professionalDetails);
-    }
-
-    if (!professionalDetailsList.isEmpty()) {
       profileDetails.put(JsonKey.PROFESSIONAL_DETAILS, professionalDetailsList);
     }
 
-    profileDetails.putAll(Map.of(
-            JsonKey.PERSONAL_DETAILS, personalDetails,
-            JsonKey.ADDITIONAL_PROPERTIES, additionalProperties,
-            JsonKey.EMPLOYMENT_DETAILS, employmentDetails,
-            JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED",
-            JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED",
-            JsonKey.PROFILE_STATUS, "NOT-VERIFIED",
-            JsonKey.MANDATORY_FIELDS_EXISTS, false
-    ));
+    profileDetails.put(JsonKey.EMPLOYMENT_DETAILS, employmentDetails);
+    profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
 
+    if (!additionalProperties.isEmpty()) {
+      profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
+    }
+
+    if (!personalDetails.isEmpty()) {
+      profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
+    }
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
+
+  private void addIfNotEmpty(Map<String, Object> map, String key, Object value) {
+    if (value instanceof String && !((String) value).isBlank()) {
+      map.put(key, value);
+    } else if (value instanceof List && !((List<?>) value).isEmpty()) {
+      map.put(key, value);
+    } else if (value instanceof Map && !((Map<?, ?>) value).isEmpty()) {
+      map.put(key, value);
+    } else if (value != null) {
+      map.put(key, value);
+    }
+  }
+
 
   private void checkIfMDOLeaderExist(Map<String,Object> userMap, Request actorMessage, String rootOrgId){
     List<String> roles = (List<String>) userMap.get(JsonKey.ROLES);
