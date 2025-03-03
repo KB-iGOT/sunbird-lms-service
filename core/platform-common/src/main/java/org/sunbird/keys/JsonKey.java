@@ -683,6 +683,13 @@ public final class JsonKey {
   public static final String CUSTOM_REGISTER_USER="customRegisterUser";
   public static final String BULK_USER_CREATE="bulkUserCreate";
   public static final String PARICHAY_USER_CREATE="parichayUserCreate";
+  public static final String PRIMARY_EMAIL = "primaryEmail";
+  public static final String DEPARTMENT_NAME = "departmentName";
+  public static final String EMPLOYMENT_DETAILS  = "employmentDetails";
+  public static final String ADDITIONAL_PROPERTIES = "additionalProperties";
+  public static final String DESIGNATION = "designation";
+  public static final String GROUP = "group";
+  public static final String PROFESSIONAL_DETAILS = "professionalDetails";
 
   private JsonKey() {}
 }
