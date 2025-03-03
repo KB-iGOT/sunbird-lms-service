@@ -304,14 +304,18 @@ public class SSOUserCreateActor extends UserBaseActor {
       professionalDetails.put(JsonKey.GROUP, personalDetails.remove(JsonKey.GROUP));
     }
 
-    professionalDetailsList.add(professionalDetails.isEmpty() ?
-            Map.of(JsonKey.DESIGNATION, "", JsonKey.GROUP, "") : professionalDetails);
+    if (!professionalDetails.isEmpty()) {
+      professionalDetailsList.add(professionalDetails);
+    }
+
+    if (!professionalDetailsList.isEmpty()) {
+      profileDetails.put(JsonKey.PROFESSIONAL_DETAILS, professionalDetailsList);
+    }
 
     profileDetails.putAll(Map.of(
             JsonKey.PERSONAL_DETAILS, personalDetails,
             JsonKey.ADDITIONAL_PROPERTIES, additionalProperties,
             JsonKey.EMPLOYMENT_DETAILS, employmentDetails,
-            JsonKey.PROFESSIONAL_DETAILS, professionalDetailsList,
             JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED",
             JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED",
             JsonKey.PROFILE_STATUS, "NOT-VERIFIED",
