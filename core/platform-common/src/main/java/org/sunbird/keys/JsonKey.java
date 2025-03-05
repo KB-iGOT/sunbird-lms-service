@@ -672,8 +672,10 @@ public final class JsonKey {
   public static final String MINISTRY_STATE_NAME = "ministryOrStateName";
   public static final String MINISTRY_STATE_TYPE = "ministryOrStateType";
   public static final String DEPT_NAME = "deptName";
+  public static final String PROFILE_PRIMARY_EMAIL_FIELD = "profileDetails.personalDetails.primaryEmail.raw";
   public static final String MDO_LEADER = "MDO_LEADER";
   public static final String ORGANISATION_ROLES="organisations.roles";
+  public static final String SAKSHAM_AI_ENABLED= "sakshamAIenabled";
   public static final String SOURCE_CREATION_TYPE="sourceCreationType";
   public static final String PROFILE_GROUP_STATUS="profileGroupStatus";
   public static final String PROFILE_DESIGNATION_STATUS="profileDesignationStatus";
