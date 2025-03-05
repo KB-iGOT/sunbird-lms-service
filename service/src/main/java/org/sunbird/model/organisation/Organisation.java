@@ -51,7 +51,7 @@ public class Organisation implements Serializable {
   private String ministryOrStateName;
   private String ministryOrStateType;
   private String deptName;
-  private Boolean sakshamAiEnabled;
+  private Boolean sakshamAIenabled;
 
   public String getId() {
     return id;
@@ -311,11 +311,11 @@ public class Organisation implements Serializable {
     this.ministryOrStateName = ministryOrStateName;
   }
 
-  public Boolean getSakshamAiEnabled() {
-    return sakshamAiEnabled;
+  public Boolean getSakshamAIenabled() {
+    return sakshamAIenabled;
   }
 
-  public void setSakshamAiEnabled(Boolean sakshamAiEnabled) {
-    this.sakshamAiEnabled = sakshamAiEnabled;
+  public void setSakshamAIenabled(Boolean sakshamAIenabled) {
+    this.sakshamAIenabled = sakshamAIenabled;
   }
 }
