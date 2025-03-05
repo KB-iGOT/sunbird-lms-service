@@ -50,4 +50,7 @@ public interface OrgService {
   String saveOrgToEs(String id, Map<String, Object> data, RequestContext context);
 
   boolean checkOrgStatusTransition(Integer currentState, Integer nextState);
+
+  String getRootOrgIdFromChannelV2(String channel, RequestContext context);
+
 }
