@@ -383,6 +383,7 @@ public class OrganisationManagementActor extends BaseActor {
       String ministryStateName = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_NAME);
       String ministryStateType = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_TYPE);
       String deptName = (String) MapUtils.getObject(updateOrgDao, JsonKey.DEPT_NAME);
+      Boolean sakshamAIenabled = (Boolean) MapUtils.getObject(updateOrgDao, JsonKey.SAKSHAM_AI_ENABLED);
       if (StringUtils.isNotEmpty(registrationStartDate) && StringUtils.isNotEmpty(registrationEndDate)) {
         logger.info("OrganisationManagementActor : orgUpdate: Organisation registration dates: " + registrationStartDate + " " + registrationEndDate);
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
@@ -405,6 +406,9 @@ public class OrganisationManagementActor extends BaseActor {
       }
       if(StringUtils.isNotEmpty(deptName)){
         updateOrgDao.put(JsonKey.DEPT_NAME, deptName);
+      }
+      if (sakshamAIenabled != null) {
+        updateOrgDao.put(JsonKey.SAKSHAM_AI_ENABLED, sakshamAIenabled);
       }
       Organisation org = mapper.convertValue(updateOrgDao, Organisation.class);
       updateOrgDao = mapper.convertValue(org, Map.class);
