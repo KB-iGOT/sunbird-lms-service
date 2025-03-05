@@ -687,7 +687,6 @@ public final class JsonKey {
   public static final String PARICHAY_USER_CREATE="parichayUserCreate";
   public static final String MATCH_PHRASE_PREFIX="match_phrase_prefix";
   public static final String ORGNAME_RAW="orgName.raw";
-  public static final String SAKSHAM_AI_ENABLED= "sakshamAiEnabled";
 
   private JsonKey() {}
 }
