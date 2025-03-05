@@ -370,7 +370,9 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
     }
     // apply simple query string
     if (!StringUtils.isBlank(searchDTO.getQuery())) {
-      if (searchDTO.getQuery().contains(JsonKey.MATCH_PHRASE_PREFIX)) {
+      if (searchDTO.getQuery().contains("@")) {
+        query.must(QueryBuilders.termQuery(JsonKey.PROFILE_PRIMARY_EMAIL_FIELD, searchDTO.getQuery()));
+      } else if (searchDTO.getQuery().contains(JsonKey.MATCH_PHRASE_PREFIX)) {
         try {
           JSONObject queryJson = new JSONObject(searchDTO.getQuery());  // Parse JSON query
           QueryBuilder matchPhrasePrefixQuery = QueryBuilders.wrapperQuery(queryJson.toString());
