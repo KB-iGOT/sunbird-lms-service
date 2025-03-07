@@ -676,6 +676,8 @@ public final class JsonKey {
   public static final String MDO_LEADER = "MDO_LEADER";
   public static final String ORGANISATION_ROLES="organisations.roles";
   public static final String SAKSHAM_AI_ENABLED= "sakshamAiEnabled";
+  public static final String MATCH_PHRASE_PREFIX="match_phrase_prefix";
+  public static final String ORGNAME_RAW="orgName.raw";
 
   private JsonKey() {}
 }
