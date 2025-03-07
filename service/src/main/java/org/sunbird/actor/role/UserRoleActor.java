@@ -92,27 +92,33 @@ public class UserRoleActor extends UserBaseActor {
       return;
     }
     List<String> assignRoles = (List<String>) requestMap.get(JsonKey.ROLES);
-    if (CollectionUtils.isNotEmpty(assignRoles) && assignRoles.stream().anyMatch(JsonKey.MDO_LEADER::equals)) {
-      Map<String, Object> requestMaps = new HashMap<>();
-      Map<String, Object> filtersMap = new HashMap<>();
-      filtersMap.put(JsonKey.ROOT_ORG_ID, requestMap.get(JsonKey.ORGANISATION_ID));
-      filtersMap.put(JsonKey.STATUS, 1);
-      List<String> rolesList = new ArrayList<>();
-      rolesList.add(JsonKey.MDO_LEADER);
-      filtersMap.put(JsonKey.ORGANISATION_ROLES, rolesList);
-      requestMaps.put(JsonKey.FILTERS, filtersMap);
-      modifySearchQueryReqForNewRoleStructure(requestMaps);
-      SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(requestMaps);
-      searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
-      Map<String, Object> result = userService.searchUser(searchDto, actorMessage.getRequestContext());
-      Number count = (Number) result.get(JsonKey.COUNT);
+    if (CollectionUtils.isNotEmpty(assignRoles)) {
+      boolean isTryingToAssignMdoLeader = assignRoles.contains(JsonKey.MDO_LEADER);
+      List<Map<String, Object>> existingRoles = userRoleService.readUserRole(userId, actorMessage.getRequestContext());
+      boolean isExistingMdoLeader = existingRoles.stream()
+              .anyMatch(role -> JsonKey.MDO_LEADER.equals(role.get(JsonKey.ROLE)));
+      if (isTryingToAssignMdoLeader && !isExistingMdoLeader) {
+        Map<String, Object> requestMaps = new HashMap<>();
+        Map<String, Object> filtersMap = new HashMap<>();
+        filtersMap.put(JsonKey.ROOT_ORG_ID, requestMap.get(JsonKey.ORGANISATION_ID));
+        filtersMap.put(JsonKey.STATUS, 1);
+        List<String> rolesList = new ArrayList<>();
+        rolesList.add(JsonKey.MDO_LEADER);
+        filtersMap.put(JsonKey.ORGANISATION_ROLES, rolesList);
+        requestMaps.put(JsonKey.FILTERS, filtersMap);
+        modifySearchQueryReqForNewRoleStructure(requestMaps);
+        SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(requestMaps);
+        searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
+        Map<String, Object> result = userService.searchUser(searchDto, actorMessage.getRequestContext());
+        Number count = (Number) result.get(JsonKey.COUNT);
 
-      if (count.longValue() >= 1) {
-        logger.info(actorMessage.getRequestContext(), "MDO Leader already exist in org");
-        Response response = new Response();
-        response.put(JsonKey.RESPONSE, "MDO Leader already exist in org");
-        sender().tell(response, self());
-        return;
+        if (count.longValue() >= 1) {
+          logger.info(actorMessage.getRequestContext(), "MDO Leader already exists in org");
+          Response response = new Response();
+          response.put(JsonKey.RESPONSE, "MDO Leader already exists in org");
+          sender().tell(response, self());
+          return;
+        }
       }
     }
     if (actorMessage.getOperation().equals(ActorOperations.ASSIGN_ROLES.getValue())) {
