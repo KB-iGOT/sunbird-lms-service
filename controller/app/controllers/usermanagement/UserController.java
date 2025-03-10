@@ -187,8 +187,10 @@ public class UserController extends BaseController {
     public CompletionStage<Result> selfRegisterUserV5(Http.Request httpRequest) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
-        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SELF_REGISTER_USER);
+        requestMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SELF_REGISTER_USER);
+        if (!requestMap.containsKey(JsonKey.REQUEST)) {
+            requestMap = Map.of(JsonKey.REQUEST, requestMap);
+        }
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
@@ -212,6 +214,9 @@ public class UserController extends BaseController {
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
         userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.CUSTOM_REGISTER_USER);
+        if (!requestMap.containsKey(JsonKey.REQUEST)) {
+            requestMap = Map.of(JsonKey.REQUEST, requestMap);
+        }
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
