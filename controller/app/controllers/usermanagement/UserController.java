@@ -212,7 +212,8 @@ public class UserController extends BaseController {
     public CompletionStage<Result> customRegisterUserV5(Http.Request httpRequest) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
-        requestMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.CUSTOM_REGISTER_USER);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.CUSTOM_REGISTER_USER);
         if (!requestMap.containsKey(JsonKey.REQUEST)) {
             requestMap = Map.of(JsonKey.REQUEST, requestMap);
         }
