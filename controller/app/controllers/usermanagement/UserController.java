@@ -164,8 +164,22 @@ public class UserController extends BaseController {
     public CompletionStage<Result> createUserV5(Http.Request httpRequest) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
-        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SINGLE_USER_CREATE);
+
+
+        if (requestMap.containsKey(JsonKey.PERSONAL_DETAILS)) {
+            Map<String, Object> personalDetails = (Map<String, Object>) requestMap.get(JsonKey.PERSONAL_DETAILS);
+            requestMap.put(JsonKey.EMAIL, personalDetails.get(JsonKey.EMAIL));
+            requestMap.put(JsonKey.FIRST_NAME, personalDetails.get(JsonKey.FIRST_NAME));
+            requestMap.put(JsonKey.PHONE, personalDetails.get(JsonKey.PHONE));
+            requestMap.put(JsonKey.CHANNEL, personalDetails.get(JsonKey.CHANNEL));
+            requestMap.put(JsonKey.PERSONAL_DETAILS, personalDetails);
+            requestMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SINGLE_USER_CREATE);
+            requestMap = Map.of(JsonKey.REQUEST, requestMap);
+        } else {
+            Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+            userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SINGLE_USER_CREATE);
+        }
+
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
