@@ -175,6 +175,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -200,6 +201,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -225,6 +227,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -248,6 +251,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -264,8 +268,6 @@ public class UserController extends BaseController {
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
         userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.PARICHAY_USER_CREATE);
         userMap.put(
-                JsonKey.ROOT_ORG_ID, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_ID));
-        userMap.put(
                 JsonKey.CHANNEL, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
@@ -275,6 +277,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
