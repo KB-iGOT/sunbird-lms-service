@@ -692,8 +692,5 @@ public final class JsonKey {
   public static final String DESIGNATION = "designation";
   public static final String GROUP = "group";
   public static final String PROFESSIONAL_DETAILS = "professionalDetails";
-
-  public static final String MATCH_PHRASE_PREFIX="match_phrase_prefix";
-  public static final String ORGNAME_RAW="orgName.raw";
   private JsonKey() {}
 }
