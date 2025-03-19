@@ -310,7 +310,7 @@ public class Organisation implements Serializable {
   public void setMinistryOrStateName(String ministryOrStateName) {
     this.ministryOrStateName = ministryOrStateName;
   }
-
+  
   public Boolean getSakshamAIenabled() {
     return sakshamAIenabled;
   }
