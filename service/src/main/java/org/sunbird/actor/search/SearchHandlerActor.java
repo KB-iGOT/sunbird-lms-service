@@ -7,8 +7,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.BooleanUtils;
@@ -292,20 +290,6 @@ public class SearchHandlerActor extends BaseActor {
         && filterMap.containsKey(JsonKey.IS_ROOT_ORG)
         && BooleanUtils.isTrue((Boolean) filterMap.remove(JsonKey.IS_ROOT_ORG))) {
       filterMap.put(JsonKey.IS_TENANT, true);
-    }
-    String queryText = (String) searchQueryMap.get(JsonKey.QUERY);
-    if (StringUtils.isNotEmpty(queryText)) {
-      try {
-        JsonObject matchPhrasePrefix = new JsonObject();
-        matchPhrasePrefix.addProperty(JsonKey.QUERY, queryText);
-        JsonObject matchPhrasePrefixWrapper = new JsonObject();
-        matchPhrasePrefixWrapper.add(JsonKey.ORGNAME_RAW, matchPhrasePrefix);
-        JsonObject matchPhraseQuery = new JsonObject();
-        matchPhraseQuery.add(JsonKey.MATCH_PHRASE_PREFIX, matchPhrasePrefixWrapper);
-        searchQueryMap.put(JsonKey.QUERY, new Gson().toJson(matchPhraseQuery));
-      } catch (Exception ex) {
-        logger.error("Error converting matchPhraseQuery to JSON String", ex);
-      }
     }
     SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(searchQueryMap);
     Future<Map<String, Object>> futureResponse =
