@@ -484,7 +484,7 @@ public final class JsonKey {
   public static final String OTP_EMAIL_WARD_LOGIN_TEMPLATE = "verifyEmailOtpTemplateWard";
   public static final String LIMIT_MANAGED_USER_CREATION = "limit_managed_user_creation";
   public static final String MANAGED_USER_LIMIT = "managed_user_limit";
-  public static final String ACCESS_TOKEN_PUBLICKEY_BASEPATH = "accesstoken.publickey.basepath";
+  public static final String ACCESS_TOKEN_PUBLICKEY_BASEPATH = "accesstoken_publickey_basepath";
   public static final String SHA_256_WITH_RSA = "SHA256withRSA";
   public static final String SUB = "sub";
   public static final String DOT_SEPARATOR = ".";
@@ -695,5 +695,8 @@ public final class JsonKey {
 
   public static final String MATCH_PHRASE_PREFIX="match_phrase_prefix";
   public static final String ORGNAME_RAW="orgName.raw";
+  public static final String GROUP_NAME = "profileDetails.professionalDetails.group";
+  public static final String DESIGNATION_NAME = "profileDetails.professionalDetails.designation";
+  public static final String PROFILE_IMAGE_URL = "profileDetails.profileImageUrl";
   private JsonKey() {}
 }
