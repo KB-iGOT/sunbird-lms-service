@@ -618,11 +618,11 @@ public class UserController extends BaseController {
                 httpRequest);
     }
 
-    public CompletionStage<Result> userSearchFieldRestriction(Http.Request httpRequest) {
+    public CompletionStage<Result> userPublicSearch(Http.Request httpRequest) {
         final String requestedFields = httpRequest.getQueryString(JsonKey.FIELDS);
         return handleSearchRequest(
                 searchHandlerActor,
-                ActorOperations.USER_SEARCH_FIELD_RESTRICTION.getValue(),
+                ActorOperations.USER_PUBLIC_SEARCH.getValue(),
                 httpRequest.body().asJson(),
                 userSearchRequest -> {
                     Request request = (Request) userSearchRequest;

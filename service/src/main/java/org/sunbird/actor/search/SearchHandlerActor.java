@@ -66,7 +66,7 @@ public class SearchHandlerActor extends BaseActor {
       case "userSearchV3":
         handleUserSearch(request, searchQueryMap,false);
         break;
-      case "userSearchFieldRestriction":
+      case "userPublicSearch":
         handleUserSearch(request, searchQueryMap,true);
         break;
       case "orgSearch":

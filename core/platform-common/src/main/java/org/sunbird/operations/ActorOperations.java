@@ -157,7 +157,7 @@ public enum ActorOperations {
   USER_CURRENT_LOGIN("userCurrentLogin", "USRLOG"),
   USER_AUTO_SEARCH("userAutoSearch", "USRAUTOSER"),
   GET_SYSTEM_SETTING_V2("getSystemSettingV2", "SYSRED"),
-  USER_SEARCH_FIELD_RESTRICTION("userSearchFieldRestriction","USRSERFIELDRES");
+  USER_PUBLIC_SEARCH("userPublicSearch","USRPUBLICSEARCH");
   private String value;
 
   private String operationCode;
