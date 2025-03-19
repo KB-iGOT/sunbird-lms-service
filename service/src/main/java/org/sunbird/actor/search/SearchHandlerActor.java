@@ -145,8 +145,7 @@ public class SearchHandlerActor extends BaseActor {
   private void handleUserSearch(Request request, Map<String, Object> searchQueryMap,boolean isFieldsRestricted)
           throws Exception {
     if (isFieldsRestricted) {
-      searchQueryMap.put(JsonKey.FIELDS, Arrays.asList(JsonKey.USER_ID, JsonKey.GROUP_NAME, JsonKey.DESIGNATION_NAME,
-              JsonKey.PROFILE_IMAGE_URL, JsonKey.FIRST_NAME, JsonKey.USER_NAME, JsonKey.ROOT_ORG_NAME));
+      searchQueryMap.put(JsonKey.FIELDS, Arrays.asList(ProjectUtil.getConfigValue(JsonKey.USER_PUBLIC_SEARCH_API_FIELDS).split(",")));
     }
     String searchVersion = request.getOperation();
     if (searchVersion.equalsIgnoreCase(ActorOperations.USER_SEARCH.getValue())) {
