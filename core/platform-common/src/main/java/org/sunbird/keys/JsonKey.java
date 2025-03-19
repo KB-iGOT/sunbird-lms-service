@@ -695,5 +695,8 @@ public final class JsonKey {
 
   public static final String MATCH_PHRASE_PREFIX="match_phrase_prefix";
   public static final String ORGNAME_RAW="orgName.raw";
+  public static final String GROUP_NAME = "profileDetails.professionalDetails.group";
+  public static final String DESIGNATION_NAME = "profileDetails.professionalDetails.designation";
+  public static final String PROFILE_IMAGE_URL = "profileDetails.profileImageUrl";
   private JsonKey() {}
 }

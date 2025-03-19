@@ -617,4 +617,23 @@ public class UserController extends BaseController {
                 null,
                 httpRequest);
     }
+
+    public CompletionStage<Result> userSearchFieldRestriction(Http.Request httpRequest) {
+        final String requestedFields = httpRequest.getQueryString(JsonKey.FIELDS);
+        return handleSearchRequest(
+                searchHandlerActor,
+                ActorOperations.USER_SEARCH_FIELD_RESTRICTION.getValue(),
+                httpRequest.body().asJson(),
+                userSearchRequest -> {
+                    Request request = (Request) userSearchRequest;
+                    request.getContext().put(JsonKey.FIELDS, requestedFields);
+                    new BaseRequestValidator().validateSearchRequest(request);
+                    return null;
+                },
+                null,
+                null,
+                getAllRequestHeaders(httpRequest),
+                ProjectUtil.EsType.user.getTypeName(),
+                httpRequest);
+    }
 }

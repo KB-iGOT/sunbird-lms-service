@@ -64,7 +64,10 @@ public class SearchHandlerActor extends BaseActor {
       case "userSearch":
       case "userSearchV2":
       case "userSearchV3":
-        handleUserSearch(request, searchQueryMap);
+        handleUserSearch(request, searchQueryMap,false);
+        break;
+      case "userSearchFieldRestriction":
+        handleUserSearch(request, searchQueryMap,true);
         break;
       case "orgSearch":
       case "orgSearchV2":
@@ -139,8 +142,12 @@ public class SearchHandlerActor extends BaseActor {
     generateSearchTelemetryEvent(searchDto, ProjectUtil.EsType.user.getTypeName(), result, request.getContext());
   }
 
-  private void handleUserSearch(Request request, Map<String, Object> searchQueryMap)
-      throws Exception {
+  private void handleUserSearch(Request request, Map<String, Object> searchQueryMap,boolean isFieldsRestricted)
+          throws Exception {
+    if (isFieldsRestricted) {
+      searchQueryMap.put(JsonKey.FIELDS, Arrays.asList(JsonKey.USER_ID, JsonKey.GROUP_NAME, JsonKey.DESIGNATION_NAME,
+              JsonKey.PROFILE_IMAGE_URL, JsonKey.FIRST_NAME, JsonKey.USER_NAME, JsonKey.ROOT_ORG_NAME));
+    }
     String searchVersion = request.getOperation();
     if (searchVersion.equalsIgnoreCase(ActorOperations.USER_SEARCH.getValue())) {
       // checking for Backward compatibility
