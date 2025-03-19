@@ -12,6 +12,7 @@ import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
+import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.validator.BaseRequestValidator;
 import play.api.libs.json.Json;
@@ -174,6 +175,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -199,6 +201,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -224,6 +227,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -247,6 +251,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -262,6 +267,8 @@ public class UserController extends BaseController {
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
         userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.PARICHAY_USER_CREATE);
+        userMap.put(
+                JsonKey.CHANNEL, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
@@ -270,6 +277,7 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
@@ -615,6 +623,26 @@ public class UserController extends BaseController {
         return handleGetUserProfileV3(
                 ActorOperations.GET_USER_LOGIN_V1.getValue(),
                 null,
+                httpRequest);
+    }
+
+
+    public CompletionStage<Result> userSearchFieldRestriction(Http.Request httpRequest) {
+        final String requestedFields = httpRequest.getQueryString(JsonKey.FIELDS);
+        return handleSearchRequest(
+                searchHandlerActor,
+                ActorOperations.USER_SEARCH_FIELD_RESTRICTION.getValue(),
+                httpRequest.body().asJson(),
+                userSearchRequest -> {
+                    Request request = (Request) userSearchRequest;
+                    request.getContext().put(JsonKey.FIELDS, requestedFields);
+                    new BaseRequestValidator().validateSearchRequest(request);
+                    return null;
+                },
+                null,
+                null,
+                getAllRequestHeaders(httpRequest),
+                ProjectUtil.EsType.user.getTypeName(),
                 httpRequest);
     }
 }
