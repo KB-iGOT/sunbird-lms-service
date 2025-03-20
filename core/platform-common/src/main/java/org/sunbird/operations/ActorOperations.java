@@ -156,7 +156,8 @@ public enum ActorOperations {
   DELETE_LOCATION_FROM_ES("deleteLocationDataFromES", "LBKGDEL"),
   USER_CURRENT_LOGIN("userCurrentLogin", "USRLOG"),
   USER_AUTO_SEARCH("userAutoSearch", "USRAUTOSER"),
-  GET_SYSTEM_SETTING_V2("getSystemSettingV2", "SYSRED");
+  GET_SYSTEM_SETTING_V2("getSystemSettingV2", "SYSRED"),
+  USER_PUBLIC_SEARCH("userPublicSearch","USRPUBLICSEARCH");
   private String value;
 
   private String operationCode;
