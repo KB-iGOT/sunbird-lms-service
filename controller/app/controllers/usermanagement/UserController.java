@@ -9,6 +9,8 @@ import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.sunbird.actor.user.validator.UserRequestValidator;
+import org.sunbird.exception.ProjectCommonException;
+import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
@@ -201,6 +203,15 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    String email = (String) request.getRequest().get(JsonKey.EMAIL);
+                    String validationMsg = new UserRequestValidator().emailValidation(email);
+                    if (!validationMsg.isEmpty()) {
+                        throw new ProjectCommonException(
+                                ResponseCode.invalidRequestData,
+                                validationMsg,
+                                ResponseCode.CLIENT_ERROR.getResponseCode()
+                        );
+                    }
                     request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
@@ -227,6 +238,15 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
+                    String email = (String) request.getRequest().get(JsonKey.EMAIL);
+                    String validationMsg = new UserRequestValidator().emailValidation(email);
+                    if (!validationMsg.isEmpty()) {
+                        throw new ProjectCommonException(
+                                ResponseCode.invalidRequestData,
+                                validationMsg,
+                                ResponseCode.CLIENT_ERROR.getResponseCode()
+                        );
+                    }
                     request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);

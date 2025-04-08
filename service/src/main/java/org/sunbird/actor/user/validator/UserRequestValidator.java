@@ -1,23 +1,24 @@
 package org.sunbird.actor.user.validator;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.sunbird.cassandra.CassandraOperation;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
+import org.sunbird.helper.ServiceFactory;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
+import org.sunbird.response.Response;
 import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.FormApiUtil;
 import org.sunbird.util.ProjectUtil;
@@ -29,6 +30,7 @@ public class UserRequestValidator extends BaseRequestValidator {
   private final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
   protected static List<String> typeList = new ArrayList<>();
   private static final LoggerUtil logger = new LoggerUtil(UserRequestValidator.class);
+  private final CassandraOperation cassandraOperation = ServiceFactory.getInstance();
 
   static {
     List<String> subTypeList =
@@ -1031,6 +1033,33 @@ public class UserRequestValidator extends BaseRequestValidator {
                 )
         );
     }
+  }
+
+  private Boolean isApprovedDomains(String emailDomain, String domainType) {
+    Map<String, Object> propertyMap = new HashMap<>();
+    propertyMap.put(JsonKey.CONTEXT_TYPE, domainType);
+    propertyMap.put(JsonKey.CONTEXT_NAME, emailDomain);
+    Response response = cassandraOperation.getRecordById(JsonKey.SUNBIRD, JsonKey.MASTER_DATA, propertyMap, null);
+    List<Map<String, Object>> responseList = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+    return CollectionUtils.isNotEmpty(responseList);
+  }
+
+  public String emailValidation(String email) {
+    StringBuffer str = new StringBuffer();
+    String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\." + "[a-zA-Z0-9_+&*-]+)*@" + "(?:[a-zA-Z0-9-]+\\.)+[a-z"
+            + "A-Z]{2,7}$";
+    Pattern pat = Pattern.compile(emailRegex);
+    if (pat.matcher(email).matches()) {
+      String emailDomain = email.split("@")[1];
+      Boolean retValue = isApprovedDomains(emailDomain, JsonKey.USER_REGISTRATION_DOMAIN)
+              || isApprovedDomains(emailDomain, JsonKey.USER_REGISTRATION_PRE_APPROVED_DOMAIN);
+      if (!retValue) {
+        str.append("Email domain of this email address is not approved. Please use Request for help.");
+      }
+    } else {
+      str.append("Invalid Email id");
+    }
+    return str.toString();
   }
 
 }

@@ -692,6 +692,12 @@ public final class JsonKey {
   public static final String DESIGNATION = "designation";
   public static final String GROUP = "group";
   public static final String PROFESSIONAL_DETAILS = "professionalDetails";
-  public static final String USER_PUBLIC_SEARCH_API_FIELDS = "user_public_search_api_fields";
+
+  public static final String MATCH_PHRASE_PREFIX="match_phrase_prefix";
+  public static final String ORGNAME_RAW="orgName.raw";
+  public static final String CONTEXT_NAME = "contextName";
+  public static final String MASTER_DATA = "master_data";
+  public static final String USER_REGISTRATION_DOMAIN = "userRegistrationDomain";
+  public static final String USER_REGISTRATION_PRE_APPROVED_DOMAIN = "userRegistrationPreApprovedDomain";
   private JsonKey() {}
 }
