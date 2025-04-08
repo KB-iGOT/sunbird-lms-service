@@ -238,15 +238,6 @@ public class UserController extends BaseController {
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
-                    String email = (String) request.getRequest().get(JsonKey.EMAIL);
-                    String validationMsg = new UserRequestValidator().emailValidation(email);
-                    if (!validationMsg.isEmpty()) {
-                        throw new ProjectCommonException(
-                                ResponseCode.invalidRequestData,
-                                validationMsg,
-                                ResponseCode.CLIENT_ERROR.getResponseCode()
-                        );
-                    }
                     request.getRequest().put("sync", true);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
