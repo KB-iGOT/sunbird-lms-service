@@ -83,6 +83,10 @@ public class RequestInterceptor {
     apiHeaderIgnoreMap.put("/v1/user/role/read", var);
     apiHeaderIgnoreMap.put("/private/user/v1/lookup", var);
     apiHeaderIgnoreMap.put("/private/user/feed/v1/create", var);
+    // adding self, custom and parichay user creation APIs as PUBLIC
+    apiHeaderIgnoreMap.put("/v5/cb/user/self/register", var);
+    apiHeaderIgnoreMap.put("/v5/cb/user/custom/register", var);
+    apiHeaderIgnoreMap.put("/v5/cb/user/parichay/create", var);
   }
 
   private static String getUserRequestedFor(Http.Request request) {
