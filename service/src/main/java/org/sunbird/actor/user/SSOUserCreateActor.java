@@ -395,15 +395,13 @@ public class SSOUserCreateActor extends UserBaseActor {
         if (tags instanceof List && !((List<?>) tags).isEmpty()) {
           additionalProperties.put(JsonKey.TAGS, tags);
         }
-
-        addIfNotEmpty(professionalDetails, JsonKey.DESIGNATION, personalDetails.remove(JsonKey.DESIGNATION));
-        addIfNotEmpty(professionalDetails, JsonKey.GROUP, personalDetails.remove(JsonKey.GROUP));
       }
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_GROUP_STATUS,
           profileDetailsRequest.remove(JsonKey.PROFILE_GROUP_STATUS));
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_DESIGNATION_STATUS,
           profileDetailsRequest.remove(JsonKey.PROFILE_DESIGNATION_STATUS));
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_STATUS, profileDetailsRequest.remove(JsonKey.PROFILE_STATUS));
+      addIfNotEmpty(profileDetails, JsonKey.PROFESSIONAL_DETAILS, profileDetailsRequest.remove(JsonKey.PROFESSIONAL_DETAILS));
     } else {
       profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
       profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
