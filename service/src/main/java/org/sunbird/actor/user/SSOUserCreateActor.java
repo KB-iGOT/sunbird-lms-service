@@ -69,11 +69,14 @@ public class SSOUserCreateActor extends UserBaseActor {
         createSSOUser(request);
         break;
       case "createUserV5":
+      createUserV5ByAdmin(request);
+        break;
       case "selfRegisterUserV5":
       case "customRegisterUserV5":
       case "bulkCreateUserV5":
       case "parichayCreateUserV5":
         createUserV5(request);
+        break;
       default:
         onReceiveUnsupportedOperation();
     }
@@ -363,4 +366,64 @@ public class SSOUserCreateActor extends UserBaseActor {
     }
   }
 
+  private void createUserV5ByAdmin(Request actorMessage) throws JsonProcessingException {
+    logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
+    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    createBasisProfileDetailsByAdmin(actorMessage);
+    createSSOUser(actorMessage);
+  }
+
+  private void createBasisProfileDetailsByAdmin(Request actorMessage) throws JsonProcessingException {
+    Map<String, Object> userMap = actorMessage.getRequest();
+    Map<String, Object> profileDetails = new HashMap<>();
+    Map<String, Object> employmentDetails = Map.of(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
+    Map<String, Object> additionalProperties = new HashMap<>();
+    List<Map<String, Object>> professionalDetailsList = new ArrayList<>();
+    Map<String, Object> professionalDetails = new HashMap<>();
+    Map<String, Object> personalDetails = new HashMap<>();
+
+    Map<String, Object> profileDetailsRequest = (Map<String, Object>) userMap.getOrDefault(JsonKey.PROFILE_DETAILS,
+        Map.of());
+    if (!profileDetailsRequest.isEmpty()) {
+      Map<String, Object> personalDetailsRequest = (Map<String, Object>) profileDetailsRequest.getOrDefault(
+          JsonKey.PERSONAL_DETAILS,
+          Map.of());
+      if (!personalDetailsRequest.isEmpty()) {
+        personalDetailsRequest.forEach((key, value) -> addIfNotEmpty(personalDetails, key, value));
+
+        Object tags = personalDetails.remove(JsonKey.TAGS);
+        if (tags instanceof List && !((List<?>) tags).isEmpty()) {
+          additionalProperties.put(JsonKey.TAGS, tags);
+        }
+
+        addIfNotEmpty(professionalDetails, JsonKey.DESIGNATION, personalDetails.remove(JsonKey.DESIGNATION));
+        addIfNotEmpty(professionalDetails, JsonKey.GROUP, personalDetails.remove(JsonKey.GROUP));
+      }
+      addIfNotEmpty(profileDetails, JsonKey.PROFILE_GROUP_STATUS,
+          profileDetailsRequest.remove(JsonKey.PROFILE_GROUP_STATUS));
+      addIfNotEmpty(profileDetails, JsonKey.PROFILE_DESIGNATION_STATUS,
+          profileDetailsRequest.remove(JsonKey.PROFILE_DESIGNATION_STATUS));
+      addIfNotEmpty(profileDetails, JsonKey.PROFILE_STATUS, profileDetailsRequest.remove(JsonKey.PROFILE_STATUS));
+    } else {
+      profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
+      profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
+      profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
+    }
+
+    if (!professionalDetails.isEmpty()) {
+      professionalDetailsList.add(professionalDetails);
+      profileDetails.put(JsonKey.PROFESSIONAL_DETAILS, professionalDetailsList);
+    }
+    profileDetails.put(JsonKey.EMPLOYMENT_DETAILS, employmentDetails);
+    profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
+
+    if (!additionalProperties.isEmpty()) {
+      profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
+    }
+
+    if (!personalDetails.isEmpty()) {
+      profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
+    }
+    userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
+  }
 }
