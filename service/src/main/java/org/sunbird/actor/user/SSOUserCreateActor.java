@@ -8,7 +8,6 @@ import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
@@ -74,8 +73,10 @@ public class SSOUserCreateActor extends UserBaseActor {
       case "selfRegisterUserV5":
       case "customRegisterUserV5":
       case "bulkCreateUserV5":
-      case "parichayCreateUserV5":
         createUserV5(request);
+        break;
+      case "parichayCreateUserV5":
+        createUserV5ForParichayUser(request);
         break;
       default:
         onReceiveUnsupportedOperation();
@@ -418,6 +419,48 @@ public class SSOUserCreateActor extends UserBaseActor {
     if (!additionalProperties.isEmpty()) {
       profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
     }
+
+    if (!personalDetails.isEmpty()) {
+      profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
+    }
+    userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
+  }
+
+  private void createUserV5ForParichayUser(Request actorMessage) throws JsonProcessingException {
+    logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
+    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    createBasicProfileDetailsForParichayUser(actorMessage);
+    createSSOUser(actorMessage);
+  }
+
+  private void createBasicProfileDetailsForParichayUser(Request actorMessage) throws JsonProcessingException {
+    Map<String, Object> userMap = actorMessage.getRequest();
+    Map<String, Object> profileDetails = new HashMap<>();
+    Map<String, Object> employmentDetails = Map.of(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
+    Map<String, Object> personalDetails = new HashMap<>();
+    String email = (String) userMap.getOrDefault(JsonKey.EMAIL, "");
+    if (StringUtils.isNotBlank(email)) {
+      personalDetails.put(JsonKey.PRIMARY_EMAIL, email);
+      userMap.put(JsonKey.EMAIL_VERIFIED, true);
+    }
+
+    String phone = (String) userMap.getOrDefault(JsonKey.PHONE, "");
+    if (StringUtils.isNotBlank(phone)) {
+      personalDetails.put(JsonKey.MOBILE, phone);
+      userMap.put(JsonKey.PHONE_VERIFIED, true);
+    }
+
+    String firstName = (String) userMap.getOrDefault(JsonKey.FIRST_NAME, "");
+    if (StringUtils.isNotBlank(firstName)) {
+      personalDetails.put(JsonKey.FIRST_NAME, firstName);
+    }
+
+    profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
+    profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
+
+    profileDetails.put(JsonKey.EMPLOYMENT_DETAILS, employmentDetails);
+    profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
 
     if (!personalDetails.isEmpty()) {
       profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
