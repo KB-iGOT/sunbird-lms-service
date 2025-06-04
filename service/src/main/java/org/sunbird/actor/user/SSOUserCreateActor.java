@@ -30,11 +30,9 @@ import org.sunbird.service.user.impl.SSOUserServiceImpl;
 import org.sunbird.service.user.impl.UserRoleServiceImpl;
 import org.sunbird.service.user.impl.UserServiceImpl;
 import org.sunbird.telemetry.dto.TelemetryEnvKey;
-import org.sunbird.util.DataCacheHandler;
-import org.sunbird.util.ProjectUtil;
-import org.sunbird.util.UserFlagUtil;
-import org.sunbird.util.Util;
+import org.sunbird.util.*;
 import org.sunbird.util.user.UserUtil;
+import org.sunbird.redis.RedisCacheUtil;
 
 public class SSOUserCreateActor extends UserBaseActor {
 
@@ -45,6 +43,8 @@ public class SSOUserCreateActor extends UserBaseActor {
   private final SSOUserService ssoUserService = SSOUserServiceImpl.getInstance();
   private final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
   private final OrgService orgService = OrgServiceImpl.getInstance();
+  private static final String EMAIL_KEY_PREFIX = "sso:email:";
+  private static final String PHONE_KEY_PREFIX = "sso:phone:";
 
   @Inject
   @Named("user_profile_update_actor")
@@ -102,6 +102,37 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> userMap = actorMessage.getRequest();
     String callerId = (String) actorMessage.getContext().get(JsonKey.CALLER_ID);
     userRequestValidator.validateCreateUserRequest(actorMessage);
+
+    // Check Redis for email/phone and set if not exist
+    int ttl = Integer.parseInt(PropertiesCache.getInstance().getProperty(JsonKey.USER_CREATION_REDIS_TTL));
+    String email = normalizeStringValue(String.valueOf(userMap.get(JsonKey.EMAIL))).toLowerCase();
+    String phone = normalizeStringValue(String.valueOf(userMap.get(JsonKey.PHONE))).toLowerCase();
+    if (StringUtils.isNotBlank(email)) {
+      String emailRedisKey = EMAIL_KEY_PREFIX + email;
+      if (isKeyInRedis(emailRedisKey, ttl)) {
+        String errorMsg = "Duplicate user creation request: " + email + " was processed recently and is still within the TTL window.";
+        logger.info(errorMsg);
+        ProjectCommonException.throwClientErrorException(
+                ResponseCode.errorParamExists,
+                MessageFormat.format(
+                        ResponseCode.errorUserCreationDuplicateRequest.getErrorMessage(), JsonKey.EMAIL_CAPS));
+      } else {
+        storeKeyInRedis(emailRedisKey, email, ttl);
+      }
+    }
+    if (StringUtils.isNotBlank(phone)) {
+      String phoneRedisKey = PHONE_KEY_PREFIX + phone;
+      if (isKeyInRedis(phoneRedisKey, ttl)) {
+        String errorMsg = "Duplicate user creation request: " + phone + " was processed recently and is still within the TTL window.";
+        logger.info(errorMsg);
+        ProjectCommonException.throwClientErrorException(
+                ResponseCode.errorParamExists,
+                MessageFormat.format(
+                        ResponseCode.errorUserCreationDuplicateRequest.getErrorMessage(), JsonKey.PHONE_CAPS));
+      } else {
+        storeKeyInRedis(phoneRedisKey, phone, ttl);
+      }
+    }
     if (StringUtils.isNotBlank(callerId)) {
       userMap.put(JsonKey.ROOT_ORG_ID, actorMessage.getContext().get(JsonKey.ROOT_ORG_ID));
     }
@@ -115,6 +146,22 @@ public class SSOUserCreateActor extends UserBaseActor {
     processSSOUser(userMap, callerId, actorMessage);
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createSSOUser: ends : ");
   }
+
+  private boolean isKeyInRedis(String key, int ttl) {
+    String data = RedisCacheUtil.get(key, null, ttl);
+      return StringUtils.isNotBlank(data);
+  }
+
+  private void storeKeyInRedis(String key, String value, int ttl) {
+    if (StringUtils.isNotBlank(key)) {
+      RedisCacheUtil.set(key, value, ttl);
+    }
+  }
+
+  private String normalizeStringValue(String value) {
+    return (value == null || value.trim().equalsIgnoreCase("null")) ? "" : value.trim();
+  }
+
 
   private void processSSOUser(Map<String, Object> userMap, String callerId, Request request) {
     Map<String, Object> requestMap;
