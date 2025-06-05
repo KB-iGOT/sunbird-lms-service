@@ -52,6 +52,12 @@ public class Organisation implements Serializable {
   private String ministryOrStateType;
   private String deptName;
   private Boolean sakshamAIenabled;
+  private String sbOrgType;
+  private String sbOrgSubType;
+  private String parentOrgName;
+  private String parentOrgId;
+  private String ministryOrStateId;
+
 
   public String getId() {
     return id;
@@ -317,5 +323,45 @@ public class Organisation implements Serializable {
 
   public void setSakshamAIenabled(Boolean sakshamAIenabled) {
     this.sakshamAIenabled = sakshamAIenabled;
+  }
+
+  public String getSbOrgType() {
+    return sbOrgType;
+  }
+
+  public void setSbOrgType(String sbOrgType) {
+    this.sbOrgType = sbOrgType;
+  }
+
+  public String getSbOrgSubType() {
+    return sbOrgSubType;
+  }
+
+  public void setSbOrgSubType(String sbOrgSubType) {
+    this.sbOrgSubType = sbOrgSubType;
+  }
+
+  public String getParentOrgName() {
+    return parentOrgName;
+  }
+
+  public void setParentOrgName(String parentOrgName) {
+    this.parentOrgName = parentOrgName;
+  }
+
+  public String getParentOrgId() {
+    return parentOrgId;
+  }
+
+  public void setParentOrgId(String parentOrgId) {
+    this.parentOrgId = parentOrgId;
+  }
+
+  public String getMinistryOrStateId() {
+    return ministryOrStateId;
+  }
+
+  public void setMinistryOrStateId(String ministryOrStateId) {
+    this.ministryOrStateId = ministryOrStateId;
   }
 }
