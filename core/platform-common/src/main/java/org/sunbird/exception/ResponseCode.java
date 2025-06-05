@@ -167,6 +167,8 @@ public enum ResponseCode {
   serverError(ResponseMessage.Key.SERVER_ERROR, ResponseMessage.Message.SERVER_ERROR),
   errorParamExistsFormatted(
           ResponseMessage.Key.ERROR_PARAM_EXISTS, ResponseMessage.Message.ERROR_PARAM_EXISTS_FORMATTED),
+  errorUserCreationDuplicateRequest(
+          ResponseMessage.Key.ERROR_USER_CREATION_DUPLICATE_REQUEST, ResponseMessage.Message.ERROR_USER_CREATION_DUPLICATE_REQUEST),
   OK(200),
   SUCCESS(200),
   CLIENT_ERROR(400),
