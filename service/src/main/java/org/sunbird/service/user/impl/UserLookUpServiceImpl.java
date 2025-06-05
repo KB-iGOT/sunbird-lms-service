@@ -16,7 +16,6 @@ import org.sunbird.exception.ResponseMessage;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.model.user.User;
-import org.sunbird.redis.RedisCacheUtil;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.service.user.UserLookupService;
