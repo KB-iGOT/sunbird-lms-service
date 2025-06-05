@@ -66,7 +66,6 @@ public class UserLookUpServiceImpl implements UserLookupService {
       List<Map<String, Object>> userMapList = userLookupDao.getEmailByType(email, context);
       if (!userMapList.isEmpty()) {
         if (opType.equalsIgnoreCase(JsonKey.CREATE)) {
-          RedisCacheUtil.delete("sso:email:" + email);
           ProjectCommonException.throwClientErrorException(
               ResponseCode.errorParamExists,
               MessageFormat.format(ResponseCode.errorParamExistsFormatted.getErrorMessage(), JsonKey.EMAIL_CAPS));
@@ -105,7 +104,6 @@ public class UserLookUpServiceImpl implements UserLookupService {
       List<Map<String, Object>> userMapList = userLookupDao.getPhoneByType(phone, context);
       if (!userMapList.isEmpty()) {
         if (opType.equalsIgnoreCase(JsonKey.CREATE)) {
-          RedisCacheUtil.delete("sso:phone:" + phone);
           ProjectCommonException.throwClientErrorException(
               ResponseCode.errorParamExists,
               MessageFormat.format(ResponseCode.errorParamExistsFormatted.getErrorMessage(), JsonKey.PHONE_CAPS));
