@@ -196,4 +196,15 @@ public class RedisCacheUtil {
             throw e;
         }
     }
+
+
+    public static String getCache(String key) {
+        try (Jedis jedis = jedisPool.getResource()) {
+            return jedis.get(key);
+        } catch (Exception e) {
+            logger.error("Error while getting data from Redis cache for key: " + key, e);
+            return null;
+        }
+    }
+
 }

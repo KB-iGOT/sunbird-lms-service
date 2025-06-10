@@ -1,5 +1,6 @@
 package org.sunbird.service.user;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -16,6 +17,7 @@ import org.sunbird.kafka.InstructionEventGenerator;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
+import org.sunbird.redis.RedisCacheUtil;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
@@ -28,6 +30,7 @@ import org.sunbird.util.*;
 import org.sunbird.util.user.UserTncUtil;
 import org.sunbird.util.user.UserUtil;
 
+import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.time.LocalDate;
@@ -177,50 +180,22 @@ public class UserProfileReadService {
       }
     }
 
-    // Record the start time for measuring the execution time.
-    long startTime = System.currentTimeMillis();
-    // Convert the 'result' object to a JsonNode using the ObjectMapper.
-    JsonNode jsonNode = mapper.valueToTree(result);
-    // Extract mandatory and non-mandatory field paths from configuration and convert to lists.
-    List<String> mandatoryPathList = List.of(ProjectUtil.getConfigValue(JsonKey.USER_READ_API_V2_MANDATORY_FIELDS).split(","));
-    List<String> nonmandatoryPathList = List.of(ProjectUtil.getConfigValue(JsonKey.USER_READ_API_V2_NON_MANDATORY_FIELDS).split(","));
-    // Retrieve the list of non-null paths in the JSON data.
-    List<String> fieldsNonNullValueList=fetchNonNullJsonPaths("", jsonNode);
 
-    List<String> missingFields = mandatoryPathList.stream()
-            .filter(field -> !fieldsNonNullValueList.contains(field))
-            .collect(Collectors.toList());
-    List<String> missingnonmanFields = nonmandatoryPathList.stream()
-            .filter(field -> !fieldsNonNullValueList.contains(field))
-            .collect(Collectors.toList());
+    String cacheKey = JsonKey.USER + ":basicProfile:" + userId;
+    String cachedJson = RedisCacheUtil.getCache(cacheKey);
+    Map<String, Object> userProfile = null;
+    try {
+      userProfile = (cachedJson != null)
+              ? mapper.readValue(cachedJson, Map.class)
+              : fetchFromDatabase(userId, actorMessage.getRequestContext());
+    } catch (JsonProcessingException e) {
+      logger.error("UserProfileReadService:getUserProfileData: Error while parsing cached JSON", e);
+      result.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0.0);
+    }
 
-    // Count the number of available mandatory fields that have non-null values.
-    long availableMandatoryFieldsCount = mandatoryPathList.stream()
-            .filter(fieldsNonNullValueList::contains)
-            .count();
-    // Count the number of available non-mandatory fields that have non-null values.
-    long availableNonMandatoryFieldsCount = nonmandatoryPathList.stream()
-            .filter(fieldsNonNullValueList::contains)
-            .count();
-    // Calculate the percentage of completion for mandatory and non-mandatory fields.
-    double mandatoryPercentage = 0.6 * ((double) availableMandatoryFieldsCount / mandatoryPathList.size());
-    double nonMandatoryPercentage = 0.4 * ((double) availableNonMandatoryFieldsCount / nonmandatoryPathList.size());
-    int profileUpdateCompletion = (int) ((mandatoryPercentage + nonMandatoryPercentage) * 100);
-    // Update the 'result' object with the calculated profile update completion percentage.
-    result.put(JsonKey.PROFILE_UPDATE_COMPLETION, profileUpdateCompletion);
-    // Record the end time and calculate the total execution time.
-    long endTime = System.currentTimeMillis();
-    long executionTime = endTime - startTime;
-    logger.info(actorMessage.getRequestContext(),"Execution time of the profile completion percentage :   " + executionTime + "   milliseconds");
-    logger.info(actorMessage.getRequestContext(), "List of mandatoryPathList :   " + mandatoryPathList);
-    logger.info(actorMessage.getRequestContext(), "Size of available mandatory fields count :   " + availableMandatoryFieldsCount);
-    logger.info(actorMessage.getRequestContext(), "List of nonmandatoryPathList :   " + nonmandatoryPathList);
-    logger.info(actorMessage.getRequestContext(), "Size of available non mandatory fields count:   " + availableNonMandatoryFieldsCount);
-    logger.info(actorMessage.getRequestContext(), "ProfileUpdateCompletion:   " + profileUpdateCompletion);
-    logger.info(actorMessage.getRequestContext(), "Missing mandatory fields:   " + missingFields);
-    logger.info(actorMessage.getRequestContext(), "Missing non mandatory fields:   " + missingnonmanFields);
-
-
+    double completion = calculateProfileCompletionPercentage(userProfile,
+            userId, actorMessage.getRequestContext());
+    result.put(JsonKey.PROFILE_UPDATE_COMPLETION, completion);
     Response response = new Response();
     response.put(JsonKey.RESPONSE, result);
     return response;
@@ -809,4 +784,69 @@ public class UserProfileReadService {
         response.put(JsonKey.SELF_REGISTRATION,userDetailsMap.get(JsonKey.CREATEDBY) == null);
         return response;
     }
+
+  private Map<String, Object> fetchFromDatabase(String userId, RequestContext requestContext) {
+    Map<String, Object> queryParams = Map.of(JsonKey.ID, userId);
+    List<String> basicProfileReadFields = List.of(ProjectUtil.getConfigValue(JsonKey.USER_BASIC_PROFILE_READ_FIELDS).split(","));
+
+    Response cassandraResponse = cassandraOperation.getRecordsByProperties(
+            JsonKey.SUNBIRD, JsonKey.USER, queryParams, basicProfileReadFields, requestContext);
+
+    List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
+    if (CollectionUtils.isEmpty(recordList)) {
+      return null;
+    }
+    Map<String, Object> record = recordList.get(0);
+    String profileDetailsJson = (String) record.get(JsonKey.PROFILE_DETAILS);
+    try {
+      if (profileDetailsJson != null) {
+        Map<String, Object> profileDetailsMap = mapper.readValue(profileDetailsJson, new TypeReference<Map<String, Object>>() {
+        });
+        record.put(JsonKey.PROFILE_DETAILS, profileDetailsMap);
+      }
+    } catch (IOException e) {
+      logger.error("Error parsing profile details JSON for user: " + userId, e);
+    }
+    return record;
+  }
+
+
+  protected double calculateProfileCompletionPercentage(Map<String, Object> profileData,
+                                                        String userId, RequestContext requestContext) {
+    List<String> requiredFields =  List.of(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS).split(","));
+    List<String> requiredExtendedUserFields =  List.of(ProjectUtil.getConfigValue(JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS).split(","));
+    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty())
+      return 0.0;
+    double totalCompletion = 0.0;
+    Map<String, Object> nestedData = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
+            .filter(Map.class::isInstance)
+            .map(Map.class::cast)
+            .orElse(Collections.emptyMap());
+    for (String field : requiredFields) {
+      boolean isFilled;
+      try {
+        if (requiredExtendedUserFields.contains(field)) {
+          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext);
+        } else {
+          Object value = profileData.getOrDefault(field, nestedData.get(field));
+          isFilled = value != null && !value.toString().trim().isEmpty();
+        }
+      } catch (Exception e) {
+        isFilled = false;
+        logger.error("Error checking field completion for user: " + userId + ", field: " + field, e);
+      }
+      if (isFilled)
+        totalCompletion += Double.parseDouble(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
+    }
+    return Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0);
+  }
+
+  private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextType, RequestContext requestContext) {
+    Response cassandraResponse =   cassandraOperation.getRecordsByProperties(
+            JsonKey.SUNBIRD, JsonKey.TABLE_USER_EXTENDED_PROFILE,
+            Map.of(JsonKey.USERID_KEY, userId, JsonKey.CONTEXT_TYPE_TYPE, contextType),
+            new ArrayList<>(), requestContext);
+    List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
+    return !CollectionUtils.isEmpty(recordList);
+  }
 }
