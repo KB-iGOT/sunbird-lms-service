@@ -58,8 +58,8 @@ public class Organisation implements Serializable {
   private String parentOrgId;
   private String ministryOrStateId;
   private String frameworkStatus;
-  private String orgHierarchyId;
-  private String orgHierarchyStatus;
+  private String orgHierarchyFrameworkId;
+  private String orgHierarchyFrameworkStatus;
 
 
   public String getId() {
@@ -376,19 +376,19 @@ public class Organisation implements Serializable {
     this.frameworkStatus = frameworkStatus;
   }
 
-  public String getOrgHierarchyId() {
-    return orgHierarchyId;
+  public String getOrgHierarchyFrameworkId() {
+    return orgHierarchyFrameworkId;
   }
 
-  public void setOrgHierarchyId(String orgHierarchyId) {
-    this.orgHierarchyId = orgHierarchyId;
+  public void setOrgHierarchyFrameworkId(String orgHierarchyFrameworkId) {
+    this.orgHierarchyFrameworkId = orgHierarchyFrameworkId;
   }
 
-  public String getOrgHierarchyStatus() {
-    return orgHierarchyStatus;
+  public String getOrgHierarchyFrameworkStatus() {
+    return orgHierarchyFrameworkStatus;
   }
 
-  public void setOrgHierarchyStatus(String orgHierarchyStatus) {
-    this.orgHierarchyStatus = orgHierarchyStatus;
+  public void setOrgHierarchyFrameworkStatus(String orgHierarchyFrameworkStatus) {
+    this.orgHierarchyFrameworkStatus = orgHierarchyFrameworkStatus;
   }
 }
