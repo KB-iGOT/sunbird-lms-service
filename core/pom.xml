@@ -17,6 +17,7 @@
         <module>cassandra-utils</module>
         <module>es-utils</module>
         <module>notification-utils</module>
+        <module>cache-utils</module>
     </modules>
 
 
