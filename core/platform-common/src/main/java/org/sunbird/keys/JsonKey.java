@@ -693,6 +693,8 @@ public final class JsonKey {
   public static final String GROUP = "group";
   public static final String PROFESSIONAL_DETAILS = "professionalDetails";
   public static final String USER_PUBLIC_SEARCH_API_FIELDS = "user_public_search_api_fields";
+  public static final String ORG_HIERARCHY_ID = "orgHierarchyId";
+  public static final String ORG_HIERARCHY_STATUS = "orgHierarchyStatus";
   public static final String USER_CREATION_REDIS_TTL = "userCreationRedisTTL";
   private JsonKey() {}
 }

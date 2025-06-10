@@ -52,6 +52,15 @@ public class Organisation implements Serializable {
   private String ministryOrStateType;
   private String deptName;
   private Boolean sakshamAIenabled;
+  private String sbOrgType;
+  private String sbOrgSubType;
+  private String parentOrgName;
+  private String parentOrgId;
+  private String ministryOrStateId;
+  private String frameworkStatus;
+  private String orgHierarchyId;
+  private String orgHierarchyStatus;
+
 
   public String getId() {
     return id;
@@ -317,5 +326,69 @@ public class Organisation implements Serializable {
 
   public void setSakshamAIenabled(Boolean sakshamAIenabled) {
     this.sakshamAIenabled = sakshamAIenabled;
+  }
+
+  public String getSbOrgType() {
+    return sbOrgType;
+  }
+
+  public void setSbOrgType(String sbOrgType) {
+    this.sbOrgType = sbOrgType;
+  }
+
+  public String getSbOrgSubType() {
+    return sbOrgSubType;
+  }
+
+  public void setSbOrgSubType(String sbOrgSubType) {
+    this.sbOrgSubType = sbOrgSubType;
+  }
+
+  public String getParentOrgName() {
+    return parentOrgName;
+  }
+
+  public void setParentOrgName(String parentOrgName) {
+    this.parentOrgName = parentOrgName;
+  }
+
+  public String getParentOrgId() {
+    return parentOrgId;
+  }
+
+  public void setParentOrgId(String parentOrgId) {
+    this.parentOrgId = parentOrgId;
+  }
+
+  public String getMinistryOrStateId() {
+    return ministryOrStateId;
+  }
+
+  public void setMinistryOrStateId(String ministryOrStateId) {
+    this.ministryOrStateId = ministryOrStateId;
+  }
+
+  public String getFrameworkStatus() {
+    return frameworkStatus;
+  }
+
+  public void setFrameworkStatus(String frameworkStatus) {
+    this.frameworkStatus = frameworkStatus;
+  }
+
+  public String getOrgHierarchyId() {
+    return orgHierarchyId;
+  }
+
+  public void setOrgHierarchyId(String orgHierarchyId) {
+    this.orgHierarchyId = orgHierarchyId;
+  }
+
+  public String getOrgHierarchyStatus() {
+    return orgHierarchyStatus;
+  }
+
+  public void setOrgHierarchyStatus(String orgHierarchyStatus) {
+    this.orgHierarchyStatus = orgHierarchyStatus;
   }
 }
