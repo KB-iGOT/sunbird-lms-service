@@ -1,6 +1,5 @@
 package org.sunbird.service.user;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,7 +16,6 @@ import org.sunbird.kafka.InstructionEventGenerator;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
-import org.sunbird.redis.RedisCacheUtil;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
@@ -30,7 +28,6 @@ import org.sunbird.util.*;
 import org.sunbird.util.user.UserTncUtil;
 import org.sunbird.util.user.UserUtil;
 
-import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.MessageFormat;
 import java.time.LocalDate;
@@ -181,21 +178,8 @@ public class UserProfileReadService {
     }
 
 
-    String cacheKey = JsonKey.USER + ":basicProfile:" + userId;
-    String cachedJson = RedisCacheUtil.getCache(cacheKey);
-    Map<String, Object> userProfile = null;
-    try {
-      userProfile = (cachedJson != null)
-              ? mapper.readValue(cachedJson, Map.class)
-              : fetchFromDatabase(userId, actorMessage.getRequestContext());
-    } catch (JsonProcessingException e) {
-      logger.error("UserProfileReadService:getUserProfileData: Error while parsing cached JSON", e);
-      result.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0.0);
-    }
-
-    double completion = calculateProfileCompletionPercentage(userProfile,
+    calculateProfileCompletionPercentage(result,
             userId, actorMessage.getRequestContext());
-    result.put(JsonKey.PROFILE_UPDATE_COMPLETION, completion);
     Response response = new Response();
     response.put(JsonKey.RESPONSE, result);
     return response;
@@ -785,38 +769,13 @@ public class UserProfileReadService {
         return response;
     }
 
-  private Map<String, Object> fetchFromDatabase(String userId, RequestContext requestContext) {
-    Map<String, Object> queryParams = Map.of(JsonKey.ID, userId);
-    List<String> basicProfileReadFields = List.of(ProjectUtil.getConfigValue(JsonKey.USER_BASIC_PROFILE_READ_FIELDS).split(","));
 
-    Response cassandraResponse = cassandraOperation.getRecordsByProperties(
-            JsonKey.SUNBIRD, JsonKey.USER, queryParams, basicProfileReadFields, requestContext);
-
-    List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
-    if (CollectionUtils.isEmpty(recordList)) {
-      return null;
-    }
-    Map<String, Object> record = recordList.get(0);
-    String profileDetailsJson = (String) record.get(JsonKey.PROFILE_DETAILS);
-    try {
-      if (profileDetailsJson != null) {
-        Map<String, Object> profileDetailsMap = mapper.readValue(profileDetailsJson, new TypeReference<Map<String, Object>>() {
-        });
-        record.put(JsonKey.PROFILE_DETAILS, profileDetailsMap);
-      }
-    } catch (IOException e) {
-      logger.error("Error parsing profile details JSON for user: " + userId, e);
-    }
-    return record;
-  }
-
-
-  protected double calculateProfileCompletionPercentage(Map<String, Object> profileData,
+  protected void calculateProfileCompletionPercentage(Map<String, Object> profileData,
                                                         String userId, RequestContext requestContext) {
     List<String> requiredFields =  List.of(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS).split(","));
     List<String> requiredExtendedUserFields =  List.of(ProjectUtil.getConfigValue(JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS).split(","));
     if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty())
-      return 0.0;
+      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,0.0);
     double totalCompletion = 0.0;
     Map<String, Object> nestedData = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
             .filter(Map.class::isInstance)
@@ -838,7 +797,7 @@ public class UserProfileReadService {
       if (isFilled)
         totalCompletion += Double.parseDouble(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
     }
-    return Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0);
+    profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
   }
 
   private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextType, RequestContext requestContext) {
