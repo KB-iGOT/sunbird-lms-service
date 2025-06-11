@@ -699,7 +699,6 @@ public final class JsonKey {
   public static final String USERID_KEY = "userid";
   public static final String TABLE_USER_EXTENDED_PROFILE = "user_extended_profile";
   public static final String USER_EXTENDED_PROFILE_READ_FIELDS = "user_extended_profile_read_fields";
-  public static final String CONTEXT_TYPE_TYPE = "contexttype";
   public static final String PROFILE_COMPLETION_FIELD_WEIGHT="profile.completion.field.weight";
   private JsonKey() {}
 }
