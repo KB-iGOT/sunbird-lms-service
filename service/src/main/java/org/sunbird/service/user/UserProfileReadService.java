@@ -177,50 +177,9 @@ public class UserProfileReadService {
       }
     }
 
-    // Record the start time for measuring the execution time.
-    long startTime = System.currentTimeMillis();
-    // Convert the 'result' object to a JsonNode using the ObjectMapper.
-    JsonNode jsonNode = mapper.valueToTree(result);
-    // Extract mandatory and non-mandatory field paths from configuration and convert to lists.
-    List<String> mandatoryPathList = List.of(ProjectUtil.getConfigValue(JsonKey.USER_READ_API_V2_MANDATORY_FIELDS).split(","));
-    List<String> nonmandatoryPathList = List.of(ProjectUtil.getConfigValue(JsonKey.USER_READ_API_V2_NON_MANDATORY_FIELDS).split(","));
-    // Retrieve the list of non-null paths in the JSON data.
-    List<String> fieldsNonNullValueList=fetchNonNullJsonPaths("", jsonNode);
 
-    List<String> missingFields = mandatoryPathList.stream()
-            .filter(field -> !fieldsNonNullValueList.contains(field))
-            .collect(Collectors.toList());
-    List<String> missingnonmanFields = nonmandatoryPathList.stream()
-            .filter(field -> !fieldsNonNullValueList.contains(field))
-            .collect(Collectors.toList());
-
-    // Count the number of available mandatory fields that have non-null values.
-    long availableMandatoryFieldsCount = mandatoryPathList.stream()
-            .filter(fieldsNonNullValueList::contains)
-            .count();
-    // Count the number of available non-mandatory fields that have non-null values.
-    long availableNonMandatoryFieldsCount = nonmandatoryPathList.stream()
-            .filter(fieldsNonNullValueList::contains)
-            .count();
-    // Calculate the percentage of completion for mandatory and non-mandatory fields.
-    double mandatoryPercentage = 0.6 * ((double) availableMandatoryFieldsCount / mandatoryPathList.size());
-    double nonMandatoryPercentage = 0.4 * ((double) availableNonMandatoryFieldsCount / nonmandatoryPathList.size());
-    int profileUpdateCompletion = (int) ((mandatoryPercentage + nonMandatoryPercentage) * 100);
-    // Update the 'result' object with the calculated profile update completion percentage.
-    result.put(JsonKey.PROFILE_UPDATE_COMPLETION, profileUpdateCompletion);
-    // Record the end time and calculate the total execution time.
-    long endTime = System.currentTimeMillis();
-    long executionTime = endTime - startTime;
-    logger.info(actorMessage.getRequestContext(),"Execution time of the profile completion percentage :   " + executionTime + "   milliseconds");
-    logger.info(actorMessage.getRequestContext(), "List of mandatoryPathList :   " + mandatoryPathList);
-    logger.info(actorMessage.getRequestContext(), "Size of available mandatory fields count :   " + availableMandatoryFieldsCount);
-    logger.info(actorMessage.getRequestContext(), "List of nonmandatoryPathList :   " + nonmandatoryPathList);
-    logger.info(actorMessage.getRequestContext(), "Size of available non mandatory fields count:   " + availableNonMandatoryFieldsCount);
-    logger.info(actorMessage.getRequestContext(), "ProfileUpdateCompletion:   " + profileUpdateCompletion);
-    logger.info(actorMessage.getRequestContext(), "Missing mandatory fields:   " + missingFields);
-    logger.info(actorMessage.getRequestContext(), "Missing non mandatory fields:   " + missingnonmanFields);
-
-
+    calculateProfileCompletionPercentage(result,
+            userId, actorMessage.getRequestContext());
     Response response = new Response();
     response.put(JsonKey.RESPONSE, result);
     return response;
@@ -809,4 +768,44 @@ public class UserProfileReadService {
         response.put(JsonKey.SELF_REGISTRATION,userDetailsMap.get(JsonKey.CREATEDBY) == null);
         return response;
     }
+
+
+  protected void calculateProfileCompletionPercentage(Map<String, Object> profileData,
+                                                        String userId, RequestContext requestContext) {
+    List<String> requiredFields =  List.of(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS).split(","));
+    List<String> requiredExtendedUserFields =  List.of(ProjectUtil.getConfigValue(JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS).split(","));
+    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty())
+      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,0.0);
+    double totalCompletion = 0.0;
+    Map<String, Object> nestedData = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
+            .filter(Map.class::isInstance)
+            .map(Map.class::cast)
+            .orElse(Collections.emptyMap());
+    for (String field : requiredFields) {
+      boolean isFilled;
+      try {
+        if (requiredExtendedUserFields.contains(field)) {
+          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext);
+        } else {
+          Object value = profileData.getOrDefault(field, nestedData.get(field));
+          isFilled = value != null && !value.toString().trim().isEmpty();
+        }
+      } catch (Exception e) {
+        isFilled = false;
+        logger.error("Error checking field completion for user: " + userId + ", field: " + field, e);
+      }
+      if (isFilled)
+        totalCompletion += Double.parseDouble(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
+    }
+    profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
+  }
+
+  private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextTypeValue, RequestContext requestContext) {
+    Response cassandraResponse =   cassandraOperation.getRecordsByProperties(
+            JsonKey.SUNBIRD, JsonKey.TABLE_USER_EXTENDED_PROFILE,
+            Map.of(JsonKey.USERID_KEY, userId, JsonKey.CONTEXT_TYPE, contextTypeValue),
+            new ArrayList<>(), requestContext);
+    List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
+    return !CollectionUtils.isEmpty(recordList);
+  }
 }
