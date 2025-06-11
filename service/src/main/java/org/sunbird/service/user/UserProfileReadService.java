@@ -800,10 +800,10 @@ public class UserProfileReadService {
     profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
   }
 
-  private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextType, RequestContext requestContext) {
+  private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextTypeValue, RequestContext requestContext) {
     Response cassandraResponse =   cassandraOperation.getRecordsByProperties(
             JsonKey.SUNBIRD, JsonKey.TABLE_USER_EXTENDED_PROFILE,
-            Map.of(JsonKey.USERID_KEY, userId, JsonKey.CONTEXT_TYPE_TYPE, contextType),
+            Map.of(JsonKey.USERID_KEY, userId, JsonKey.CONTEXT_TYPE, contextTypeValue),
             new ArrayList<>(), requestContext);
     List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
     return !CollectionUtils.isEmpty(recordList);
