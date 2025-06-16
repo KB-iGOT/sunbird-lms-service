@@ -774,8 +774,10 @@ public class UserProfileReadService {
                                                         String userId, RequestContext requestContext) {
     List<String> requiredFields =  List.of(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS).split(","));
     List<String> requiredExtendedUserFields =  List.of(ProjectUtil.getConfigValue(JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS).split(","));
-    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty())
-      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,0.0);
+    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty()) {
+      profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE, 0.0);
+      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0);
+    }
     double totalCompletion = 0.0;
     Map<String, Object> nestedData = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
             .filter(Map.class::isInstance)
@@ -797,7 +799,8 @@ public class UserProfileReadService {
       if (isFilled)
         totalCompletion += Double.parseDouble(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
     }
-    profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
+    profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, (int) Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
+    profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
   }
 
   private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextTypeValue, RequestContext requestContext) {
