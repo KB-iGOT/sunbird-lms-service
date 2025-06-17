@@ -701,5 +701,7 @@ public final class JsonKey {
   public static final String USER_EXTENDED_PROFILE_READ_FIELDS = "user_extended_profile_read_fields";
   public static final String PROFILE_COMPLETION_FIELD_WEIGHT="profile.completion.field.weight";
   public static final String PROFILE_COMPLETION_PERCENTAGE = "profileCompletionPercentage";
+  public static final String SERVICE_HISTORY = "serviceHistory";
+
   private JsonKey() {}
 }
