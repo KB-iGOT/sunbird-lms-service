@@ -787,7 +787,16 @@ public class UserProfileReadService {
       boolean isFilled;
       try {
         if (requiredExtendedUserFields.contains(field)) {
-          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext);
+          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext) || (JsonKey.SERVICE_HISTORY.equalsIgnoreCase(field) &&
+                  Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
+                          .filter(Map.class::isInstance)
+                          .map(Map.class::cast)
+                          .map(details -> details.get(JsonKey.PROFESSIONAL_DETAILS))
+                          .filter(List.class::isInstance)
+                          .map(List.class::cast)
+                          .map(org.apache.commons.collections4.CollectionUtils::isNotEmpty)
+                          .orElse(false));
+
         } else {
           Object value = profileData.getOrDefault(field, nestedData.get(field));
           isFilled = value != null && !value.toString().trim().isEmpty();
