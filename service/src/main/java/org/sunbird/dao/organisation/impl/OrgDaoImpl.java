@@ -2,10 +2,9 @@ package org.sunbird.dao.organisation.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+
+import java.util.*;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.cassandra.CassandraOperation;
@@ -51,6 +50,7 @@ public class OrgDaoImpl implements OrgDao {
       if (CollectionUtils.isNotEmpty(responseList)) {
         Map<String, Object> orgMap = responseList.get(0);
         enrichOrgDetails(orgMap, context);
+        enrichOrgDetailsWithCustomFields(orgMap, context);
         return orgMap;
       }
     }
@@ -103,6 +103,23 @@ public class OrgDaoImpl implements OrgDao {
     orgMap.remove(JsonKey.CONTACT_DETAILS);
     orgMap.putAll(Util.getOrgDefaultValue());
   }
+
+  private void enrichOrgDetailsWithCustomFields(Map<String, Object> orgMap, RequestContext context) {
+
+    String customFields = (String) orgMap.get(JsonKey.CUSTOM_FIELDS_DATA);
+    if (StringUtils.isNotBlank(customFields)) {
+      try {
+        Map<String, Object> customFieldsMap = mapper.readValue(customFields, Map.class);
+        orgMap.put(JsonKey.CUSTOM_FIELDS_DATA, customFieldsMap);
+      } catch (JsonProcessingException e) {
+        logger.error(context, "Error while parsing custom fields", e);
+        ProjectCommonException.throwServerErrorException(ResponseCode.SERVER_ERROR);
+      }
+    } else {
+      orgMap.put(JsonKey.CUSTOM_FIELDS_DATA, new HashMap<>());
+    }
+  }
+
 
   @Override
   public Response create(Map<String, Object> orgMap, RequestContext context) {

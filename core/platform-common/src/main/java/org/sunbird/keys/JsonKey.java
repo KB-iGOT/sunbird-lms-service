@@ -702,6 +702,7 @@ public final class JsonKey {
   public static final String PROFILE_COMPLETION_FIELD_WEIGHT="profile.completion.field.weight";
   public static final String PROFILE_COMPLETION_PERCENTAGE = "profileCompletionPercentage";
   public static final String SERVICE_HISTORY = "serviceHistory";
+  public static final String CUSTOM_FIELDS_DATA = "customfieldsdata";
 
   private JsonKey() {}
 }
