@@ -694,5 +694,7 @@ public final class JsonKey {
   public static final String PROFESSIONAL_DETAILS = "professionalDetails";
   public static final String USER_PUBLIC_SEARCH_API_FIELDS = "user_public_search_api_fields";
   public static final String USER_CREATION_REDIS_TTL = "userCreationRedisTTL";
+  public static final String CUSTOM_FIELDS_DATA = "customfieldsdata";
+
   private JsonKey() {}
 }
