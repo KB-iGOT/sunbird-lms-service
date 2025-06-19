@@ -60,7 +60,7 @@ public class Organisation implements Serializable {
   private String frameworkStatus;
   private String orgHierarchyFrameworkId;
   private String orgHierarchyFrameworkStatus;
-
+  private String customFieldsData;
 
   public String getId() {
     return id;
@@ -390,5 +390,13 @@ public class Organisation implements Serializable {
 
   public void setOrgHierarchyFrameworkStatus(String orgHierarchyFrameworkStatus) {
     this.orgHierarchyFrameworkStatus = orgHierarchyFrameworkStatus;
+  }
+
+  public String getCustomFieldsData() {
+    return customFieldsData;
+  }
+
+  public void setCustomFieldsData(String customFieldsData) {
+    this.customFieldsData = customFieldsData;
   }
 }
