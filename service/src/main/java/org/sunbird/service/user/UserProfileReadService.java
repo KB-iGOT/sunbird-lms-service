@@ -798,8 +798,21 @@ public class UserProfileReadService {
                           .orElse(false));
 
         } else {
-          Object value = profileData.getOrDefault(field, nestedData.get(field));
-          isFilled = value != null && !value.toString().trim().isEmpty();
+          if (JsonKey.EMPLOYMENT_DETAILS.equalsIgnoreCase(field)) {
+            isFilled = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
+                    .filter(Map.class::isInstance)
+                    .map(Map.class::cast)
+                    .map(details -> details.get(JsonKey.EMPLOYMENT_DETAILS))
+                    .filter(Map.class::isInstance)
+                    .map(Map.class::cast)
+                    .map(empDetails -> empDetails.get(JsonKey.ABOUT_ME))
+                    .map(Object::toString)
+                    .filter(aboutMe -> !aboutMe.trim().isEmpty())
+                    .isPresent();
+          } else {
+            Object value = profileData.getOrDefault(field, nestedData.get(field));
+            isFilled = value != null && !value.toString().trim().isEmpty();
+          }
         }
       } catch (Exception e) {
         isFilled = false;
