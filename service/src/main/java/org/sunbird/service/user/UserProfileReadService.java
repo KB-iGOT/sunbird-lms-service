@@ -799,16 +799,10 @@ public class UserProfileReadService {
 
         } else {
           if (JsonKey.EMPLOYMENT_DETAILS.equalsIgnoreCase(field)) {
-            isFilled = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
-                    .filter(Map.class::isInstance)
-                    .map(Map.class::cast)
-                    .map(details -> details.get(JsonKey.EMPLOYMENT_DETAILS))
-                    .filter(Map.class::isInstance)
-                    .map(Map.class::cast)
-                    .map(empDetails -> empDetails.get(JsonKey.ABOUT_ME))
-                    .map(Object::toString)
-                    .filter(aboutMe -> !aboutMe.trim().isEmpty())
-                    .isPresent();
+           isFilled = asMap(profileData.get(JsonKey.PROFILE_DETAILS))
+                            .flatMap(details -> asMap(details.get(JsonKey.EMPLOYMENT_DETAILS)))
+                            .flatMap(empDetails -> getNonEmptyString(empDetails, JsonKey.ABOUT_ME))
+                            .isPresent();
           } else {
             Object value = profileData.getOrDefault(field, nestedData.get(field));
             isFilled = value != null && !value.toString().trim().isEmpty();
@@ -832,5 +826,17 @@ public class UserProfileReadService {
             new ArrayList<>(), requestContext);
     List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
     return !CollectionUtils.isEmpty(recordList);
+  }
+
+  private Optional<Map<String, Object>> asMap(Object obj) {
+    return Optional.ofNullable(obj)
+            .filter(Map.class::isInstance)
+            .map(m -> (Map<String, Object>) m);
+  }
+
+  private Optional<String> getNonEmptyString(Map<String, Object> map, String key) {
+    return Optional.ofNullable(map.get(key))
+            .map(Object::toString)
+            .filter(s -> !s.trim().isEmpty());
   }
 }
