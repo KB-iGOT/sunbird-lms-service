@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.cassandra.CassandraOperation;
@@ -805,7 +806,7 @@ public class UserProfileReadService {
                             .isPresent();
           } else {
             Object value = profileData.getOrDefault(field, nestedData.get(field));
-            isFilled = value != null && !value.toString().trim().isEmpty();
+            isFilled = StringUtils.isNotBlank(ObjectUtils.toString(value));
           }
         }
       } catch (Exception e) {
