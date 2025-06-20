@@ -52,6 +52,7 @@ public class Organisation implements Serializable {
   private String ministryOrStateType;
   private String deptName;
   private Boolean sakshamAIenabled;
+  private String customFieldsData;
 
   public String getId() {
     return id;
@@ -317,5 +318,13 @@ public class Organisation implements Serializable {
 
   public void setSakshamAIenabled(Boolean sakshamAIenabled) {
     this.sakshamAIenabled = sakshamAIenabled;
+  }
+
+  public String getCustomFieldsData() {
+    return customFieldsData;
+  }
+
+  public void setCustomFieldsData(String customFieldsData) {
+    this.customFieldsData = customFieldsData;
   }
 }
