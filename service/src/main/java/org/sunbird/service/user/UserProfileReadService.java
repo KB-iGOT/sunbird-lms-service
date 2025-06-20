@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.cassandra.CassandraOperation;
@@ -798,8 +799,15 @@ public class UserProfileReadService {
                           .orElse(false));
 
         } else {
-          Object value = profileData.getOrDefault(field, nestedData.get(field));
-          isFilled = value != null && !value.toString().trim().isEmpty();
+          if (JsonKey.EMPLOYMENT_DETAILS.equalsIgnoreCase(field)) {
+           isFilled = asMap(profileData.get(JsonKey.PROFILE_DETAILS))
+                            .flatMap(details -> asMap(details.get(JsonKey.EMPLOYMENT_DETAILS)))
+                            .flatMap(empDetails -> getNonEmptyString(empDetails, JsonKey.ABOUT_ME))
+                            .isPresent();
+          } else {
+            Object value = profileData.getOrDefault(field, nestedData.get(field));
+            isFilled = StringUtils.isNotBlank(ObjectUtils.toString(value));
+          }
         }
       } catch (Exception e) {
         isFilled = false;
@@ -819,5 +827,17 @@ public class UserProfileReadService {
             new ArrayList<>(), requestContext);
     List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
     return !CollectionUtils.isEmpty(recordList);
+  }
+
+  private Optional<Map<String, Object>> asMap(Object obj) {
+    return Optional.ofNullable(obj)
+            .filter(Map.class::isInstance)
+            .map(m -> (Map<String, Object>) m);
+  }
+
+  private Optional<String> getNonEmptyString(Map<String, Object> map, String key) {
+    return Optional.ofNullable(map.get(key))
+            .map(Object::toString)
+            .filter(s -> !s.trim().isEmpty());
   }
 }
