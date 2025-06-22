@@ -392,7 +392,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
       for (Map.Entry<String, Object> entry : searchDTO.getSortBy().entrySet()) {
         if (!entry.getKey().contains(".")) {
           searchSourceBuilder.sort(
-              entry.getKey() + ElasticSearchHelper.RAW_APPEND,
+              getSortableField(entry.getKey()),
               ElasticSearchHelper.getSortOrder((String) entry.getValue()));
         } else {
           Map<String, Object> map = (Map<String, Object>) entry.getValue();
@@ -780,5 +780,15 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
         "ElasticSearchRestHighImpl:getEsResultByListOfIds: method ended for index " + index);
 
     return promise.future();
+  }
+
+  public static String getSortableField(String fieldName) {
+    switch (fieldName) {
+      case "orgName":
+      case "channel":
+        return fieldName + ".keyword";
+      default:
+        return fieldName + ElasticSearchHelper.RAW_APPEND;
+    }
   }
 }
