@@ -703,6 +703,8 @@ public final class JsonKey {
   public static final String PROFILE_COMPLETION_PERCENTAGE = "profileCompletionPercentage";
   public static final String SERVICE_HISTORY = "serviceHistory";
   public static final String CUSTOM_FIELDS_DATA = "customfieldsdata";
+  public static final String ABOUT_ME = "aboutme";
+  public static final String ORG_DEFAULT_ES_QUERY_FIELDS = "org_default_es_query_fields";
 
   private JsonKey() {}
 }
