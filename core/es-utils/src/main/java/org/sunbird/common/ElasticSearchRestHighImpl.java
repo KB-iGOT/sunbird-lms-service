@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -373,7 +374,8 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
     }
     // apply simple query string
     if (!StringUtils.isBlank(searchDTO.getQuery())) {
-      if (searchDTO.getQuery().contains("@")) {
+      //validate whether regex pattern  refer userRegisterImp in cb-ext
+      if (isValidEmail(searchDTO.getQuery())) {
         query.must(QueryBuilders.termQuery(JsonKey.PROFILE_PRIMARY_EMAIL_FIELD, searchDTO.getQuery()));
       } else {
         SimpleQueryStringBuilder sqsb = QueryBuilders.simpleQueryStringQuery(searchDTO.getQuery());
@@ -512,6 +514,13 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
 
     ConnectionManager.getRestClient().searchAsync(searchRequest, listener);
     return promise.future();
+  }
+
+  private boolean isValidEmail(String email) {
+    String emailRegex = "^[a-zA-Z0-9_+&*-]+(?:\\.[a-zA-Z0-9_+&*-]+)*@" +
+            "(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,7}$";
+    Pattern pat = Pattern.compile(emailRegex);
+    return email != null && pat.matcher(email).matches();
   }
 
   /**
