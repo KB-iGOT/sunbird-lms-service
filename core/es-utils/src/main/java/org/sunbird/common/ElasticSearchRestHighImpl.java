@@ -2,6 +2,7 @@ package org.sunbird.common;
 
 import akka.dispatch.Futures;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -379,6 +380,9 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
       } else {
         SimpleQueryStringBuilder sqsb = QueryBuilders.simpleQueryStringQuery(searchDTO.getQuery());
         query.must(sqsb);
+        if (CollectionUtils.isEmpty(searchDTO.getQueryFields())) {
+          searchDTO.setQueryFields(getOrgDefaultSearchFields(index));
+        }
         if (CollectionUtils.isNotEmpty(searchDTO.getQueryFields())) {
           Map<String, Float> searchFields =
               searchDTO
@@ -394,7 +398,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
       for (Map.Entry<String, Object> entry : searchDTO.getSortBy().entrySet()) {
         if (!entry.getKey().contains(".")) {
           searchSourceBuilder.sort(
-              entry.getKey() + ElasticSearchHelper.RAW_APPEND,
+              getSortableField(entry.getKey()),
               ElasticSearchHelper.getSortOrder((String) entry.getValue()));
         } else {
           Map<String, Object> map = (Map<String, Object>) entry.getValue();
@@ -789,5 +793,23 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
         "ElasticSearchRestHighImpl:getEsResultByListOfIds: method ended for index " + index);
 
     return promise.future();
+  }
+
+  private static String getSortableField(String fieldName) {
+    switch (fieldName) {
+      case "orgName":
+      case "channel":
+        return fieldName + ".keyword";
+      default:
+        return fieldName + ElasticSearchHelper.RAW_APPEND;
+    }
+  }
+
+  private static List<String> getOrgDefaultSearchFields(String index) {
+    List<String> queryFields = new ArrayList<String>();
+    if (ProjectUtil.EsType.organisation.getTypeName().equalsIgnoreCase(index)) {
+      queryFields = Arrays.asList(ProjectUtil.getConfigValue(JsonKey.ORG_DEFAULT_ES_QUERY_FIELDS).split(","));
+    }
+    return queryFields;
   }
 }

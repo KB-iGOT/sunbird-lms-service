@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.cassandra.CassandraOperation;
@@ -774,8 +775,10 @@ public class UserProfileReadService {
                                                         String userId, RequestContext requestContext) {
     List<String> requiredFields =  List.of(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS).split(","));
     List<String> requiredExtendedUserFields =  List.of(ProjectUtil.getConfigValue(JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS).split(","));
-    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty())
-      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,0.0);
+    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty()) {
+      profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE, 0.0);
+      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0);
+    }
     double totalCompletion = 0.0;
     Map<String, Object> nestedData = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
             .filter(Map.class::isInstance)
@@ -785,10 +788,26 @@ public class UserProfileReadService {
       boolean isFilled;
       try {
         if (requiredExtendedUserFields.contains(field)) {
-          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext);
+          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext) || (JsonKey.SERVICE_HISTORY.equalsIgnoreCase(field) &&
+                  Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
+                          .filter(Map.class::isInstance)
+                          .map(Map.class::cast)
+                          .map(details -> details.get(JsonKey.PROFESSIONAL_DETAILS))
+                          .filter(List.class::isInstance)
+                          .map(List.class::cast)
+                          .map(org.apache.commons.collections4.CollectionUtils::isNotEmpty)
+                          .orElse(false));
+
         } else {
-          Object value = profileData.getOrDefault(field, nestedData.get(field));
-          isFilled = value != null && !value.toString().trim().isEmpty();
+          if (JsonKey.EMPLOYMENT_DETAILS.equalsIgnoreCase(field)) {
+           isFilled = asMap(profileData.get(JsonKey.PROFILE_DETAILS))
+                            .flatMap(details -> asMap(details.get(JsonKey.EMPLOYMENT_DETAILS)))
+                            .flatMap(empDetails -> getNonEmptyString(empDetails, JsonKey.ABOUT_ME))
+                            .isPresent();
+          } else {
+            Object value = profileData.getOrDefault(field, nestedData.get(field));
+            isFilled = StringUtils.isNotBlank(ObjectUtils.toString(value));
+          }
         }
       } catch (Exception e) {
         isFilled = false;
@@ -797,7 +816,8 @@ public class UserProfileReadService {
       if (isFilled)
         totalCompletion += Double.parseDouble(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
     }
-    profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
+    profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, (int) Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
+    profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
   }
 
   private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextTypeValue, RequestContext requestContext) {
@@ -807,5 +827,17 @@ public class UserProfileReadService {
             new ArrayList<>(), requestContext);
     List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
     return !CollectionUtils.isEmpty(recordList);
+  }
+
+  private Optional<Map<String, Object>> asMap(Object obj) {
+    return Optional.ofNullable(obj)
+            .filter(Map.class::isInstance)
+            .map(m -> (Map<String, Object>) m);
+  }
+
+  private Optional<String> getNonEmptyString(Map<String, Object> map, String key) {
+    return Optional.ofNullable(map.get(key))
+            .map(Object::toString)
+            .filter(s -> !s.trim().isEmpty());
   }
 }
