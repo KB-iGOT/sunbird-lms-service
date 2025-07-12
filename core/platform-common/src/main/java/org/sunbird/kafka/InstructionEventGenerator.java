@@ -137,7 +137,7 @@ public class InstructionEventGenerator {
     return jsonMessage;
   }
 
-  public static void mentorshipUserUpdateEvent(String key, String topic, Map<String, String> data) throws Exception {
+  public static void userUpdateEvent(String key, String topic, Map<String, String> data) throws Exception {
     String jsonMessage = null;
     try {
       jsonMessage = mapper.writeValueAsString(data);
@@ -145,7 +145,7 @@ public class InstructionEventGenerator {
       logger.error("Error creating JSON message: " + e.getMessage(), e);
     }
     if (StringUtils.isBlank(jsonMessage)) {
-      throw new ProjectCommonException(ResponseCode.valueOf("BE_JOB_REQUEST_EXCEPTION"), "mentorship user update Event is not generated properly.", ResponseCode.CLIENT_ERROR.getResponseCode());
+      throw new ProjectCommonException(ResponseCode.valueOf("BE_JOB_REQUEST_EXCEPTION"), "User update Event is not generated properly.", ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     if (StringUtils.isNotBlank(topic)) {
       if (StringUtils.isNotBlank(key)) KafkaClient.send(key, jsonMessage, topic);
