@@ -145,6 +145,7 @@ public class SearchHandlerActor extends BaseActor {
     if (isFieldsRestricted) {
       searchQueryMap.put(JsonKey.FIELDS, Arrays.asList(ProjectUtil.getConfigValue(JsonKey.USER_PUBLIC_SEARCH_API_FIELDS).split(",")));
     }
+    validateSearchQueryMap(searchQueryMap,JsonKey.USER_SEARCH);
     String searchVersion = request.getOperation();
     if (searchVersion.equalsIgnoreCase(ActorOperations.USER_SEARCH.getValue())) {
       // checking for Backward compatibility
@@ -278,9 +279,10 @@ public class SearchHandlerActor extends BaseActor {
     }
   }
 
-  private void handleOrgSearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) {
+  private void handleOrgSearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) throws Exception {
     List<String> fields = (List<String>) searchQueryMap.get(JsonKey.FIELDS);
     Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+    validateSearchQueryMap(searchQueryMap,JsonKey.ORG_SEARCH);
     if (filterMap.containsKey(JsonKey.IS_SCHOOL)
         && BooleanUtils.isTrue((Boolean) filterMap.remove(JsonKey.IS_SCHOOL))) {
       filterMap.put(JsonKey.ORGANISATION_TYPE, 2);
@@ -568,4 +570,26 @@ public class SearchHandlerActor extends BaseActor {
     return (Map<String, Object>)
         ((Map<String, Object>) (searchQueryMap.get(JsonKey.FILTERS))).get(JsonKey.SEARCH_FUZZY);
   }
+
+  private void validateSearchQueryMap(Map<String, Object> searchQueryMap, String searchMethod) throws Exception {
+    String query = (String) searchQueryMap.get(JsonKey.QUERY);
+    if (StringUtils.isBlank(query)) return;
+
+    String propertyKey = Map.of(
+            "userSearch", JsonKey.USER_SERACH_QUERY_MAX_SIZE,
+            "orgSearch", JsonKey.ORG_SERACH_QUERY_MAX_SIZE
+    ).get(searchMethod);
+
+    if (propertyKey == null) return;
+
+    int maxSize = Integer.parseInt(PropertiesCache.getInstance().getProperty(propertyKey));
+    if (query.length() > maxSize) {
+      throw new ProjectCommonException(
+              ResponseCode.CLIENT_ERROR,
+              String.format(ResponseMessage.Message.TOO_BIG_QUEY),
+              ResponseCode.CLIENT_ERROR.getResponseCode()
+      );
+    }
+  }
+
 }
