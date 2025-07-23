@@ -705,6 +705,10 @@ public final class JsonKey {
   public static final String CUSTOM_FIELDS_DATA = "customfieldsdata";
   public static final String ABOUT_ME = "aboutme";
   public static final String ORG_DEFAULT_ES_QUERY_FIELDS = "org_default_es_query_fields";
+  public static final String USER_SERACH_QUERY_MAX_SIZE = "user_search_query_max_size";
+  public static final String ORG_SERACH_QUERY_MAX_SIZE = "org_search_query_max_size";
+  public static final String USER_SEARCH = "userSearch";
+  public static final String ORG_SEARCH = "orgSearch";
 
   private JsonKey() {}
 }
