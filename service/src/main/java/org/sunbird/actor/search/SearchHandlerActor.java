@@ -279,7 +279,7 @@ public class SearchHandlerActor extends BaseActor {
     }
   }
 
-  private void handleOrgSearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) throws Exception {
+  private void handleOrgSearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) {
     List<String> fields = (List<String>) searchQueryMap.get(JsonKey.FIELDS);
     Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
     validateSearchQueryMap(searchQueryMap,JsonKey.ORG_SEARCH);
@@ -571,7 +571,7 @@ public class SearchHandlerActor extends BaseActor {
         ((Map<String, Object>) (searchQueryMap.get(JsonKey.FILTERS))).get(JsonKey.SEARCH_FUZZY);
   }
 
-  private void validateSearchQueryMap(Map<String, Object> searchQueryMap, String searchMethod) throws Exception {
+  private void validateSearchQueryMap(Map<String, Object> searchQueryMap, String searchMethod) {
     String query = (String) searchQueryMap.get(JsonKey.QUERY);
     if (StringUtils.isBlank(query)) return;
 
@@ -584,11 +584,8 @@ public class SearchHandlerActor extends BaseActor {
 
     int maxSize = Integer.parseInt(PropertiesCache.getInstance().getProperty(propertyKey));
     if (query.length() > maxSize) {
-      throw new ProjectCommonException(
-              ResponseCode.CLIENT_ERROR,
-              String.format(ResponseMessage.Message.TOO_BIG_QUEY),
-              ResponseCode.CLIENT_ERROR.getResponseCode()
-      );
+      query = query.substring(0, maxSize); // Trim the query
+      searchQueryMap.put(JsonKey.QUERY, query); // Update the map with trimmed query
     }
   }
 

@@ -114,7 +114,6 @@ public interface ResponseMessage {
     String ERROR_OTP_ATTEMPT_EXCEEDED = "The maximum number of attempts for OTP verification has been exceeded. Please try again.";
     String ERROR_PARAM_EXISTS_FORMATTED = "This {0} is already registered with an existing User";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "Duplicate request: This {0} was processed recently and is still within TTL window.";
-    String TOO_BIG_QUEY = "Query is too big, please reduce the size of the query and try again.";
   }
 
   interface Key {
