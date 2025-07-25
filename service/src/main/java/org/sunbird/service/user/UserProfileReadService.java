@@ -14,6 +14,7 @@ import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.kafka.InstructionEventGenerator;
+import org.sunbird.kafka.KafkaClient;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
@@ -757,6 +758,10 @@ public class UserProfileReadService {
         dataMap.put(JsonKey.EDATA, requestMap);
         String topic = ProjectUtil.getConfigValue("kafka_user_first_login_event_topic");
         InstructionEventGenerator.createFirstLoginDetailsEvent("", topic, dataMap);
+        String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
+        Map<String, String> userUpdateMap = new HashMap<>();
+        userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
+        InstructionEventGenerator.userUpdateEvent("", onboardUserOnFirstLogin, userUpdateMap);
       } else {
             map.put(JsonKey.ID, userId);
             map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));

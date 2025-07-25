@@ -171,7 +171,7 @@ public class UserRoleActor extends UserBaseActor {
       try {
         HashMap<String,String> userDetails = new HashMap<>();
         userDetails.put(JsonKey.USER_ID,(String) requestMap.get(JsonKey.USER_ID));
-        InstructionEventGenerator.mentorshipUserUpdateEvent("", topic, userDetails);
+        InstructionEventGenerator.userUpdateEvent("", topic, userDetails);
         logger.info("kafka_mentorship_user_update_topic event pushed after role change");
       }catch (Exception e){
         logger.error("error while generating mentorship event :", e);
