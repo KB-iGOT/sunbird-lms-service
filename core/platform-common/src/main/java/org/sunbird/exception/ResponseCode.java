@@ -169,6 +169,12 @@ public enum ResponseCode {
           ResponseMessage.Key.ERROR_PARAM_EXISTS, ResponseMessage.Message.ERROR_PARAM_EXISTS_FORMATTED),
   errorUserCreationDuplicateRequest(
           ResponseMessage.Key.ERROR_USER_CREATION_DUPLICATE_REQUEST, ResponseMessage.Message.ERROR_USER_CREATION_DUPLICATE_REQUEST),
+  roleNotAllowed(
+          ResponseMessage.Key.ROLE_NOT_ALLOWED, ResponseMessage.Message.ROLE_NOT_ALLOWED_VALUE),
+  invalidCreator(
+          ResponseMessage.Key.INVALID_CREATOR, ResponseMessage.Message.INVALID_CREATOR_VALUE),
+  roleAssignDenied(
+          ResponseMessage.Key.ROLE_ASSIGN_DENIED, ResponseMessage.Message.ROLE_ASSIGN_DENIED_VALUE),
   OK(200),
   SUCCESS(200),
   CLIENT_ERROR(400),
