@@ -193,7 +193,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     int userFlagValue = userFlagsToNum(userFlagsMap);
     requestMap.put(JsonKey.FLAGS_VALUE, userFlagValue);
     Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
-    if (userMap.get(JsonKey.CREATED_BY).toString() == null || StringUtils.isBlank(userMap.get(JsonKey.CREATED_BY).toString().toString())) {
+    if (!userMap.get(JsonKey.SOURCE_CREATION_TYPE).equals(JsonKey.SELF_REGISTER_USER) &&  userMap.get(JsonKey.CREATED_BY).toString() == null || StringUtils.isBlank(userMap.get(JsonKey.CREATED_BY).toString().toString())) {
       throw new ProjectCommonException(
               ResponseCode.invalidCreator,
               ResponseCode.invalidCreator.getErrorMessage(),
