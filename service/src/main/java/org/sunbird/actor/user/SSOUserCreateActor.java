@@ -2,9 +2,11 @@ package org.sunbird.actor.user;
 
 import akka.actor.ActorRef;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
@@ -15,6 +17,7 @@ import org.sunbird.dto.SearchDTO;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
+import org.sunbird.model.systemsettings.SystemSetting;
 import org.sunbird.model.user.User;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
@@ -22,6 +25,7 @@ import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.service.organisation.OrgService;
 import org.sunbird.service.organisation.impl.OrgServiceImpl;
+import org.sunbird.service.systemsettings.SystemSettingsService;
 import org.sunbird.service.user.AssociationMechanism;
 import org.sunbird.service.user.SSOUserService;
 import org.sunbird.service.user.UserRoleService;
@@ -96,7 +100,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     createSSOUser(actorMessage);
   }
 
-  private void createSSOUser(Request actorMessage) {
+  private void createSSOUser(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createSSOUser: starts : ");
     actorMessage.toLower();
     Map<String, Object> userMap = actorMessage.getRequest();
@@ -163,7 +167,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
 
-  private void processSSOUser(Map<String, Object> userMap, String callerId, Request request) {
+  private void processSSOUser(Map<String, Object> userMap, String callerId, Request request) throws JsonProcessingException {
     Map<String, Object> requestMap;
     UserUtil.setUserDefaultValue(userMap, request.getRequestContext());
     // Update external ids provider with OrgId
@@ -187,9 +191,33 @@ public class SSOUserCreateActor extends UserBaseActor {
     setStateValidation(requestMap, userFlagsMap);
     int userFlagValue = userFlagsToNum(userFlagsMap);
     requestMap.put(JsonKey.FLAGS_VALUE, userFlagValue);
+    Object createdBy = userMap.get(JsonKey.CREATED_BY);
+    if (!JsonKey.SELF_REGISTER_USER.equals(userMap.get(JsonKey.SOURCE_CREATION_TYPE)) &&
+            (createdBy == null || StringUtils.isBlank(createdBy.toString()))) {
+      throw new ProjectCommonException(
+              ResponseCode.invalidCreator,
+              ResponseCode.invalidCreator.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
+    List<String> allowedRoles = validateCreatorRole(userMap.get(JsonKey.CREATED_BY).toString(), request.getRequestContext());
+    if (CollectionUtils.isEmpty(allowedRoles)) {
+      throw new ProjectCommonException(
+              ResponseCode.roleAssignDenied,
+              ResponseCode.roleAssignDenied.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
     Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     // update roles to user_roles
     if (CollectionUtils.isNotEmpty(roles)) {
+      for (String role : roles) {
+        if (!allowedRoles.contains(role)) {
+          throw new ProjectCommonException(
+                  ResponseCode.roleNotAllowed,
+                  ProjectUtil.formatMessage(
+                          ResponseCode.roleNotAllowed.getErrorMessage(),
+                          role),
+                  ResponseCode.CLIENT_ERROR.getResponseCode());
+        }}
       requestMap.put(JsonKey.ROLES, roles);
       requestMap.put(JsonKey.ROLE_OPERATION, JsonKey.CREATE);
       List<Map<String, Object>> formattedRoles =
@@ -513,5 +541,23 @@ public class SSOUserCreateActor extends UserBaseActor {
       profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
     }
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
+  }
+
+  private List<String> validateCreatorRole(String userid, RequestContext context) throws JsonProcessingException {
+    List<Map<String, Object>> userRoles = userRoleService.getUserRoles(userid, context);
+    List<Map<String, List<String>>> allowedRoles = mapper.readValue(
+            DataCacheHandler.getConfigSettings().get("roleHierarchyMap"), new TypeReference<List<Map<String, List<String>>>>() {}
+    );
+    List<String> userRoleList = userRoles.stream()
+            .map(roleMap -> (String) roleMap.get("role"))
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+    Set<String> combinedAllowedRoles = userRoleList.stream()
+            .flatMap(role -> allowedRoles.stream()
+                    .filter(roleMap -> roleMap.containsKey(role))
+                    .flatMap(roleMap -> Optional.ofNullable(roleMap.get(role)).stream().flatMap(Collection::stream))
+            )
+            .collect(Collectors.toSet());
+    return new ArrayList<>(combinedAllowedRoles);
   }
 }
