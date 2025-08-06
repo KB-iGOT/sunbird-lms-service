@@ -6,7 +6,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
@@ -24,7 +23,6 @@ import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.service.organisation.OrgService;
 import org.sunbird.service.organisation.impl.OrgServiceImpl;
-import org.sunbird.service.systemsettings.SystemSettingsService;
 import org.sunbird.service.user.AssociationMechanism;
 import org.sunbird.service.user.SSOUserService;
 import org.sunbird.service.user.UserRoleService;
@@ -190,9 +188,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     setStateValidation(requestMap, userFlagsMap);
     int userFlagValue = userFlagsToNum(userFlagsMap);
     requestMap.put(JsonKey.FLAGS_VALUE, userFlagValue);
-    Object createdBy = userMap.get(JsonKey.CREATED_BY);
     if (!JsonKey.SELF_REGISTER_USER.equals(userMap.get(JsonKey.SOURCE_CREATION_TYPE)) &&
-            (createdBy == null || StringUtils.isBlank(createdBy.toString()))) {
+            (userMap.get(JsonKey.CREATED_BY) == null || StringUtils.isBlank((String)userMap.get(JsonKey.CREATED_BY)))) {
       throw new ProjectCommonException(
               ResponseCode.invalidCreator,
               ResponseCode.invalidCreator.getErrorMessage(),
@@ -205,7 +202,6 @@ public class SSOUserCreateActor extends UserBaseActor {
               ResponseCode.roleAssignDenied.getErrorMessage(),
               ResponseCode.CLIENT_ERROR.getResponseCode());
     }
-    Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     // update roles to user_roles
     if (CollectionUtils.isNotEmpty(roles)) {
       for (String role : roles) {
@@ -223,6 +219,7 @@ public class SSOUserCreateActor extends UserBaseActor {
           userRoleService.updateUserRole(requestMap, request.getRequestContext());
       requestMap.put(JsonKey.ROLES, formattedRoles);
     }
+    Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     Response resp = null;
     if (((String) response.get(JsonKey.RESPONSE)).equalsIgnoreCase(JsonKey.SUCCESS)) {
       Map<String, Object> userRequest = new HashMap<>();
@@ -544,19 +541,24 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private List<String> validateCreatorRole(String userid, RequestContext context) throws JsonProcessingException {
     List<Map<String, Object>> userRoles = userRoleService.getUserRoles(userid, context);
-    List<Map<String, List<String>>> allowedRoles = mapper.readValue(
-            DataCacheHandler.getConfigSettings().get("roleHierarchyMap"), new TypeReference<List<Map<String, List<String>>>>() {}
+    Map<String, List<String>> roleHierarchyMap = mapper.readValue(
+            DataCacheHandler.getConfigSettings().get("roleHierarchyMap"),
+            new TypeReference<Map<String, List<String>>>() {}
     );
-    List<String> userRoleList = userRoles.stream()
-            .map(roleMap -> (String) roleMap.get("role"))
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
-    Set<String> combinedAllowedRoles = userRoleList.stream()
-            .flatMap(role -> allowedRoles.stream()
-                    .filter(roleMap -> roleMap.containsKey(role))
-                    .flatMap(roleMap -> Optional.ofNullable(roleMap.get(role)).stream().flatMap(Collection::stream))
-            )
-            .collect(Collectors.toSet());
+    List<String> userRoleList = new ArrayList<>(userRoles.size());
+    for (Map<String, Object> roleMap : userRoles) {
+      Object role = roleMap.get("role");
+      if (role instanceof String) {
+        userRoleList.add((String) role);
+      }
+    }
+    Set<String> combinedAllowedRoles = new HashSet<>();
+    for (String role : userRoleList) {
+      List<String> allowed = roleHierarchyMap.get(role);
+      if (allowed != null) {
+        combinedAllowedRoles.addAll(allowed);
+      }
+    }
     return new ArrayList<>(combinedAllowedRoles);
   }
 }
