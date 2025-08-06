@@ -49,7 +49,6 @@ public class SSOUserCreateActor extends UserBaseActor {
   private final OrgService orgService = OrgServiceImpl.getInstance();
   private static final String EMAIL_KEY_PREFIX = "sso:email:";
   private static final String PHONE_KEY_PREFIX = "sso:phone:";
-  private final SystemSettingsService systemSettingsService = new SystemSettingsService();
 
   @Inject
   @Named("user_profile_update_actor")
