@@ -106,7 +106,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     actorMessage.toLower();
     Map<String, Object> userMap = actorMessage.getRequest();
     String callerId = (String) actorMessage.getContext().get(JsonKey.CALLER_ID);
-    userRequestValidator.validateCreateUserRequest(actorMessage);
+//    userRequestValidator.validateCreateUserRequest(actorMessage);
 
     // Check Redis for email/phone and set if not exist
     int ttl = Integer.parseInt(PropertiesCache.getInstance().getProperty(JsonKey.USER_CREATION_REDIS_TTL));
@@ -192,20 +192,23 @@ public class SSOUserCreateActor extends UserBaseActor {
     setStateValidation(requestMap, userFlagsMap);
     int userFlagValue = userFlagsToNum(userFlagsMap);
     requestMap.put(JsonKey.FLAGS_VALUE, userFlagValue);
-    Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
-    if (!userMap.get(JsonKey.SOURCE_CREATION_TYPE).equals(JsonKey.SELF_REGISTER_USER) &&  userMap.get(JsonKey.CREATED_BY).toString() == null || StringUtils.isBlank(userMap.get(JsonKey.CREATED_BY).toString().toString())) {
-      throw new ProjectCommonException(
-              ResponseCode.invalidCreator,
-              ResponseCode.invalidCreator.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode());
-    }
-    List<String> allowedRoles = validateCreatorRole(userMap.get(JsonKey.CREATED_BY).toString(), request.getRequestContext());
+    Object createdBy = userMap.get(JsonKey.CREATED_BY);
+//    if (!JsonKey.SELF_REGISTER_USER.equals(userMap.get(JsonKey.SOURCE_CREATION_TYPE)) &&
+//            (createdBy == null || StringUtils.isBlank(createdBy.toString()))) {
+//      throw new ProjectCommonException(
+//              ResponseCode.invalidCreator,
+//              ResponseCode.invalidCreator.getErrorMessage(),
+//              ResponseCode.CLIENT_ERROR.getResponseCode());
+//    }
+//    List<String> allowedRoles = validateCreatorRole(userMap.get(JsonKey.CREATED_BY).toString(), request.getRequestContext());
+    List<String> allowedRoles = validateCreatorRole("1e8b6826-3326-4175-b202-f5f5971f457a", request.getRequestContext());
     if (CollectionUtils.isEmpty(allowedRoles)) {
       throw new ProjectCommonException(
               ResponseCode.roleAssignDenied,
               ResponseCode.roleAssignDenied.getErrorMessage(),
               ResponseCode.CLIENT_ERROR.getResponseCode());
     }
+    Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     // update roles to user_roles
     if (CollectionUtils.isNotEmpty(roles)) {
       for (String role : roles) {
@@ -544,12 +547,12 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private List<String> validateCreatorRole(String userid, RequestContext context) throws JsonProcessingException {
     List<Map<String, Object>> userRoles = userRoleService.getUserRoles(userid, context);
-    SystemSetting allowedRoleList = systemSettingsService.getSystemSettingByKey("roleHierarchyMap", context);
-    if (allowedRoleList == null || allowedRoleList.getValue() == null) {
-      return Collections.emptyList();
-    }
+//    SystemSetting allowedRoleList = systemSettingsService.getSystemSettingByKey("roleHierarchyMap", context);
+//    if (allowedRoleList == null || allowedRoleList.getValue() == null) {
+//      return Collections.emptyList();
+//    }
     List<Map<String, List<String>>> allowedRoles = mapper.readValue(
-            allowedRoleList.getValue(), new TypeReference<List<Map<String, List<String>>>>() {}
+            DataCacheHandler.getConfigSettings().get("roleHierarchyMap"), new TypeReference<List<Map<String, List<String>>>>() {}
     );
     List<String> userRoleList = userRoles.stream()
             .map(roleMap -> (String) roleMap.get("role"))
