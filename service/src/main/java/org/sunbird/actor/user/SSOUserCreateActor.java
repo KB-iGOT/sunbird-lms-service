@@ -180,7 +180,6 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.USER_ID, userId);
     requestMap = UserUtil.encryptUserData(userMap);
     // removing roles from requestMap, so it won't get save in user table
-    List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
     removeUnwanted(requestMap);
     requestMap.put(JsonKey.IS_DELETED, false);
     Map<String, Boolean> userFlagsMap = new HashMap<>();
@@ -195,31 +194,16 @@ public class SSOUserCreateActor extends UserBaseActor {
               ResponseCode.invalidCreator.getErrorMessage(),
               ResponseCode.CLIENT_ERROR.getResponseCode());
     }
-    List<String> allowedRoles = validateCreatorRole(userMap.get(JsonKey.CREATED_BY).toString(), request.getRequestContext());
-    if (CollectionUtils.isEmpty(allowedRoles)) {
-      throw new ProjectCommonException(
-              ResponseCode.roleAssignDenied,
-              ResponseCode.roleAssignDenied.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode());
-    }
+    List<String> roles = validateCreatorRole(userMap.get(JsonKey.CREATED_BY).toString(), request);
+    Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     // update roles to user_roles
     if (CollectionUtils.isNotEmpty(roles)) {
-      for (String role : roles) {
-        if (!allowedRoles.contains(role)) {
-          throw new ProjectCommonException(
-                  ResponseCode.roleNotAllowed,
-                  ProjectUtil.formatMessage(
-                          ResponseCode.roleNotAllowed.getErrorMessage(),
-                          role),
-                  ResponseCode.CLIENT_ERROR.getResponseCode());
-        }}
       requestMap.put(JsonKey.ROLES, roles);
       requestMap.put(JsonKey.ROLE_OPERATION, JsonKey.CREATE);
       List<Map<String, Object>> formattedRoles =
-          userRoleService.updateUserRole(requestMap, request.getRequestContext());
+              userRoleService.updateUserRole(requestMap, request.getRequestContext());
       requestMap.put(JsonKey.ROLES, formattedRoles);
     }
-    Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     Response resp = null;
     if (((String) response.get(JsonKey.RESPONSE)).equalsIgnoreCase(JsonKey.SUCCESS)) {
       Map<String, Object> userRequest = new HashMap<>();
@@ -539,8 +523,9 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
-  private List<String> validateCreatorRole(String userid, RequestContext context) throws JsonProcessingException {
-    List<Map<String, Object>> userRoles = userRoleService.getUserRoles(userid, context);
+  private List<String> validateCreatorRole(String userid, Request request) throws JsonProcessingException {
+    List<Map<String, Object>> userRoles = userRoleService.getUserRoles(userid, request.getRequestContext());
+    List<String> roles = (List<String>) request.getRequest().get(JsonKey.ROLES);
     Map<String, List<String>> roleHierarchyMap = mapper.readValue(
             DataCacheHandler.getConfigSettings().get("roleHierarchyMap"),
             new TypeReference<Map<String, List<String>>>() {}
@@ -559,6 +544,26 @@ public class SSOUserCreateActor extends UserBaseActor {
         combinedAllowedRoles.addAll(allowed);
       }
     }
-    return new ArrayList<>(combinedAllowedRoles);
+    if (CollectionUtils.isEmpty(combinedAllowedRoles)) {
+      throw new ProjectCommonException(
+              ResponseCode.roleAssignDenied,
+              ResponseCode.roleAssignDenied.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
+    // update roles to user_roles
+    if (CollectionUtils.isNotEmpty(roles)) {
+      for (String role : roles) {
+        if (!combinedAllowedRoles.contains(role)) {
+          throw new ProjectCommonException(
+                  ResponseCode.roleNotAllowed,
+                  ProjectUtil.formatMessage(
+                          ResponseCode.roleNotAllowed.getErrorMessage(),
+                          role),
+                  ResponseCode.CLIENT_ERROR.getResponseCode());
+        }}
+    } else {
+      roles.add((JsonKey.PUBLIC).toUpperCase());
+    }
+    return roles;
   }
 }
