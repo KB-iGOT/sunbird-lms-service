@@ -28,19 +28,44 @@ public class KeycloakBruteForceAttackUtil {
       throws Exception {
     String url =
         ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/auth/admin/realms/"
+            + "/admin/realms/"
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
             + "/attack-detection/brute-force/users/"
             + fedUserPrefix
             + userId;
     String response = HttpClientUtil.get(url, getHeaders(context), context);
     logger.info(context, "KeycloakBruteForceAttackUtil:getUserStatus: Response = " + response);
-    Map<String, Object> attackStatus = new ObjectMapper().readValue(response, Map.class);
-    boolean isDisabled = ((boolean) attackStatus.get("disabled"));
-    if (isDisabled) {
-      logger.info(context, "check attack detection for userId : " + userId + ", " + attackStatus);
+
+    // Check if response is empty or null (indicates an error response)
+    if (response == null || response.trim().isEmpty()) {
+      logger.info(
+          context,
+          "KeycloakBruteForceAttackUtil:isUserAccountDisabled: Empty or null response from Keycloak API for userId: "
+              + userId
+              + ". Assuming user is not disabled due to brute force.");
+      return false;
     }
-    return isDisabled;
+
+    try {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> attackStatus = new ObjectMapper().readValue(response, Map.class);
+      boolean isDisabled = ((boolean) attackStatus.get("disabled"));
+      if (isDisabled) {
+        logger.info(context, "check attack detection for userId : " + userId + ", " + attackStatus);
+      }
+      return isDisabled;
+    } catch (Exception ex) {
+      logger.error(
+          context,
+          "KeycloakBruteForceAttackUtil:isUserAccountDisabled: Error parsing JSON response for userId: "
+              + userId
+              + ". Response: "
+              + response,
+          ex);
+      // In case of JSON parsing error, assume user is not disabled to allow the reset password flow
+      // to continue
+      return false;
+    }
   }
 
   /**
@@ -52,14 +77,25 @@ public class KeycloakBruteForceAttackUtil {
       throws Exception {
     String url =
         ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/auth/admin/realms/"
+            + "/admin/realms/"
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
             + "/attack-detection/brute-force/users/"
             + fedUserPrefix
             + userId;
-    HttpClientUtil.delete(url, getHeaders(context), context);
-    logger.info(context, "clear Brute Force For User for userId : " + userId);
-    return true;
+    try {
+      String response = HttpClientUtil.delete(url, getHeaders(context), context);
+      logger.info(
+          context, "clear Brute Force For User for userId : " + userId + ", response: " + response);
+      return true;
+    } catch (Exception ex) {
+      logger.error(
+          context,
+          "KeycloakBruteForceAttackUtil:unlockTempDisabledUser: Error clearing brute force attack for userId: "
+              + userId,
+          ex);
+      // Return false to indicate the operation failed
+      return false;
+    }
   }
 
   private static Map<String, String> getHeaders(RequestContext context) throws Exception {

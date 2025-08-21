@@ -68,7 +68,11 @@ public class UserOnBoardingNotificationActorTest {
     PowerMockito.mockStatic(KeycloakRequiredActionLinkUtil.class);
     PowerMockito.when(
             KeycloakRequiredActionLinkUtil.getLink(
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                "userID",
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.any()))
         .thenReturn("someLink");
 
     Request request = new Request();
@@ -92,7 +96,11 @@ public class UserOnBoardingNotificationActorTest {
     PowerMockito.mockStatic(KeycloakRequiredActionLinkUtil.class);
     PowerMockito.when(
             KeycloakRequiredActionLinkUtil.getLink(
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                "userID",
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.any()))
         .thenReturn("someLink");
 
     Request request = new Request();
@@ -117,7 +125,11 @@ public class UserOnBoardingNotificationActorTest {
     PowerMockito.mockStatic(KeycloakRequiredActionLinkUtil.class);
     PowerMockito.when(
             KeycloakRequiredActionLinkUtil.getLink(
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                "userID",
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.any()))
         .thenReturn("someLink");
 
     Request request = new Request();
@@ -142,7 +154,11 @@ public class UserOnBoardingNotificationActorTest {
     PowerMockito.mockStatic(KeycloakRequiredActionLinkUtil.class);
     PowerMockito.when(
             KeycloakRequiredActionLinkUtil.getLink(
-                Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any()))
+                "userID",
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.any()))
         .thenReturn("someLink");
 
     Request request = new Request();
