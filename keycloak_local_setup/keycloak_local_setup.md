@@ -13,7 +13,7 @@ This readme file provides instructions for setting up keycloak for sunbird in a 
 
 To set up the keyloak for sunbird in local, follow the steps below:
 
-1. Clone the latest branch of the 'sunbird-lms-service' using the following command:
+1. Clone the latest branch of the 'sunbird-lms-service' using the below command and checkout branch '4.8.27_k24':
 ```shell
 git clone https://github.com/Sunbird-Lern/sunbird-lms-service.git
 ```
