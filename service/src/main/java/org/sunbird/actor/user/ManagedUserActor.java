@@ -235,5 +235,4 @@ public class ManagedUserActor extends UserBaseActor {
     response.put(JsonKey.RESPONSE, responseMap);
     sender().tell(response, self());
   }
-
 }
