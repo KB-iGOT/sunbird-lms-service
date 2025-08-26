@@ -1,5 +1,6 @@
 package org.sunbird.actor.user;
 
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.sunbird.actor.user.validator.UserCreateRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.exception.ProjectCommonException;
+import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.model.location.Location;
 import org.sunbird.request.Request;
@@ -63,6 +65,7 @@ public class ManagedUserActor extends UserBaseActor {
   private void createManagedUser(Request actorMessage) {
     actorMessage.toLower();
     Map<String, Object> userMap = actorMessage.getRequest();
+    validateEmailAndPhone(userMap);
     populateLocationCodesFromProfileLocation(userMap);
     if (userMap.containsKey(JsonKey.ORG_EXTERNAL_ID)) {
       userMap.remove(JsonKey.ORG_EXTERNAL_ID);
@@ -235,4 +238,25 @@ public class ManagedUserActor extends UserBaseActor {
     response.put(JsonKey.RESPONSE, responseMap);
     sender().tell(response, self());
   }
+
+  private void validateEmailAndPhone(Map<String,Object> userMap) {
+    if (StringUtils.isBlank((String) userMap.get(JsonKey.PHONE))) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.PHONE)
+      );
+    }
+    if (StringUtils.isBlank((String) userMap.get(JsonKey.EMAIL))) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.EMAIL)
+      );
+    }
+    // check phone and uniqueness using user look table
+    userLookupService.checkPhoneUniqueness(
+            (String) userMap.get(JsonKey.PHONE), null);
+    userLookupService.checkEmailUniqueness(
+            (String) userMap.get(JsonKey.EMAIL), null);
+  }
+
 }
