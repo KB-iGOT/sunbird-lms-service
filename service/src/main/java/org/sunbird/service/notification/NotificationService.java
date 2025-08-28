@@ -228,7 +228,8 @@ public class NotificationService {
   private void validatePhoneOrEmail(List<String> emailOrPhones, String type) {
     if (CollectionUtils.isNotEmpty(emailOrPhones)) {
       for (String emailOrPhone : emailOrPhones) {
-        if (JsonKey.EMAIL.equalsIgnoreCase(type) && !ProjectUtil.isEmailvalid(emailOrPhone)) {
+        if (JsonKey.EMAIL.equalsIgnoreCase(type)
+            && !ProjectUtil.isEmailvalid(emailOrPhone.trim())) {
           ProjectCommonException.throwClientErrorException(
               ResponseCode.invalidParameterValue,
               MessageFormat.format(
