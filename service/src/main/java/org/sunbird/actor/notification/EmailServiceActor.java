@@ -59,7 +59,7 @@ public class EmailServiceActor extends BaseActor {
         (CollectionUtils.isEmpty((List<String>) request.get(JsonKey.RECIPIENT_EMAILS)))
             ? new ArrayList<>()
             : (List<String>) request.get(JsonKey.RECIPIENT_EMAILS);
-    logger.info("Email Service Actor: Sending email to: " + emails.get(0));
+    logger.info("Email Service Actor: Sending email to: " + emails.size());
     String mode;
     if (request.get(JsonKey.MODE) != null
         && JsonKey.SMS.equalsIgnoreCase((String) request.get(JsonKey.MODE))) {
