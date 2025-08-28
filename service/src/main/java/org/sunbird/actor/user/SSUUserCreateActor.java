@@ -3,8 +3,12 @@ package org.sunbird.actor.user;
 import akka.dispatch.Futures;
 import akka.dispatch.Mapper;
 import akka.pattern.Patterns;
+import java.text.MessageFormat;
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.commons.lang.StringUtils;
+import org.sunbird.exception.ProjectCommonException;
+import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.operations.ActorOperations;
@@ -69,6 +73,18 @@ public class SSUUserCreateActor extends UserBaseActor {
     UserUtil.setUserDefaultValue(userMap, actorMessage.getRequestContext());
     removeUnwanted(userMap);
     UserUtil.toLower(userMap);
+    if (StringUtils.isBlank((String) userMap.get(JsonKey.PHONE))) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.PHONE)
+      );
+    }
+    if (StringUtils.isBlank((String) userMap.get(JsonKey.EMAIL))) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.EMAIL)
+      );
+    }
     // check phone and uniqueness using user look table
     userLookupService.checkPhoneUniqueness(
         (String) userMap.get(JsonKey.PHONE), actorMessage.getRequestContext());

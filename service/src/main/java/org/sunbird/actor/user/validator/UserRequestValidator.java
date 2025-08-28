@@ -18,6 +18,8 @@ import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
+import org.sunbird.service.user.UserLookupService;
+import org.sunbird.service.user.impl.UserLookUpServiceImpl;
 import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.FormApiUtil;
 import org.sunbird.util.ProjectUtil;
@@ -28,6 +30,7 @@ public class UserRequestValidator extends BaseRequestValidator {
 
   private final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
   protected static List<String> typeList = new ArrayList<>();
+  private final UserLookupService userLookupService = UserLookUpServiceImpl.getInstance();
   private static final LoggerUtil logger = new LoggerUtil(UserRequestValidator.class);
 
   static {
@@ -217,7 +220,13 @@ public class UserRequestValidator extends BaseRequestValidator {
       validatePhoneNo(
           (String) userRequest.getRequest().get(JsonKey.PHONE),
           (String) userRequest.getRequest().get(JsonKey.COUNTRY_CODE));
+    } else {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.errorMandatoryParamsEmpty,
+              MessageFormat.format(ResponseCode.errorMandatoryParamsEmpty.getErrorMessage(), JsonKey.PHONE));
     }
+    userLookupService.checkPhoneUniqueness(
+            (String) userRequest.getRequest().get(JsonKey.PHONE), userRequest.getRequestContext());
   }
 
   /**
