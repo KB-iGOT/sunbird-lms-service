@@ -4,7 +4,6 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.velocity.VelocityContext;
@@ -12,8 +11,8 @@ import org.apache.velocity.app.Velocity;
 import org.sunbird.actor.core.BaseActor;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
-import org.sunbird.mail.SendEmail;
 import org.sunbird.mail.OTPSendGridConnection;
+import org.sunbird.mail.SendEmail;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
@@ -22,7 +21,7 @@ import org.sunbird.service.notification.NotificationService;
 import org.sunbird.util.ProjectUtil;
 
 public class OTPEmailServiceActor extends BaseActor {
-    public final LoggerUtil logger = new LoggerUtil(EmailServiceActor.class);
+  public final LoggerUtil logger = new LoggerUtil(EmailServiceActor.class);
   private final NotificationService notificationService = new NotificationService();
   private final OTPSendGridConnection connection = new OTPSendGridConnection();
   private final String resetInterval =
@@ -74,6 +73,7 @@ public class OTPEmailServiceActor extends BaseActor {
     if (JsonKey.EMAIL.equalsIgnoreCase(mode)) {
       // Fetch user emails from Elastic Search based on recipient search query given in
       // request.
+      logger.info("OTP Email Service Actor: Sending email to: " + emails.get(0));
       Map<String, Object> recipientSearchQuery =
           (Map<String, Object>) request.get(JsonKey.RECIPIENT_SEARCH_QUERY);
       List<String> emailList =
