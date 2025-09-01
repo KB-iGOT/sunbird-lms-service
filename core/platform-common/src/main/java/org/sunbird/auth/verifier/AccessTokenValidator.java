@@ -26,6 +26,7 @@ public class AccessTokenValidator {
     Map<Object, Object> headerData =
         mapper.readValue(new String(decodeFromBase64(header)), Map.class);
     String keyId = headerData.get("kid").toString();
+    System.out.println("\n\nKey ID: " + keyId + "\n\n");
     boolean isValid =
         CryptoUtil.verifyRSASign(
             payLoad,
@@ -104,8 +105,13 @@ public class AccessTokenValidator {
               + payload.toString()
               + ", request context data : "
               + requestContext);
+
+      System.out.println("\n\nverifyUserToken:: Payload: " + payload + "\n\n");
       if (MapUtils.isNotEmpty(payload) && checkIss((String) payload.get("iss"))) {
         userId = (String) payload.get(JsonKey.SUB);
+
+        System.out.println("\n\nverifyUserToken:: User ID: " + userId + "\n\n");
+
         if (StringUtils.isNotBlank(userId)) {
           int pos = userId.lastIndexOf(":");
           userId = userId.substring(pos + 1);
@@ -166,6 +172,7 @@ public class AccessTokenValidator {
 
   private static boolean checkIss(String iss) {
     String realmUrl = sso_url + "realms/" + realm;
+    System.out.println("\n\ncheckIss:: Realm URL: " + realmUrl + "|| iss: " + iss + "\n\n");
     return (realmUrl.equalsIgnoreCase(iss));
   }
 

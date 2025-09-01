@@ -23,11 +23,43 @@ public class KeycloakUtil {
     fields.put("client_id", ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_ID));
     fields.put("client_secret", ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_SECRET));
     fields.put("grant_type", "client_credentials");
-
+    System.out.println("\nKeycloakUtil:getAdminAccessToken: url = " + url + "\n");
+    System.out.println("\nKeycloakUtil:getAdminAccessToken: fields = " + fields + "\n");
     String response = HttpClientUtil.postFormData(url, fields, headers, context);
-    logger.debug(context, "KeycloakUtil:getAdminAccessToken: Response = " + response);
-    Map<String, Object> responseMap = new ObjectMapper().readValue(response, Map.class);
-    return (String) responseMap.get("access_token");
+    System.out.println("\nKeycloakUtil:getAdminAccessToken: Response = " + response + "\n");
+
+    // Check if response is empty or null (indicates an error response)
+    if (response == null || response.trim().isEmpty()) {
+      Exception ex = new Exception("Empty response from Keycloak token endpoint");
+      logger.error(
+          context,
+          "KeycloakUtil:getAdminAccessToken: Empty or null response from Keycloak token endpoint. URL: "
+              + url,
+          ex);
+      throw new Exception("Failed to get admin access token: Empty response from Keycloak");
+    }
+
+    try {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> responseMap = new ObjectMapper().readValue(response, Map.class);
+      String accessToken = (String) responseMap.get("access_token");
+      if (accessToken == null || accessToken.trim().isEmpty()) {
+        Exception ex = new Exception("No access_token found in response");
+        logger.error(
+            context,
+            "KeycloakUtil:getAdminAccessToken: No access_token found in response. Response: "
+                + response,
+            ex);
+        throw new Exception("Failed to get admin access token: No access_token in response");
+      }
+      return accessToken;
+    } catch (Exception ex) {
+      logger.error(
+          context,
+          "KeycloakUtil:getAdminAccessToken: Error parsing JSON response. Response: " + response,
+          ex);
+      throw new Exception("Failed to get admin access token: Error parsing response", ex);
+    }
   }
 
   public static String getAdminAccessTokenWithDomain(RequestContext context) throws Exception {
@@ -43,7 +75,7 @@ public class KeycloakUtil {
   public static String getAdminAccessTokenWithoutDomain(RequestContext context) throws Exception {
     String url =
         ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/auth/realms/"
+            + "/realms/"
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
             + "/protocol/openid-connect/token";
     return getAdminAccessToken(context, url);

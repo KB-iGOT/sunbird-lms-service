@@ -14,7 +14,6 @@ import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
-import org.sunbird.model.organisation.Organisation;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
@@ -26,7 +25,6 @@ import org.sunbird.service.user.SSOUserService;
 import org.sunbird.service.user.UserLookupService;
 import org.sunbird.service.user.UserService;
 import org.sunbird.util.DataCacheHandler;
-import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.StringFormatter;
 import org.sunbird.util.user.UserUtil;
 
@@ -111,55 +109,56 @@ public class SSOUserServiceImpl implements SSOUserService {
 
   private void validateChannelAndOrganisationId(
       Map<String, Object> userMap, RequestContext context) {
-    String requestedOrgId = (String) userMap.get(JsonKey.ORGANISATION_ID);
-    String requestedChannel = (String) userMap.get(JsonKey.CHANNEL);
-    String fetchedRootOrgIdByChannel = "";
-    if (StringUtils.isNotBlank(requestedChannel)) {
-      fetchedRootOrgIdByChannel = orgService.getRootOrgIdFromChannelV2(requestedChannel, context);
-      if (StringUtils.isBlank(fetchedRootOrgIdByChannel)) {
-        throw new ProjectCommonException(
-            ResponseCode.invalidParameterValue,
-            ProjectUtil.formatMessage(
-                ResponseCode.invalidParameterValue.getErrorMessage(),
-                requestedChannel,
-                JsonKey.CHANNEL),
-            ResponseCode.CLIENT_ERROR.getResponseCode());
-      }
-      userMap.put(JsonKey.ROOT_ORG_ID, fetchedRootOrgIdByChannel);
-    }
-    Organisation fetchedOrgById;
-    if (StringUtils.isNotBlank(requestedOrgId)) {
-      fetchedOrgById = orgService.getOrgObjById(requestedOrgId, context);
-      if (null == fetchedOrgById) {
-        ProjectCommonException.throwClientErrorException(
-            ResponseCode.invalidParameter,
-            MessageFormat.format(
-                ResponseCode.invalidParameter.getErrorMessage(), JsonKey.ORGANISATION));
-      }
-      // if requested orgId is not blank then its channel should match with requested channel
-      if (StringUtils.isNotBlank(requestedChannel)
-          && !requestedChannel.equalsIgnoreCase(fetchedOrgById.getChannel())) {
-        throwParameterMismatchException(JsonKey.CHANNEL, JsonKey.ORGANISATION_ID);
-      }
-      if (fetchedOrgById.isTenant()) {
-        if (StringUtils.isNotBlank(requestedChannel)
-            && !fetchedRootOrgIdByChannel.equalsIgnoreCase(fetchedOrgById.getId())) {
-          throwParameterMismatchException(JsonKey.CHANNEL, JsonKey.ORGANISATION_ID);
-        }
-        userMap.put(JsonKey.ROOT_ORG_ID, fetchedOrgById.getId());
-        userMap.put(JsonKey.CHANNEL, fetchedOrgById.getChannel());
-      } else {
-        if (StringUtils.isNotBlank(requestedChannel)) {
-          userMap.put(JsonKey.ROOT_ORG_ID, fetchedRootOrgIdByChannel);
-        } else {
-          // fetch rootorgid by requested orgid channel
-          String rootOrgId =
-              orgService.getRootOrgIdFromChannel(fetchedOrgById.getChannel(), context);
-          userMap.put(JsonKey.ROOT_ORG_ID, rootOrgId);
-          userMap.put(JsonKey.CHANNEL, fetchedOrgById.getChannel());
-        }
-      }
-    }
+    // String requestedOrgId = (String) userMap.get(JsonKey.ORGANISATION_ID);
+    // String requestedChannel = (String) userMap.get(JsonKey.CHANNEL);
+    // String fetchedRootOrgIdByChannel = "";
+    // if (StringUtils.isNotBlank(requestedChannel)) {
+    //   fetchedRootOrgIdByChannel = orgService.getRootOrgIdFromChannelV2(requestedChannel,
+    // context);
+    //   if (StringUtils.isBlank(fetchedRootOrgIdByChannel)) {
+    //     throw new ProjectCommonException(
+    //         ResponseCode.invalidParameterValue,
+    //         ProjectUtil.formatMessage(
+    //             ResponseCode.invalidParameterValue.getErrorMessage(),
+    //             requestedChannel,
+    //             JsonKey.CHANNEL),
+    //         ResponseCode.CLIENT_ERROR.getResponseCode());
+    //   }
+    //   userMap.put(JsonKey.ROOT_ORG_ID, fetchedRootOrgIdByChannel);
+    // }
+    // Organisation fetchedOrgById;
+    // if (StringUtils.isNotBlank(requestedOrgId)) {
+    //   fetchedOrgById = orgService.getOrgObjById(requestedOrgId, context);
+    //   if (null == fetchedOrgById) {
+    //     ProjectCommonException.throwClientErrorException(
+    //         ResponseCode.invalidParameter,
+    //         MessageFormat.format(
+    //             ResponseCode.invalidParameter.getErrorMessage(), JsonKey.ORGANISATION));
+    //   }
+    //   // if requested orgId is not blank then its channel should match with requested channel
+    //   if (StringUtils.isNotBlank(requestedChannel)
+    //       && !requestedChannel.equalsIgnoreCase(fetchedOrgById.getChannel())) {
+    //     throwParameterMismatchException(JsonKey.CHANNEL, JsonKey.ORGANISATION_ID);
+    //   }
+    //   if (fetchedOrgById.isTenant()) {
+    //     if (StringUtils.isNotBlank(requestedChannel)
+    //         && !fetchedRootOrgIdByChannel.equalsIgnoreCase(fetchedOrgById.getId())) {
+    //       throwParameterMismatchException(JsonKey.CHANNEL, JsonKey.ORGANISATION_ID);
+    //     }
+    //     userMap.put(JsonKey.ROOT_ORG_ID, fetchedOrgById.getId());
+    //     userMap.put(JsonKey.CHANNEL, fetchedOrgById.getChannel());
+    //   } else {
+    //     if (StringUtils.isNotBlank(requestedChannel)) {
+    //       userMap.put(JsonKey.ROOT_ORG_ID, fetchedRootOrgIdByChannel);
+    //     } else {
+    //       // fetch rootorgid by requested orgid channel
+    //       String rootOrgId =
+    //           orgService.getRootOrgIdFromChannel(fetchedOrgById.getChannel(), context);
+    //       userMap.put(JsonKey.ROOT_ORG_ID, rootOrgId);
+    //       userMap.put(JsonKey.CHANNEL, fetchedOrgById.getChannel());
+    //     }
+    //   }
+    // }
   }
 
   private String validateExternalIdAndGetOrgId(

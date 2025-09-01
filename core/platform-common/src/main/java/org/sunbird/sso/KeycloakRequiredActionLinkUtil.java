@@ -28,8 +28,6 @@ public class KeycloakRequiredActionLinkUtil {
   private static final String REDIRECT_URI = "redirectUri";
   private static final String SUNBIRD_KEYCLOAK_LINK_EXPIRATION_TIME =
       "sunbird_keycloak_required_action_link_expiration_seconds";
-  private static final String SUNBIRD_KEYCLOAK_REQD_ACTION_LINK = "/get-required-action-link";
-  private static final String LINK = "link";
 
   private static ObjectMapper mapper = new ObjectMapper();
 
@@ -42,7 +40,11 @@ public class KeycloakRequiredActionLinkUtil {
    * @return Generated link from Keycloak service
    */
   public static String getLink(
-      String userName, String redirectUri, String requiredAction, RequestContext context) {
+      String userId,
+      String userName,
+      String redirectUri,
+      String requiredAction,
+      RequestContext context) {
     Map<String, String> request = new HashMap<>();
 
     request.put(CLIENT_ID, ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_ID));
@@ -58,7 +60,7 @@ public class KeycloakRequiredActionLinkUtil {
     try {
       Thread.sleep(
           Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SYNC_READ_WAIT_TIME)));
-      return generateLink(request, context);
+      return generateLink(userId, request, context);
     } catch (Exception ex) {
       logger.error(
           context,
@@ -69,8 +71,8 @@ public class KeycloakRequiredActionLinkUtil {
     return null;
   }
 
-  private static String generateLink(Map<String, String> request, RequestContext context)
-      throws Exception {
+  private static String generateLink(
+      String userId, Map<String, String> request, RequestContext context) throws Exception {
     Map<String, String> headers = new HashMap<>();
 
     headers.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
@@ -78,28 +80,64 @@ public class KeycloakRequiredActionLinkUtil {
         JsonKey.AUTHORIZATION,
         JsonKey.BEARER + KeycloakUtil.getAdminAccessTokenWithDomain(context));
 
-    logger.info(
-        context,
-        "KeycloakRequiredActionLinkUtil:generateLink: complete URL "
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_URL)
-            + "realms/"
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + SUNBIRD_KEYCLOAK_REQD_ACTION_LINK);
-    logger.info(
-        context,
-        "KeycloakRequiredActionLinkUtil:generateLink: request body "
-            + mapper.writeValueAsString(request));
+    // Get federated user ID from username
+    String fedUserId = getFederatedUserId(userId);
+
+    System.out.println(
+        "KeycloakRequiredActionLinkUtil:generateLink:: User Id: "
+            + userId
+            + ", Federated User ID: "
+            + fedUserId);
+
+    // Build URL for Keycloak 24.0.4 execute-actions-email endpoint
     String url =
         ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_URL)
-            + "realms/"
+            + "admin/realms/"
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + SUNBIRD_KEYCLOAK_REQD_ACTION_LINK;
-    String response =
-        HttpClientUtil.post(url, mapper.writeValueAsString(request), headers, context);
+            + "/users/"
+            + fedUserId
+            + "/execute-actions-email";
+
+    // Prepare query parameters
+    StringBuilder queryParams = new StringBuilder();
+    queryParams.append("?client_id=").append(request.get(CLIENT_ID));
+    queryParams.append("&redirect_uri=").append(request.get(REDIRECT_URI));
+    if (request.containsKey(EXPIRATION_IN_SEC)) {
+      queryParams.append("&lifespan=").append(request.get(EXPIRATION_IN_SEC));
+    }
+
+    String completeUrl = url + queryParams.toString();
+
+    logger.info(
+        context, "KeycloakRequiredActionLinkUtil:generateLink: complete URL " + completeUrl);
+
+    // Prepare request body with required action as array
+    String[] requiredActions = {request.get(REQUIRED_ACTION)};
+    String requestBody = mapper.writeValueAsString(requiredActions);
+
+    logger.info(
+        context, "KeycloakRequiredActionLinkUtil:generateLink: request body " + requestBody);
+
+    String response = HttpClientUtil.post(completeUrl, requestBody, headers, context);
 
     logger.info(context, "KeycloakRequiredActionLinkUtil:generateLink: Response = " + response);
 
-    Map<String, Object> responseMap = new ObjectMapper().readValue(response, Map.class);
-    return (String) responseMap.get(LINK);
+    // The new API doesn't return a link, it sends the email directly
+    // Return success message or empty string as the method signature expects a String
+    return "Email sent successfully";
+  }
+
+  /**
+   * Helper method to get federated user ID from username
+   *
+   * @param userId String
+   * @return String federated user ID
+   */
+  private static String getFederatedUserId(String userId) {
+    return String.join(
+        ":",
+        "f",
+        ProjectUtil.getConfigValue(JsonKey.SUNBIRD_KEYCLOAK_USER_FEDERATION_PROVIDER_ID),
+        userId);
   }
 }
