@@ -61,6 +61,7 @@ public class Organisation implements Serializable {
   private String orgHierarchyFrameworkId;
   private String orgHierarchyFrameworkStatus;
   private String customFieldsData;
+    private Boolean isCca;
 
   public String getId() {
     return id;
@@ -399,4 +400,12 @@ public class Organisation implements Serializable {
   public void setCustomFieldsData(String customFieldsData) {
     this.customFieldsData = customFieldsData;
   }
+
+    public Boolean getCcaEnabled() {
+        return isCca;
+    }
+
+    public void setCcaEnabled(Boolean sakshamAIenabled) {
+        this.isCca = sakshamAIenabled;
+    }
 }
