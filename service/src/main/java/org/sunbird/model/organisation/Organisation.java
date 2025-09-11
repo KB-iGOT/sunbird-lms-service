@@ -401,7 +401,11 @@ public class Organisation implements Serializable {
     this.customFieldsData = customFieldsData;
   }
 
-  public Boolean getCcaEnabled() {return isCca;}
+  public Boolean getCca() {
+    return isCca;
+  }
 
-  public void setCcaEnabled(Boolean ccaEnabled) {this.isCca = ccaEnabled;}
+  public void setCca(Boolean cca) {
+    isCca = cca;
+  }
 }
