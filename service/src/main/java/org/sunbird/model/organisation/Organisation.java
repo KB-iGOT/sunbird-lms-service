@@ -403,5 +403,5 @@ public class Organisation implements Serializable {
 
   public Boolean getCcaEnabled() {return isCca;}
 
-  public void setCcaEnabled(Boolean sakshamAIenabled) {this.isCca = sakshamAIenabled;}
+  public void setCcaEnabled(Boolean ccaEnabled) {this.isCca = ccaEnabled;}
 }
