@@ -61,7 +61,7 @@ public class Organisation implements Serializable {
   private String orgHierarchyFrameworkId;
   private String orgHierarchyFrameworkStatus;
   private String customFieldsData;
-    private Boolean isCca;
+  private Boolean isCca;
 
   public String getId() {
     return id;
