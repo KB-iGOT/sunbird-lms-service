@@ -401,11 +401,12 @@ public class Organisation implements Serializable {
     this.customFieldsData = customFieldsData;
   }
 
+  @JsonProperty(value = "iscca")
   public Boolean getCca() {
     return isCca;
   }
 
   public void setCca(Boolean cca) {
-    isCca = cca;
+    this.isCca = cca;
   }
 }

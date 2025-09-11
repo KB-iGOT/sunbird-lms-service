@@ -411,9 +411,9 @@ public class OrganisationManagementActor extends BaseActor {
       if (sakshamAIenabled != null) {
         updateOrgDao.put(JsonKey.SAKSHAM_AI_ENABLED, sakshamAIenabled);
       }
-        if (isCca != null) {
-            updateOrgDao.put(JsonKey.CCA_ENABLED_RQST, isCca);
-        }
+      if (isCca != null) {
+        updateOrgDao.put(JsonKey.CCA_ENABLED, isCca);
+      }
       Organisation org = mapper.convertValue(updateOrgDao, Organisation.class);
       updateOrgDao = mapper.convertValue(org, Map.class);
       Response response =
