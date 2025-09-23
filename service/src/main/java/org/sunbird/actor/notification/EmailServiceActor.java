@@ -82,9 +82,9 @@ public class EmailServiceActor extends BaseActor {
               userIds, emails, recipientSearchQuery, requestContext);
       notificationService.updateFirstNameAndOrgNameInEmailContext(
           userIds, emailList, request, requestContext);
-      logger.info("Email Service Actor: Post validation - Sending email to: " + emails.get(0));
       if (CollectionUtils.isNotEmpty(emailList)) {
-        String template =
+          logger.info("Email Service Actor: Post validation - Sending email to: " + emails.get(0));
+          String template =
             notificationService.getEmailTemplateFile(
                 (String) request.get(JsonKey.EMAIL_TEMPLATE_TYPE), requestContext);
         sendMail(request, emailList, template, requestContext);
