@@ -32,6 +32,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
+import org.sunbird.util.ProjectUtil;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 
@@ -665,40 +666,54 @@ public class ElasticSearchHelper {
    * @return SearchDTO
    */
   private static SearchDTO getBasicBuiders(SearchDTO search, Map<String, Object> searchQueryMap) {
-    if (searchQueryMap.containsKey(JsonKey.QUERY)) {
-      search.setQuery((String) searchQueryMap.get(JsonKey.QUERY));
-    }
-    if (searchQueryMap.containsKey(JsonKey.QUERY_FIELDS)) {
-      search.setQueryFields((List<String>) searchQueryMap.get(JsonKey.QUERY_FIELDS));
-    }
-    if (searchQueryMap.containsKey(JsonKey.FACETS)) {
-      List<String> facetsList= (List<String>) searchQueryMap.get(JsonKey.FACETS);
-      search.setFacets(facetsList);
-    //  search.setFacets((List<Map<String, String>>) searchQueryMap.get(JsonKey.FACETS));
-    }
-    if (searchQueryMap.containsKey(JsonKey.FIELDS)) {
-      search.setFields((List<String>) searchQueryMap.get(JsonKey.FIELDS));
-    }
-    if(searchQueryMap.containsKey(JsonKey.MULTI_QUERY_SEARCH_FIELDS)) {
-      search.setMultiSearchFields((Map<String, List<String>>) searchQueryMap.get(JsonKey.MULTI_QUERY_SEARCH_FIELDS));
-    }
-    if (searchQueryMap.containsKey(JsonKey.FILTERS)) {
-      search.getAdditionalProperties().put(JsonKey.FILTERS, searchQueryMap.get(JsonKey.FILTERS));
-    }
-    if (searchQueryMap.containsKey(JsonKey.EXISTS)) {
-      search.getAdditionalProperties().put(JsonKey.EXISTS, searchQueryMap.get(JsonKey.EXISTS));
-    }
-    if (searchQueryMap.containsKey(JsonKey.NOT_EXISTS)) {
-      search
-          .getAdditionalProperties()
-          .put(JsonKey.NOT_EXISTS, searchQueryMap.get(JsonKey.NOT_EXISTS));
-    }
-    if (searchQueryMap.containsKey(JsonKey.SORT_BY)) {
-      search
-          .getSortBy()
-          .putAll((Map<? extends String, ? extends String>) searchQueryMap.get(JsonKey.SORT_BY));
-    }
-    return search;
+      int allowedQueryStringLength = JsonKey.ALLOWED_SEARCH_QUERY_STRING_DEFAULT;
+      String allowedLengthConfig = ProjectUtil.getConfigValue(JsonKey.ALLOWED_SEARCH_QUERY_STRING);
+      if (StringUtils.isNotBlank(allowedLengthConfig)) {
+          try {
+              allowedQueryStringLength = Integer.parseInt(allowedLengthConfig);
+          } catch (NumberFormatException e) {
+              logger.error("Error parsing allowedQueryStringLength from config", e);
+          }
+      }
+      if (searchQueryMap.containsKey(JsonKey.QUERY)) {
+          String queryString = (String) searchQueryMap.get(JsonKey.QUERY);
+          if (StringUtils.isNotBlank(queryString) && queryString.length() > allowedQueryStringLength) {
+              queryString = queryString.substring(0, allowedQueryStringLength);
+              logger.info("trimmed user search query string:" + queryString);
+          }
+          search.setQuery(queryString);
+      }
+      if (searchQueryMap.containsKey(JsonKey.QUERY_FIELDS)) {
+          search.setQueryFields((List<String>) searchQueryMap.get(JsonKey.QUERY_FIELDS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.FACETS)) {
+          List<String> facetsList = (List<String>) searchQueryMap.get(JsonKey.FACETS);
+          search.setFacets(facetsList);
+          //  search.setFacets((List<Map<String, String>>) searchQueryMap.get(JsonKey.FACETS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.FIELDS)) {
+          search.setFields((List<String>) searchQueryMap.get(JsonKey.FIELDS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.MULTI_QUERY_SEARCH_FIELDS)) {
+          search.setMultiSearchFields((Map<String, List<String>>) searchQueryMap.get(JsonKey.MULTI_QUERY_SEARCH_FIELDS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.FILTERS)) {
+          search.getAdditionalProperties().put(JsonKey.FILTERS, searchQueryMap.get(JsonKey.FILTERS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.EXISTS)) {
+          search.getAdditionalProperties().put(JsonKey.EXISTS, searchQueryMap.get(JsonKey.EXISTS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.NOT_EXISTS)) {
+          search
+                  .getAdditionalProperties()
+                  .put(JsonKey.NOT_EXISTS, searchQueryMap.get(JsonKey.NOT_EXISTS));
+      }
+      if (searchQueryMap.containsKey(JsonKey.SORT_BY)) {
+          search
+                  .getSortBy()
+                  .putAll((Map<? extends String, ? extends String>) searchQueryMap.get(JsonKey.SORT_BY));
+      }
+      return search;
   }
 
   /**
