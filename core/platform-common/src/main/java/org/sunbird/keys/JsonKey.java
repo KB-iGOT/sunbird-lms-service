@@ -707,6 +707,8 @@ public final class JsonKey {
   public static final String ORG_DEFAULT_ES_QUERY_FIELDS = "org_default_es_query_fields";
   public static final String USER_PROFILE_UPDATE_TOPIC = "kafka_user_profile_update_topic";
   public static final String IS_CCA = "isCCA";
+  public static final String ALLOWED_SEARCH_QUERY_STRING = "allowed_search_query_string";
+  public static final int ALLOWED_SEARCH_QUERY_STRING_DEFAULT = 100;
 
   private JsonKey() {}
 }
