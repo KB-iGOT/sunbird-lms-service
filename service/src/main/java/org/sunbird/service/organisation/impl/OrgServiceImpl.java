@@ -378,46 +378,36 @@ public class OrgServiceImpl implements OrgService {
   }
 
     @Override
-    public Map<String, String> getMinistryInfoFromChannel(String channel,RequestContext context) {
-        Map<String, Object> filters = new HashMap<>();
-        filters.put(JsonKey.IS_TENANT, true);
-        filters.put(JsonKey.CHANNEL, channel);
+    public Map<String, String> getMinistryInfoFromChannel(String channel, RequestContext context) {
+      Map<String, Object> filters = new HashMap<>();
+      filters.put(JsonKey.IS_TENANT, true);
+      filters.put(JsonKey.CHANNEL, channel);
 
-        SearchDTO searchDTO = new SearchDTO();
-        searchDTO.getAdditionalProperties().put(JsonKey.FILTERS, filters);
+      SearchDTO searchDTO = new SearchDTO();
+      searchDTO.getAdditionalProperties().put(JsonKey.FILTERS, filters);
 
-        Future<Map<String, Object>> esResultF = orgDao.search(searchDTO, context);
-        Map<String, Object> esResult =
-                (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(esResultF);
+      Future<Map<String, Object>> esResultF = orgDao.search(searchDTO, context);
+      Map<String, Object> esResult = (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(esResultF);
 
-        if (MapUtils.isNotEmpty(esResult)
-                && CollectionUtils.isNotEmpty((List<?>) esResult.get(JsonKey.CONTENT))) {
-
-            Map<String, Object> esContent =
-                    ((List<Map<String, Object>>) esResult.get(JsonKey.CONTENT)).get(0);
-
-            if (null == esContent.get(JsonKey.STATUS) || (1 != (int) esContent.get(JsonKey.STATUS))) {
-                ProjectCommonException.throwClientErrorException(
-                        ResponseCode.errorInactiveOrg,
-                        ProjectUtil.formatMessage(
-                                ResponseCode.errorInactiveOrg.getErrorMessage(), JsonKey.CHANNEL, channel));
+      if (MapUtils.isNotEmpty(esResult) && CollectionUtils.isNotEmpty((List<?>) esResult.get(JsonKey.CONTENT))) {
+        Object esContentObj = esResult.get(JsonKey.CONTENT);
+          if (esContentObj instanceof List) {
+            List<?> contentList = (List<?>) esContentObj;
+              if (CollectionUtils.isNotEmpty(contentList)) {
+                Object orgDetailsObj = contentList.get(0);
+                  Map<String, Object> esContent = (Map<String, Object>) orgDetailsObj;
+                  String ministryOrStateId = (String) esContent.get(JsonKey.MINISTRY_STATE_ID);
+                  String ministryOrStateName = (String) esContent.get(JsonKey.MINISTRY_STATE_NAME);
+                  Map<String, String> ministryInfo = new HashMap<>();
+                  ministryInfo.put(JsonKey.MINISTRY_STATE_ID, ministryOrStateId);
+                  ministryInfo.put(JsonKey.MINISTRY_STATE_NAME, ministryOrStateName);
+                  return ministryInfo;
+                }
             }
 
-            String ministryOrStateId = (String) esContent.get("ministryOrStateId");
-            String ministryOrStateName = (String) esContent.get("ministryOrStateName");
-
-            Map<String, String> ministryInfo = new HashMap<>();
-            ministryInfo.put("ministryOrStateId", ministryOrStateId);
-            ministryInfo.put("ministryOrStateName", ministryOrStateName);
-
-            return ministryInfo;
-
-        } else {
-            throw new ProjectCommonException(
-                    ResponseCode.invalidParameterValue,
-                    ProjectUtil.formatMessage(
-                            ResponseCode.invalidParameterValue.getErrorMessage(), channel, JsonKey.CHANNEL),
-                    ResponseCode.CLIENT_ERROR.getResponseCode());
-        }
+      } else {
+            throw new ProjectCommonException(ResponseCode.invalidParameterValue, ProjectUtil.formatMessage(ResponseCode.invalidParameterValue.getErrorMessage(), channel, JsonKey.CHANNEL), ResponseCode.CLIENT_ERROR.getResponseCode());
+      }
+      return Map.of();
     }
 }

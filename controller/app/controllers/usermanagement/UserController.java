@@ -62,6 +62,8 @@ public class UserController extends BaseController {
   @Named("user_self_declaration_management_actor")
   private ActorRef userSelfDeclarationManagementActor;
 
+  private final ObjectMapper mapper = new ObjectMapper();
+
   public CompletionStage<Result> createUser(Http.Request httpRequest) {
     return handleRequest(
         ssoUserCreateActor,
@@ -648,7 +650,7 @@ public class UserController extends BaseController {
     }
 
     public CompletionStage<Result> createSupportUserV5(Http.Request httpRequest) throws JsonProcessingException {
-        Map<String, Object> requestMap = new ObjectMapper().readValue(
+        Map<String, Object> requestMap = mapper.readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
         userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SUPPORT_USER_CREATE);
