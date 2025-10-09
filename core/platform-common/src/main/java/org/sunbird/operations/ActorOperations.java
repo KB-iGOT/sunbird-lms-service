@@ -102,7 +102,7 @@ public enum ActorOperations {
   CUSTOM_REGISTER_USER_V5("customRegisterUserV5", "USRCRT"),
   BULK_CREATE_USER_V5("bulkCreateUserV5", "USRCRT"),
   PARICHAY_CREATE_USER_V5("parichayCreateUserV5", "USRCRT"),
-
+  CREATE_SUPPORT_USER_V5("supportCreateUserV5", "USRCRT"),
   V2_NOTIFICATION("v2Notification", "NOTI"),
   GET_MANAGED_USERS("getManagedUsers", "USRRED"),
   CHECK_USER_EXISTENCE("checkUserExistence", "UEXIST"),

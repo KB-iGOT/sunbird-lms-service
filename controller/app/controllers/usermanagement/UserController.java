@@ -646,4 +646,28 @@ public class UserController extends BaseController {
                 ProjectUtil.EsType.user.getTypeName(),
                 httpRequest);
     }
+
+    public CompletionStage<Result> createSupportUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SUPPORT_USER_CREATE);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.CREATE_SUPPORT_USER_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    request.getRequest().put("sync", true);
+                    new UserRequestValidator().validateUserCreateV5(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
 }
