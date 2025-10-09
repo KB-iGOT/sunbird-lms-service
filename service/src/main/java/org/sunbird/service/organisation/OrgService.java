@@ -53,4 +53,6 @@ public interface OrgService {
 
   String getRootOrgIdFromChannelV2(String channel, RequestContext context);
 
+    Map<String, String> getMinistryInfoFromChannel(String channel, RequestContext context);
+
 }

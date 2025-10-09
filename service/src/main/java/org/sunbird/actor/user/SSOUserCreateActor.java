@@ -73,6 +73,7 @@ public class SSOUserCreateActor extends UserBaseActor {
       case "selfRegisterUserV5":
       case "customRegisterUserV5":
       case "bulkCreateUserV5":
+      case "supportCreateUserV5":
         createUserV5(request);
         break;
       case "parichayCreateUserV5":
@@ -362,6 +363,9 @@ public class SSOUserCreateActor extends UserBaseActor {
     profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
+    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
+    profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
+    profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
 
     if (!additionalProperties.isEmpty()) {
       profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
@@ -470,6 +474,9 @@ public class SSOUserCreateActor extends UserBaseActor {
     if (!personalDetails.isEmpty()) {
       profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
     }
+    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
+    profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
+    profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
