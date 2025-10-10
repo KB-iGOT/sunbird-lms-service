@@ -663,7 +663,7 @@ public class UserController extends BaseController {
                 req -> {
                     Request request = (Request) req;
                     request.getRequest().put("sync", true);
-                    new UserRequestValidator().validateUserCreateV5(request);
+                    new UserRequestValidator().validateCreateUserRequest(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;
                 },
