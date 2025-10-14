@@ -146,3 +146,4 @@ GET     /v1/system/settings/list                @controllers.systemsettings.Syst
 POST    /v1/system/settings/set                 @controllers.systemsettings.SystemSettingsController.setSystemSetting(request: play.mvc.Http.Request)
 GET     /v2/system/settings/get/:field          @controllers.systemsettings.SystemSettingsController.getSystemSettingV2(field:String, request: play.mvc.Http.Request)
 POST    /v5/user/public/search					@controllers.usermanagement.UserController.userPublicSearch(request: play.mvc.Http.Request)
+POST    /v5/cb/support/user/create              @controllers.usermanagement.UserController.createSupportUserV5(request: play.mvc.Http.Request)
