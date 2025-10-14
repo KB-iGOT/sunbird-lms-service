@@ -114,6 +114,7 @@ public interface ResponseMessage {
     String ERROR_OTP_ATTEMPT_EXCEEDED = "The maximum number of attempts for OTP verification has been exceeded. Please try again.";
     String ERROR_PARAM_EXISTS_FORMATTED = "This {0} is already registered with an existing User";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "Duplicate request: This {0} was processed recently and is still within TTL window.";
+    String BE_JOB_REQUEST_EXCEPTION = "BE job request event could not be generated.";
   }
 
   interface Key {
@@ -195,5 +196,6 @@ public interface ResponseMessage {
     String ERROR_OTP_EXPIRED = "0075";
     String ERROR_OTP_ATTEMPT_EXCEEDED = "0076";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "0077";
+    String BE_JOB_REQUEST_EXCEPTION = "0078";
   }
 }

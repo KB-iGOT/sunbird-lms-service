@@ -126,6 +126,7 @@ public class OrganisationManagementActor extends BaseActor {
       request.put(JsonKey.IS_TENANT, false);
       request.put(JsonKey.IS_SSO_ROOTORG_ENABLED, false);
     }
+    request.computeIfAbsent(JsonKey.IS_CCA, k -> false);
     // This will remove all extra unnecessary parameter from request
     ObjectMapper mapper = new ObjectMapper();
     Organisation org = mapper.convertValue(request, Organisation.class);
@@ -384,7 +385,6 @@ public class OrganisationManagementActor extends BaseActor {
       String ministryStateType = (String) MapUtils.getObject(updateOrgDao, JsonKey.MINISTRY_STATE_TYPE);
       String deptName = (String) MapUtils.getObject(updateOrgDao, JsonKey.DEPT_NAME);
       Boolean sakshamAIenabled = (Boolean) MapUtils.getObject(updateOrgDao, JsonKey.SAKSHAM_AI_ENABLED);
-      Boolean isCca = (Boolean) MapUtils.getObject(updateOrgDao, JsonKey.CCA_ENABLED);
       if (StringUtils.isNotEmpty(registrationStartDate) && StringUtils.isNotEmpty(registrationEndDate)) {
         logger.info("OrganisationManagementActor : orgUpdate: Organisation registration dates: " + registrationStartDate + " " + registrationEndDate);
         ZoneId zoneId = ZoneId.of("Asia/Kolkata");
@@ -410,9 +410,6 @@ public class OrganisationManagementActor extends BaseActor {
       }
       if (sakshamAIenabled != null) {
         updateOrgDao.put(JsonKey.SAKSHAM_AI_ENABLED, sakshamAIenabled);
-      }
-      if (isCca != null) {
-        updateOrgDao.put(JsonKey.CCA_ENABLED, isCca);
       }
       Organisation org = mapper.convertValue(updateOrgDao, Organisation.class);
       updateOrgDao = mapper.convertValue(org, Map.class);
@@ -483,6 +480,7 @@ public class OrganisationManagementActor extends BaseActor {
           ResponseCode.RESOURCE_NOT_FOUND.getResponseCode());
     }
     result.putAll(Util.getOrgDefaultValue());
+    result.computeIfAbsent(JsonKey.IS_CCA, k -> false);
     result.remove(JsonKey.CONTACT_DETAILS);
     Response response = new Response();
     response.put(JsonKey.RESPONSE, result);

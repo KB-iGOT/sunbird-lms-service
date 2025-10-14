@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import net.logstash.logback.encoder.org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -32,6 +33,7 @@ import org.elasticsearch.search.sort.SortOrder;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
+import org.sunbird.util.ProjectUtil;
 import scala.concurrent.Await;
 import scala.concurrent.Future;
 
@@ -57,6 +59,10 @@ public class ElasticSearchHelper {
   public static final List<String> upsertResults =
       new ArrayList<>(Arrays.asList("CREATED", "UPDATED", "NOOP"));
   private static final String _DOC = "_doc";
+  private static final int allowedQueryStringLength = NumberUtils.toInt(
+            ProjectUtil.getConfigValue(JsonKey.ALLOWED_SEARCH_QUERY_STRING),
+            JsonKey.ALLOWED_SEARCH_QUERY_STRING_DEFAULT
+    );
 
   private ElasticSearchHelper() {}
 
@@ -665,9 +671,14 @@ public class ElasticSearchHelper {
    * @return SearchDTO
    */
   private static SearchDTO getBasicBuiders(SearchDTO search, Map<String, Object> searchQueryMap) {
-    if (searchQueryMap.containsKey(JsonKey.QUERY)) {
-      search.setQuery((String) searchQueryMap.get(JsonKey.QUERY));
-    }
+      if (searchQueryMap.containsKey(JsonKey.QUERY)) {
+          String queryString = (String) searchQueryMap.get(JsonKey.QUERY);
+          if (StringUtils.isNotBlank(queryString) && queryString.length() > allowedQueryStringLength) {
+              queryString = queryString.substring(0, allowedQueryStringLength);
+              logger.info("trimmed user search query string:" + queryString);
+          }
+          search.setQuery(queryString);
+      }
     if (searchQueryMap.containsKey(JsonKey.QUERY_FIELDS)) {
       search.setQueryFields((List<String>) searchQueryMap.get(JsonKey.QUERY_FIELDS));
     }

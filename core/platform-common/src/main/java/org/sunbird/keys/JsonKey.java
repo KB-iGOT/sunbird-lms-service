@@ -710,6 +710,9 @@ public final class JsonKey {
   public static final String MINISTRY_STATE_ID = "ministryOrStateId";
   public static final String MINISTRY_STATE_ORG_NAME = "ministryOrStateOrgName";
   public static final String SUPPORT_USER_CREATE = "supportUserCreate";
+  public static final String IS_CCA = "isCCA";
+  public static final String ALLOWED_SEARCH_QUERY_STRING = "allowed_search_query_string";
+  public static final int ALLOWED_SEARCH_QUERY_STRING_DEFAULT = 100;
 
   private JsonKey() {}
 }

@@ -82,13 +82,11 @@ public class EmailServiceActor extends BaseActor {
               userIds, emails, recipientSearchQuery, requestContext);
       notificationService.updateFirstNameAndOrgNameInEmailContext(
           userIds, emailList, request, requestContext);
-      logger.info("Email Service Actor: Post validation - Sending email to: " + emails.get(0));
       if (CollectionUtils.isNotEmpty(emailList)) {
         String template =
             notificationService.getEmailTemplateFile(
                 (String) request.get(JsonKey.EMAIL_TEMPLATE_TYPE), requestContext);
         sendMail(request, emailList, template, requestContext);
-        logger.info("Email Service Actor: Post Sending email to: " + emails.get(0));
       }
     }
 
@@ -104,7 +102,6 @@ public class EmailServiceActor extends BaseActor {
       RequestContext requestContext) {
     long startTime = System.currentTimeMillis();
     try {
-      logger.info("EmailServiceActor::sendMail::  " + emails.get(0));
       SendEmail sendEmail = new SendEmail();
       Velocity.init();
       VelocityContext context = ProjectUtil.getContext(request);
@@ -132,7 +129,6 @@ public class EmailServiceActor extends BaseActor {
           "EmailServiceActor:sendMail: Exception occurred with message = " + e.getMessage(),
           e);
     }
-    logger.info("Email Sent to: " + emails.get(0));
     logger.info("Email Sent. Time taken (in ms): " + (System.currentTimeMillis() - startTime));
   }
 
