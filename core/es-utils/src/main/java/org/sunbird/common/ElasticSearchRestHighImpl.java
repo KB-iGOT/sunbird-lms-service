@@ -138,7 +138,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
           }
         };
 
-    ConnectionManager.getRestClient().indexAsync(indexRequest, listener);
+    ConnectionManager.getRestClient(isUserServiceIndex(index)).indexAsync(indexRequest, listener);
 
     return promise.future();
   }
@@ -199,7 +199,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
               promise.failure(e);
             }
           };
-      ConnectionManager.getRestClient().updateAsync(updateRequest, listener);
+      ConnectionManager.getRestClient(isUserServiceIndex(index)).updateAsync(updateRequest, listener);
 
     } else {
       logger.info(context, "ElasticSearchRestHighImpl:update: Requested data is invalid.");
@@ -265,7 +265,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
             }
           };
 
-      ConnectionManager.getRestClient().getAsync(getRequest, listener);
+      ConnectionManager.getRestClient(isUserServiceIndex(index)).getAsync(getRequest, listener);
     } else {
       logger.info(
           context,
@@ -320,7 +320,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
             }
           };
 
-      ConnectionManager.getRestClient().deleteAsync(delRequest, listener);
+      ConnectionManager.getRestClient(isUserServiceIndex(index)).deleteAsync(delRequest, listener);
     } else {
       logger.info(
           context,
@@ -512,7 +512,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
           }
         };
 
-    ConnectionManager.getRestClient().searchAsync(searchRequest, listener);
+    ConnectionManager.getRestClient(isUserServiceIndex(index)).searchAsync(searchRequest, listener);
     return promise.future();
   }
 
@@ -532,7 +532,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
   public Future<Boolean> healthCheck() {
 
     GetIndexRequest indexRequest =
-        new GetIndexRequest().indices(ProjectUtil.EsType.user.getTypeName());
+        new GetIndexRequest().indices(ProjectUtil.EsType.organisation.getTypeName());
     Promise<Boolean> promise = Futures.promise();
     ActionListener<Boolean> listener =
         new ActionListener<Boolean>() {
@@ -551,7 +551,34 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
             logger.error("ElasticSearchRestHighImpl:healthCheck: error " + e.getMessage(), e);
           }
         };
-    ConnectionManager.getRestClient().indices().existsAsync(indexRequest, listener);
+    ConnectionManager.getRestClient(false).indices().existsAsync(indexRequest, listener);
+
+    return promise.future();
+  }
+
+  public Future<Boolean> userHealthCheck() {
+
+    GetIndexRequest indexRequest =
+        new GetIndexRequest().indices(ProjectUtil.EsType.user.getTypeName());
+    Promise<Boolean> promise = Futures.promise();
+    ActionListener<Boolean> listener =
+        new ActionListener<Boolean>() {
+          @Override
+          public void onResponse(Boolean getResponse) {
+            if (getResponse) {
+              promise.success(getResponse);
+            } else {
+              promise.success(false);
+            }
+          }
+
+          @Override
+          public void onFailure(Exception e) {
+            promise.failure(e);
+            logger.error("ElasticSearchRestHighImpl:userHealthCheck: error " + e.getMessage(), e);
+          }
+        };
+    ConnectionManager.getRestClient(true).indices().existsAsync(indexRequest, listener);
 
     return promise.future();
   }
@@ -610,7 +637,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
             promise.success(false);
           }
         };
-    ConnectionManager.getRestClient().bulkAsync(request, listener);
+    ConnectionManager.getRestClient(isUserServiceIndex(index)).bulkAsync(request, listener);
 
     logger.debug(
         context,
@@ -744,7 +771,7 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
               promise.failure(e);
             }
           };
-      ConnectionManager.getRestClient().updateAsync(updateRequest, listener);
+      ConnectionManager.getRestClient(isUserServiceIndex(index)).updateAsync(updateRequest, listener);
       return promise.future();
     } else {
       logger.info(context, "ElasticSearchRestHighImpl:upsert: Requested data is invalid.");
@@ -811,5 +838,11 @@ public class ElasticSearchRestHighImpl implements ElasticSearchService {
       queryFields = Arrays.asList(ProjectUtil.getConfigValue(JsonKey.ORG_DEFAULT_ES_QUERY_FIELDS).split(","));
     }
     return queryFields;
+  }
+
+  private static boolean isUserServiceIndex(String index) {
+    return ProjectUtil.EsType.user.getTypeName().equalsIgnoreCase(index)
+        || ProjectUtil.EsType.usernotes.getTypeName().equalsIgnoreCase(index)
+        || ProjectUtil.EsType.userfeed.getTypeName().equalsIgnoreCase(index);
   }
 }

@@ -21,22 +21,24 @@ public class ConnectionManager {
   private static final LoggerUtil logger = new LoggerUtil(ConnectionManager.class);
 
   private static RestHighLevelClient restClient = null;
+  private static RestHighLevelClient userRestClient = null;
   private static List<String> host = new ArrayList<>();
   private static List<Integer> ports = new ArrayList<>();
 
   static {
     System.setProperty("es.set.netty.runtime.available.processors", "false");
-    initialiseRestClientConnection();
+    initialiseRestClientConnection(true);
+    initialiseRestClientConnection(false);
     registerShutDownHook();
   }
 
   private ConnectionManager() {}
 
-  private static boolean initialiseRestClientConnection() {
+  private static boolean initialiseRestClientConnection(boolean isUserService) {
     boolean response = false;
     try {
       String cluster = System.getenv(JsonKey.SUNBIRD_ES_CLUSTER);
-      String hostName = System.getenv(JsonKey.SUNBIRD_ES_IP);
+      String hostName = isUserService ? System.getenv(JsonKey.USER_ES_IP) : System.getenv(JsonKey.SUNBIRD_ES_IP);
       String port = System.getenv(JsonKey.SUNBIRD_ES_PORT);
       if (StringUtils.isBlank(hostName) || StringUtils.isBlank(port)) {
         return false;
@@ -49,7 +51,7 @@ public class ConnectionManager {
       for (String val : splitedPort) {
         ports.add(Integer.parseInt(val));
       }
-      response = createRestClient(cluster, host);
+      response = createRestClient(cluster, host, isUserService);
       logger.info(
           "ELASTIC SEARCH CONNECTION ESTABLISHED for restClient from EVN with Following Details cluster "
               + cluster
@@ -70,14 +72,24 @@ public class ConnectionManager {
    *
    * @return TransportClient
    */
-  public static RestHighLevelClient getRestClient() {
-    if (restClient == null) {
-      logger.info("ConnectionManager:getRestClient eLastic search rest clinet is null ");
-      initialiseRestClientConnection();
-      logger.info(
-          "ConnectionManager:getRestClient after calling initialiseRestClientConnection ES client value ");
+  public static RestHighLevelClient getRestClient(boolean isUserService) {
+    if (isUserService) {
+      if (userRestClient == null) {
+        logger.info("ConnectionManager:getRestClient eLastic search userRestClient is null ");
+        initialiseRestClientConnection(true);
+        logger.info(
+            "ConnectionManager:getRestClient after calling initialiseRestClientConnection ES userRestClient value ");
+      }
+      return userRestClient;
+    } else {
+      if (restClient == null) {
+        logger.info("ConnectionManager:getRestClient eLastic search rest clinet is null ");
+        initialiseRestClientConnection(false);
+        logger.info(
+            "ConnectionManager:getRestClient after calling initialiseRestClientConnection ES client value ");
+      }
+      return restClient;
     }
-    return restClient;
   }
 
   /**
@@ -88,12 +100,17 @@ public class ConnectionManager {
    * @return boolean
    * @throws UnknownHostException
    */
-  private static boolean createRestClient(String clusterName, List<String> host) {
+  private static boolean createRestClient(String clusterName, List<String> host, boolean isUserService)
+      throws UnknownHostException {
     HttpHost[] httpHost = new HttpHost[host.size()];
     for (int i = 0; i < host.size(); i++) {
       httpHost[i] = new HttpHost(host.get(i), 9200);
     }
-    restClient = new RestHighLevelClient(RestClient.builder(httpHost));
+    if (isUserService) {
+      userRestClient = new RestHighLevelClient(RestClient.builder(httpHost));
+    } else {
+      restClient = new RestHighLevelClient(RestClient.builder(httpHost));
+    }
     logger.info("ConnectionManager:createRestClient client initialisation done. ");
     return true;
   }
@@ -116,6 +133,16 @@ public class ConnectionManager {
             "ConnectionManager:ResourceCleanUp error occured during restclient resource cleanup "
                 + e);
       }
+      try {
+        if (null != userRestClient) {
+          userRestClient.close();
+        }
+      } catch (IOException e) {
+        logger.info(
+            "ConnectionManager:ResourceCleanUp error occured during userRestClient resource cleanup "
+                + e);
+      }
+      logger.info("ConnectionManager:ResourceCleanUp resource clean up completed.");
     }
   }
 

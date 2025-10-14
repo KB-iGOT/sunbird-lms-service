@@ -104,6 +104,23 @@ public class HealthActorTest {
   }
 
   @Test
+  public void getUserESHealthCheck() {
+    ElasticSearchService elasticSearchService = PowerMockito.mock(ElasticSearchService.class);
+    Promise<Boolean> promise = Futures.promise();
+    promise.success(true);
+    PowerMockito.mockStatic(EsClientFactory.class);
+    when(EsClientFactory.getInstance(JsonKey.REST)).thenReturn(elasticSearchService);
+    when(elasticSearchService.userHealthCheck()).thenReturn(promise.future());
+    TestKit probe = new TestKit(system);
+    ActorRef subject = system.actorOf(props);
+    Request reqObj = new Request();
+    reqObj.setOperation(ActorOperations.ES.getValue());
+    subject.tell(reqObj, probe.getRef());
+    Response res = probe.expectMsgClass(duration("200 second"), Response.class);
+    Assert.assertTrue(null != res.get(JsonKey.RESPONSE));
+  }
+
+  @Test
   @PrepareForTest(ServiceFactory.class)
   public void getCASSANDRAHealthCheck() {
     cassandraOperation = PowerMockito.mock(CassandraOperation.class);

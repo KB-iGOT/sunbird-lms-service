@@ -99,6 +99,7 @@ public final class JsonKey {
   public static final String ERROR_MSG = "err_msg";
   public static final String ERRORMSG = "errmsg";
   public static final String ES_SERVICE = "Elastic search service";
+  public static final String ES_USER_SERVICE = "User Elastic search service";
   public static final String EXISTS = "exists";
   public static final String EXTERNAL_ID = "externalId";
   public static final String FACETS = "facets";
@@ -255,6 +256,7 @@ public final class JsonKey {
   public static final String SUNBIRD_ES_CHANNEL = "es.channel.name";
   public static final String SUNBIRD_ES_CLUSTER = "sunbird_es_cluster";
   public static final String SUNBIRD_ES_IP = "sunbird_es_host";
+  public static final String USER_ES_IP = "user_es_host";
   public static final String SUNBIRD_ES_PORT = "sunbird_es_port";
   public static final String SUNBIRD_INSTALLATION = "sunbird_installation";
   public static final String SUNBIRD_SSO_CLIENT_ID = "sunbird_sso_client_id";
