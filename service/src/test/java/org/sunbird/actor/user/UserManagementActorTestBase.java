@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PowerMockIgnore;
 import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.core.classloader.annotations.SuppressStaticInitializationFor;
 import org.powermock.modules.junit4.PowerMockRunner;
 import org.sunbird.cassandraimpl.CassandraOperationImpl;
 import org.sunbird.common.Constants;
@@ -71,7 +72,12 @@ import scala.concurrent.Promise;
   UserLookUpServiceImpl.class,
   ActorSelection.class,
   OrgExternalServiceImpl.class,
-  UserRoleServiceImpl.class
+  UserRoleServiceImpl.class,
+  org.sunbird.redis.RedisCacheUtil.class,
+  org.sunbird.kafka.KafkaClient.class
+})
+@SuppressStaticInitializationFor({
+  "org.sunbird.kafka.KafkaClient"
 })
 @PowerMockIgnore({
   "javax.management.*",
@@ -98,6 +104,7 @@ public abstract class UserManagementActorTestBase {
 
   @Before
   public void beforeEachTest() {
+    // Mock factories and core service dependencies
     PowerMockito.mockStatic(ServiceFactory.class);
     PowerMockito.mockStatic(EsClientFactory.class);
     cassandraOperation = mock(CassandraOperationImpl.class);
@@ -180,8 +187,8 @@ public abstract class UserManagementActorTestBase {
     requestMap.put(JsonKey.USERNAME, "username");
     requestMap.put(JsonKey.EMAIL, "username@gmail.com");
     requestMap.put(JsonKey.PHONE, "4346345377");
-    List externalIds = new ArrayList();
-    Map externalId = new HashMap();
+  List<Map<String, Object>> externalIds = new ArrayList<>();
+  Map<String, Object> externalId = new HashMap<>();
     externalId.put(JsonKey.ID, "extid1e2d");
     externalId.put(JsonKey.ID_TYPE, "channel1003");
     externalId.put(JsonKey.PROVIDER, "channel1003");
@@ -217,10 +224,10 @@ public abstract class UserManagementActorTestBase {
 
     List<Map<String, Object>> userRoleListResponse = new ArrayList<>();
     List<Map<String, Object>> scopeList = new ArrayList<>();
-    Map<String, Object> scopeMap = new HashMap();
+  Map<String, Object> scopeMap = new HashMap<>();
     scopeMap.put(JsonKey.ORGANISATION_ID, "someOrg");
     scopeList.add(scopeMap);
-    Map<String, Object> userRoleMap = new HashMap();
+  Map<String, Object> userRoleMap = new HashMap<>();
     userRoleMap.put(JsonKey.ROLE, "role");
     userRoleMap.put(JsonKey.SCOPE, scopeList);
     userRoleListResponse.add(userRoleMap);
@@ -230,6 +237,37 @@ public abstract class UserManagementActorTestBase {
     when(UserRoleServiceImpl.getInstance()).thenReturn(userRoleService);
     when(userRoleService.updateUserRole(Mockito.anyMap(), Mockito.any()))
         .thenReturn(userRoleListResponse);
+
+    // Prevent external Redis and Kafka connections during tests
+  try {
+      // Redis: avoid hitting real Redis by stubbing get/set
+      Class<?> redisClazz = Class.forName("org.sunbird.redis.RedisCacheUtil");
+      PowerMockito.mockStatic(redisClazz);
+      PowerMockito
+          .when(
+              redisClazz,
+              "get",
+              Mockito.anyString(),
+              Mockito.any(),
+              Mockito.anyInt())
+          .thenReturn(null);
+      PowerMockito.doNothing()
+          .when(redisClazz, "set", Mockito.anyString(), Mockito.anyString(), Mockito.anyInt());
+    } catch (Exception e) {
+      // Ignore if Redis class not found in test runtime
+    }
+
+    try {
+      // Kafka: suppress actual send calls to avoid Kafka bootstrap during tests
+      Class<?> kafkaClazz = Class.forName("org.sunbird.kafka.KafkaClient");
+      PowerMockito.mockStatic(kafkaClazz);
+      PowerMockito.doNothing()
+          .when(kafkaClazz, "send", Mockito.anyString(), Mockito.anyString());
+      PowerMockito.doNothing()
+          .when(kafkaClazz, "send", Mockito.anyString(), Mockito.anyString(), Mockito.anyString());
+    } catch (Exception e) {
+      // Ignore if Kafka class not found in test runtime
+    }
   }
 
   public List<Map<String, String>> getLocationIdTypeList() {
@@ -429,7 +467,7 @@ public abstract class UserManagementActorTestBase {
   }
 
   public Map<String, Object> getUpdateRequestWithLocationCodes() {
-    Map<String, Object> reqObj = new HashMap();
+    Map<String, Object> reqObj = new HashMap<>();
     reqObj.put(JsonKey.LOCATION_CODES, Arrays.asList("locationCode"));
     reqObj.put(JsonKey.USER_ID, "userId");
     getUpdateRequestWithDefaultFlags(reqObj);
@@ -437,7 +475,7 @@ public abstract class UserManagementActorTestBase {
   }
 
   public Map<String, Object> getUpdateRequestWithLocationCodeSchoolAsOrgExtId() {
-    Map<String, Object> reqObj = new HashMap();
+    Map<String, Object> reqObj = new HashMap<>();
     reqObj.put(JsonKey.ORG_EXTERNAL_ID, "orgExtId");
     reqObj.put(JsonKey.USER_ID, "userId");
     reqObj.put("updateUserSchoolOrg", true);

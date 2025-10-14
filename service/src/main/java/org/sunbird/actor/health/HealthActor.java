@@ -47,6 +47,7 @@ public class HealthActor extends BaseActor {
   private void esHealthCheck() {
     // check the elastic search
     boolean isallHealthy = true;
+    boolean isUserServiceHealthy = true;
     Map<String, Object> finalResponseMap = new HashMap<>();
     List<Map<String, Object>> responseList = new ArrayList<>();
     responseList.add(ProjectUtil.createCheckResponse(JsonKey.ACTOR_SERVICE, false, null));
@@ -61,9 +62,22 @@ public class HealthActor extends BaseActor {
       isallHealthy = false;
       logger.error("Elastic search health Error == ", e);
     }
+
+    try {
+      Future<Boolean> esResponseF = getEsConnection().userHealthCheck();
+      boolean esResponse = (boolean) ElasticSearchHelper.getResponseFromFuture(esResponseF);
+
+      responseList.add(ProjectUtil.createCheckResponse(JsonKey.ES_USER_SERVICE, esResponse, null));
+      isUserServiceHealthy = esResponse;
+    } catch (Exception e) {
+      responseList.add(ProjectUtil.createCheckResponse(JsonKey.ES_USER_SERVICE, true, e));
+      isUserServiceHealthy = false;
+      logger.error("User Elastic search health Error == ", e);
+    }
+
     finalResponseMap.put(JsonKey.CHECKS, responseList);
     finalResponseMap.put(JsonKey.NAME, "ES health check api");
-    if (isallHealthy) {
+    if (isallHealthy && isUserServiceHealthy) {
       finalResponseMap.put(JsonKey.Healthy, true);
     } else {
       finalResponseMap.put(JsonKey.Healthy, false);
@@ -139,6 +153,15 @@ public class HealthActor extends BaseActor {
       isallHealthy = response;
     } catch (Exception e) {
       responseList.add(ProjectUtil.createCheckResponse(JsonKey.ES_SERVICE, true, e));
+      isallHealthy = false;
+    }
+    try {
+      Future<Boolean> responseF = getEsConnection().userHealthCheck();
+      boolean response = (boolean) ElasticSearchHelper.getResponseFromFuture(responseF);
+      responseList.add(ProjectUtil.createCheckResponse(JsonKey.ES_SERVICE, !response, null));
+      isallHealthy = response;
+    } catch (Exception e) {
+      responseList.add(ProjectUtil.createCheckResponse(JsonKey.ES_USER_SERVICE, true, e));
       isallHealthy = false;
     }
     finalResponseMap.put(JsonKey.CHECKS, responseList);

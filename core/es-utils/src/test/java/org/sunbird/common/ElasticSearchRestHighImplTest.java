@@ -1,6 +1,7 @@
 package org.sunbird.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.doNothing;
@@ -46,6 +47,7 @@ import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.helper.ConnectionManager;
 import org.sunbird.keys.JsonKey;
+import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.PropertiesCache;
 import scala.concurrent.Future;
 
@@ -73,7 +75,8 @@ import scala.concurrent.Future;
   SearchHits.class,
   Aggregations.class,
   ElasticSearchHelper.class,
-  PropertiesCache.class
+  PropertiesCache.class,
+  ProjectUtil.class
 })
 public class ElasticSearchRestHighImplTest {
 
@@ -89,7 +92,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testSaveSuccess() {
     mockRulesForSave(false);
-    Future<String> result = esService.save("test", "001", new HashMap<>(), null);
+    Future<String> result = esService.save("user", "001", new HashMap<>(), null);
     String res = (String) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals("001", res);
   }
@@ -104,7 +107,7 @@ public class ElasticSearchRestHighImplTest {
 
   @Test
   public void testSaveFailureWithEmptyIdentifier() {
-    Future<String> result = esService.save("test", "", new HashMap<>(), null);
+    Future<String> result = esService.save("user", "", new HashMap<>(), null);
     String res = (String) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals("ERROR", res);
   }
@@ -112,7 +115,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testSaveFailure() {
     mockRulesForSave(true);
-    Future<String> result = esService.save("test", "001", new HashMap<>(), null);
+    Future<String> result = esService.save("user", "001", new HashMap<>(), null);
     String res = (String) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(null, res);
   }
@@ -120,7 +123,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testUpdateSuccess() {
     mockRulesForUpdate(false);
-    Future<Boolean> result = esService.update("test", "001", new HashMap<>(), null);
+    Future<Boolean> result = esService.update("user", "001", new HashMap<>(), null);
     boolean res = (boolean) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(true, res);
   }
@@ -128,7 +131,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testUpdateFailure() {
     mockRulesForUpdate(true);
-    Future<Boolean> result = esService.update("test", "001", new HashMap<>(), null);
+    Future<Boolean> result = esService.update("user", "001", new HashMap<>(), null);
     Object res = ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(null, res);
   }
@@ -163,7 +166,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testGetDataByIdentifierFailureWithEmptyIdentifier() {
     try {
-      esService.getDataByIdentifier("test", "", null);
+      esService.getDataByIdentifier("user", "", null);
     } catch (ProjectCommonException e) {
       assertEquals(e.getErrorResponseCode(), ResponseCode.invalidRequestData.getResponseCode());
     }
@@ -172,7 +175,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testGetDataByIdentifierFailure() {
     mockRulesForGet(true);
-    Future<Map<String, Object>> result = esService.getDataByIdentifier("test", "001", null);
+    Future<Map<String, Object>> result = esService.getDataByIdentifier("user", "001", null);
     Object res = ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(null, res);
   }
@@ -180,7 +183,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testDeleteSuccess() {
     mockRulesForDelete(false, false);
-    Future<Boolean> result = esService.delete("test", "001", null);
+    Future<Boolean> result = esService.delete("user", "001", null);
     boolean res = (boolean) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(true, res);
   }
@@ -188,7 +191,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testDeleteSuccessWithoutDelete() {
     mockRulesForDelete(false, true);
-    Future<Boolean> result = esService.delete("test", "001", null);
+    Future<Boolean> result = esService.delete("user", "001", null);
     boolean res = (boolean) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(false, res);
   }
@@ -196,7 +199,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testDeleteFailure() {
     mockRulesForDelete(true, false);
-    Future<Boolean> result = esService.delete("test", "001", null);
+    Future<Boolean> result = esService.delete("user", "001", null);
     Object res = ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(null, res);
   }
@@ -204,7 +207,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testDeleteFailureWithEmptyIdentifier() {
     try {
-      esService.delete("test", "", null);
+      esService.delete("user", "", null);
     } catch (ProjectCommonException e) {
       assertEquals(e.getErrorResponseCode(), ResponseCode.invalidRequestData.getResponseCode());
     }
@@ -222,7 +225,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testUpsertSuccess() {
     mockRulesForUpdate(false);
-    Future<Boolean> result = esService.update("test", "001", new HashMap<>(), null);
+    Future<Boolean> result = esService.update("user", "001", new HashMap<>(), null);
     boolean res = (boolean) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(true, res);
   }
@@ -230,7 +233,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testUpsertFailure() {
     mockRulesForUpdate(true);
-    Future<Boolean> result = esService.update("test", "001", new HashMap<>(), null);
+    Future<Boolean> result = esService.update("user", "001", new HashMap<>(), null);
     Object res = ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(null, res);
   }
@@ -247,7 +250,7 @@ public class ElasticSearchRestHighImplTest {
   @Test
   public void testUpsertFailureWithEmptyIdentifier() {
     try {
-      esService.update("test", "", new HashMap<>(), null);
+      esService.update("user", "", new HashMap<>(), null);
     } catch (ProjectCommonException e) {
       assertEquals(e.getErrorResponseCode(), ResponseCode.invalidRequestData.getResponseCode());
     }
@@ -260,7 +263,7 @@ public class ElasticSearchRestHighImplTest {
     Map<String, Object> map = new HashMap<>();
     map.put(JsonKey.IDENTIFIER, "0001");
     list.add(map);
-    Future<Boolean> result = esService.bulkInsert("test", list, null);
+    Future<Boolean> result = esService.bulkInsert("user", list, null);
     boolean res = (boolean) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(true, res);
   }
@@ -272,7 +275,7 @@ public class ElasticSearchRestHighImplTest {
     Map<String, Object> map = new HashMap<>();
     map.put(JsonKey.IDENTIFIER, "0001");
     list.add(map);
-    Future<Boolean> result = esService.bulkInsert("test", list, null);
+    Future<Boolean> result = esService.bulkInsert("user", list, null);
     boolean res = (boolean) ElasticSearchHelper.getResponseFromFuture(result);
     assertEquals(false, res);
   }
@@ -281,13 +284,15 @@ public class ElasticSearchRestHighImplTest {
     client = mock(RestHighLevelClient.class);
     PowerMockito.mockStatic(ConnectionManager.class);
     PowerMockito.mockStatic(PropertiesCache.class);
+    PowerMockito.mockStatic(ProjectUtil.class);
 
     try {
       doNothing().when(ConnectionManager.class, "registerShutDownHook");
     } catch (Exception e) {
       Assert.fail("Initialization of test case failed due to " + e.getLocalizedMessage());
     }
-    when(ConnectionManager.getRestClient()).thenReturn(client);
+    when(ConnectionManager.getRestClient(true)).thenReturn(client);
+    when(ProjectUtil.getConfigValue(anyString())).thenReturn("user");
   }
 
   private static void mockRulesForBulk(boolean fail) {
@@ -399,7 +404,7 @@ public class ElasticSearchRestHighImplTest {
   private static void mockRulesForGet(boolean fail) {
     GetResponse getResponse = mock(GetResponse.class);
     Map<String, Object> map = new HashMap<>();
-    map.put("test", "any");
+    map.put("user", "any");
     when(getResponse.getSourceAsMap()).thenReturn(map);
     when(getResponse.isExists()).thenReturn(true);
 

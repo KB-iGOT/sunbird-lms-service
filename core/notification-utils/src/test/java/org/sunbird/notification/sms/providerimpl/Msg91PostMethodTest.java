@@ -27,6 +27,7 @@ import org.sunbird.notification.utils.PropertiesCache;
 import org.sunbird.notification.utils.SMSFactory;
 import org.sunbird.notification.utils.SmsTemplateUtil;
 import org.sunbird.request.RequestContext;
+import org.sunbird.util.ProjectUtil;
 
 @RunWith(PowerMockRunner.class)
 @PowerMockIgnore({"javax.management.*", "javax.net.ssl.*", "javax.security.*"})
@@ -34,7 +35,9 @@ import org.sunbird.request.RequestContext;
   HttpClients.class,
   CloseableHttpClient.class,
   PropertiesCache.class,
-  SmsTemplateUtil.class
+  SmsTemplateUtil.class,
+  ProjectUtil.class,
+  SMSFactory.class
 })
 public class Msg91PostMethodTest {
 
@@ -43,18 +46,35 @@ public class Msg91PostMethodTest {
     CloseableHttpResponse httpResp = mock(CloseableHttpResponse.class);
     PropertiesCache propertiesCache = mock(PropertiesCache.class);
     StatusLine statusLine = mock(StatusLine.class);
+    
     PowerMockito.mockStatic(HttpClients.class);
+    PowerMockito.mockStatic(ProjectUtil.class);
+  PowerMockito.mockStatic(PropertiesCache.class);
+    
     try {
+      // Mock ProjectUtil first - this is critical for SMSFactory.getInstance()
+      when(ProjectUtil.getConfigValue("sms_gateway_provider")).thenReturn(JsonKey.MSG_91);
+      when(ProjectUtil.getConfigValue(Mockito.anyString())).thenReturn("test_value");
+      
+      // Mock PropertiesCache for Msg91SmsProvider initialization
+      when(PropertiesCache.getInstance()).thenReturn(propertiesCache);
+      when(propertiesCache.getProperty(Mockito.anyString())).thenReturn("test_value");
+      when(propertiesCache.getProperty("sunbird.msg.91.baseurl")).thenReturn("http://api.msg91.com/");
+      when(propertiesCache.getProperty("sunbird.msg.91.post.url")).thenReturn("api/v2/sendsms");
+      when(propertiesCache.getProperty("sunbird.msg.91.method")).thenReturn("POST");
+      when(propertiesCache.getProperty("sunbird.msg.91.sender")).thenReturn("TestSun");
+      when(propertiesCache.getProperty("sunbird.msg.91.route")).thenReturn("4");
+      when(propertiesCache.getProperty("sunbird.msg.91.country")).thenReturn("91");
+      when(propertiesCache.getProperty("sunbird.msg.91.auth")).thenReturn("test_auth_key");
+      
+      // Mock HTTP client behavior
       doReturn(httpClient).when(HttpClients.class, "createDefault");
       when(httpClient.execute(Mockito.any(HttpPost.class))).thenReturn(httpResp);
       doReturn(statusLine).when(httpResp).getStatusLine();
       doReturn(200).when(statusLine).getStatusCode();
-    } catch (Exception e) {
-      Assert.fail("Exception while mocking static " + e.getLocalizedMessage());
-    }
 
-    try {
-      PowerMockito.when(propertiesCache.getProperty(Mockito.anyString())).thenReturn("anyString");
+  // Factory selection will use ProjectUtil mock; no need to stub SMSFactory directly
+      
     } catch (Exception e) {
       Assert.fail("Exception while mocking static " + e.getLocalizedMessage());
     }
@@ -65,18 +85,35 @@ public class Msg91PostMethodTest {
     CloseableHttpResponse httpResp = mock(CloseableHttpResponse.class);
     PropertiesCache propertiesCache = mock(PropertiesCache.class);
     StatusLine statusLine = mock(StatusLine.class);
+    
     PowerMockito.mockStatic(HttpClients.class);
+    PowerMockito.mockStatic(ProjectUtil.class);
+  PowerMockito.mockStatic(PropertiesCache.class);
+    
     try {
+      // Mock ProjectUtil first - this is critical for SMSFactory.getInstance()
+      when(ProjectUtil.getConfigValue("sms_gateway_provider")).thenReturn(JsonKey.MSG_91);
+      when(ProjectUtil.getConfigValue(Mockito.anyString())).thenReturn("test_value");
+      
+      // Mock PropertiesCache for Msg91SmsProvider initialization
+      when(PropertiesCache.getInstance()).thenReturn(propertiesCache);
+      when(propertiesCache.getProperty(Mockito.anyString())).thenReturn("test_value");
+      when(propertiesCache.getProperty("sunbird.msg.91.baseurl")).thenReturn("http://api.msg91.com/");
+      when(propertiesCache.getProperty("sunbird.msg.91.post.url")).thenReturn("api/v2/sendsms");
+      when(propertiesCache.getProperty("sunbird.msg.91.method")).thenReturn("POST");
+      when(propertiesCache.getProperty("sunbird.msg.91.sender")).thenReturn("TestSun");
+      when(propertiesCache.getProperty("sunbird.msg.91.route")).thenReturn("4");
+      when(propertiesCache.getProperty("sunbird.msg.91.country")).thenReturn("91");
+      when(propertiesCache.getProperty("sunbird.msg.91.auth")).thenReturn("test_auth_key");
+      
+      // Mock HTTP client behavior
       doReturn(httpClient).when(HttpClients.class, "createDefault");
       when(httpClient.execute(Mockito.any(HttpPost.class))).thenReturn(httpResp);
       doReturn(statusLine).when(httpResp).getStatusLine();
       doReturn(400).when(statusLine).getStatusCode();
-    } catch (Exception e) {
-      Assert.fail("Exception while mocking static " + e.getLocalizedMessage());
-    }
 
-    try {
-      PowerMockito.when(propertiesCache.getProperty(Mockito.anyString())).thenReturn("anyString");
+  // Factory selection will use ProjectUtil mock; no need to stub SMSFactory directly
+      
     } catch (Exception e) {
       Assert.fail("Exception while mocking static " + e.getLocalizedMessage());
     }

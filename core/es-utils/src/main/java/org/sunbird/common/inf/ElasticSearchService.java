@@ -75,6 +75,13 @@ public interface ElasticSearchService {
   public Future<Boolean> healthCheck();
 
   /**
+   * This method will do the health check of elastic search.
+   *
+   * @return boolean
+   */
+  public Future<Boolean> userHealthCheck();
+
+  /**
    * This method will do the bulk data insertion.
    *
    * @param index String index name
