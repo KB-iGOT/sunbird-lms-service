@@ -44,7 +44,9 @@ public class OrgServiceImpl implements OrgService {
     initializeOrgStatusTransition();
   }
 
-  private final List<String> stateOrMinistry = Arrays.asList("16", "2048", "512");
+  private final List<String> stateOrMinistry = List.of(
+          ProjectUtil.getConfigValue(JsonKey.ORGANISATION_TYPE_IDS).split(",")
+  );
 
   @Override
   public Map<String, Object> getOrgById(String orgId, RequestContext context) {

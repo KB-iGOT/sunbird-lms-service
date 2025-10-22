@@ -715,6 +715,7 @@ public final class JsonKey {
   public static final String IS_CCA = "isCCA";
   public static final String ALLOWED_SEARCH_QUERY_STRING = "allowed_search_query_string";
   public static final int ALLOWED_SEARCH_QUERY_STRING_DEFAULT = 100;
+  public static final String ORGANISATION_TYPE_IDS = "organisation_type_ids";
 
   private JsonKey() {}
 }
