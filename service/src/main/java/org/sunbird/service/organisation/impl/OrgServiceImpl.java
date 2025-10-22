@@ -44,6 +44,10 @@ public class OrgServiceImpl implements OrgService {
     initializeOrgStatusTransition();
   }
 
+  private final List<String> stateOrMinistry = List.of(
+          ProjectUtil.getConfigValue(JsonKey.ORGANISATION_TYPE_IDS).split(",")
+  );
+
   @Override
   public Map<String, Object> getOrgById(String orgId, RequestContext context) {
     return orgDao.getOrgById(orgId, context);
@@ -388,22 +392,32 @@ public class OrgServiceImpl implements OrgService {
 
     Future<Map<String, Object>> esResultF = orgDao.search(searchDTO, context);
     Map<String, Object> esResult = (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(esResultF);
-
+    String ministryOrStateId = "";
+    String ministryOrStateName = "";
     if (MapUtils.isNotEmpty(esResult) && CollectionUtils.isNotEmpty((List<?>) esResult.get(JsonKey.CONTENT))) {
-        Object esContentObj = esResult.get(JsonKey.CONTENT);
-        if (esContentObj instanceof List) {
-          List<?> contentList = (List<?>) esContentObj;
-          if (CollectionUtils.isNotEmpty(contentList)) {
-            Object orgDetailsObj = contentList.get(0);
-            Map<String, Object> esContent = (Map<String, Object>) orgDetailsObj;
-            String ministryOrStateId = (String) esContent.get(JsonKey.MINISTRY_STATE_ID);
-            String ministryOrStateName = (String) esContent.get(JsonKey.MINISTRY_STATE_NAME);
-            Map<String, String> ministryInfo = new HashMap<>();
-            ministryInfo.put(JsonKey.MINISTRY_STATE_ID, ministryOrStateId);
-            ministryInfo.put(JsonKey.MINISTRY_STATE_NAME, ministryOrStateName);
-            return ministryInfo;
+      Object esContentObj = esResult.get(JsonKey.CONTENT);
+      if (esContentObj instanceof List) {
+        List<?> contentList = (List<?>) esContentObj;
+        if (CollectionUtils.isNotEmpty(contentList)) {
+          Object orgDetailsObj = contentList.get(0);
+          Map<String, Object> esContent = (Map<String, Object>) orgDetailsObj;
+          if (MapUtils.isNotEmpty(esContent)) {
+            Object organisationTypeObj = esContent.get(JsonKey.ORGANISATION_TYPE);
+            String organisationType = organisationTypeObj.toString();
+            if (stateOrMinistry.contains(organisationType)) {
+              ministryOrStateId = (String) esContent.get(JsonKey.ROOT_ORG_ID);
+              ministryOrStateName = (String) esContent.get(JsonKey.ORG_NAME);
+            } else {
+              ministryOrStateId = (String) esContent.get(JsonKey.MINISTRY_STATE_ID);
+              ministryOrStateName = (String) esContent.get(JsonKey.MINISTRY_STATE_NAME);
+            }
           }
         }
+        Map<String, String> ministryInfo = new HashMap<>();
+        ministryInfo.put(JsonKey.MINISTRY_STATE_ID, ministryOrStateId);
+        ministryInfo.put(JsonKey.MINISTRY_STATE_NAME, ministryOrStateName);
+        return ministryInfo;
+      }
     } else {
        throw new ProjectCommonException(ResponseCode.invalidParameterValue, ProjectUtil.formatMessage(ResponseCode.invalidParameterValue.getErrorMessage(), channel, JsonKey.CHANNEL), ResponseCode.CLIENT_ERROR.getResponseCode());
     }
