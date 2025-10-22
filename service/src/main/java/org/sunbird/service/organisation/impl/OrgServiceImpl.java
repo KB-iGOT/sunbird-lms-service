@@ -403,7 +403,7 @@ public class OrgServiceImpl implements OrgService {
             Object organisationTypeObj = esContent.get(JsonKey.ORGANISATION_TYPE);
             String organisationType = organisationTypeObj.toString();
             if (stateOrMinistry.contains(organisationType)) {
-              ministryOrStateId = (String) esContent.get(JsonKey.ORG_ID);
+              ministryOrStateId = (String) esContent.get(JsonKey.ROOT_ORG_ID);
               ministryOrStateName = (String) esContent.get(JsonKey.ORG_NAME);
             } else {
               ministryOrStateId = (String) esContent.get(JsonKey.MINISTRY_STATE_ID);
