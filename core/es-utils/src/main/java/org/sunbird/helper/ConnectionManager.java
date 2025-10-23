@@ -75,19 +75,21 @@ public class ConnectionManager {
   public static RestHighLevelClient getRestClient(boolean isUserService) {
     if (isUserService) {
       if (userRestClient == null) {
-        logger.info("ConnectionManager:getRestClient eLastic search userRestClient is null ");
+        logger.info("ConnectionManager:getRestClient ElasticSearch userRestClient is null ");
         initialiseRestClientConnection(true);
         logger.info(
             "ConnectionManager:getRestClient after calling initialiseRestClientConnection ES userRestClient value ");
       }
+      logger.info("ConnectionManager:getRestClient returning userRestClient");
       return userRestClient;
     } else {
       if (restClient == null) {
-        logger.info("ConnectionManager:getRestClient eLastic search rest clinet is null ");
+        logger.info("ConnectionManager:getRestClient ElasticSearch rest client is null ");
         initialiseRestClientConnection(false);
         logger.info(
             "ConnectionManager:getRestClient after calling initialiseRestClientConnection ES client value ");
       }
+      logger.info("ConnectionManager:getRestClient returning restClient");
       return restClient;
     }
   }
