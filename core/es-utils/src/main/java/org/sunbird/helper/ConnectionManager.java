@@ -22,8 +22,6 @@ public class ConnectionManager {
 
   private static RestHighLevelClient restClient = null;
   private static RestHighLevelClient userRestClient = null;
-  private static List<String> host = new ArrayList<>();
-  private static List<Integer> ports = new ArrayList<>();
 
   static {
     System.setProperty("es.set.netty.runtime.available.processors", "false");
@@ -39,17 +37,13 @@ public class ConnectionManager {
     try {
       String cluster = System.getenv(JsonKey.SUNBIRD_ES_CLUSTER);
       String hostName = isUserService ? System.getenv(JsonKey.USER_ES_IP) : System.getenv(JsonKey.SUNBIRD_ES_IP);
-      String port = System.getenv(JsonKey.SUNBIRD_ES_PORT);
-      if (StringUtils.isBlank(hostName) || StringUtils.isBlank(port)) {
+      if (StringUtils.isBlank(hostName)) {
         return false;
       }
       String[] splitedHost = hostName.split(",");
+      List<String> host = new ArrayList<>();
       for (String val : splitedHost) {
         host.add(val);
-      }
-      String[] splitedPort = port.split(",");
-      for (String val : splitedPort) {
-        ports.add(Integer.parseInt(val));
       }
       response = createRestClient(cluster, host, isUserService);
       logger.info(
@@ -57,8 +51,7 @@ public class ConnectionManager {
               + cluster
               + "  hostName"
               + hostName
-              + " port "
-              + port
+              + " response: "
               + response);
     } catch (Exception e) {
       logger.error("Error while initialising connection for restClient from the Env", e);
