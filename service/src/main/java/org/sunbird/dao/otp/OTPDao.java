@@ -65,4 +65,33 @@ public interface OTPDao {
    */
   void updateOTPDetailsV3(String keyspaceName, String tableName, Map<String, Object> request, Map<String, Object> compositeKey, RequestContext context);
 
+  /**
+   * Inserts OTP lookup details into the database without ttl.
+   *
+   * @param type The type of the OTP (e.g., email, phone).
+   * @param key The key associated with the OTP.
+   * @param otp The OTP to be inserted.
+   * @param context The request context.
+   */
+  void insertOTPLookup(String type, String key, String otp, RequestContext context);
+
+  /**
+   * Retrieves OTP lookup details from the database.
+   *
+   * @param type The type of the OTP (e.g., email, phone).
+   * @param key The key associated with the OTP.
+   * @param requestContext The request context.
+   * @return A map containing OTP lookup details.
+   */
+  Map<String, Object> getOTPLookupDetails(String type, String key, RequestContext requestContext);
+
+  /**
+   * Deletes OTP lookup details from the database.
+   *
+   * @param type The type of the OTP (e.g., email, phone).
+   * @param key The key associated with the OTP.
+   * @param requestContext The request context.
+   */
+  void deleteOTPLookup(String type, String key, RequestContext requestContext);
+
 }
