@@ -174,7 +174,8 @@ public class OTPDaoImpl implements OTPDao {
       request.put(JsonKey.TYPE, type);
       request.put(JsonKey.KEY, key);
       request.put(JsonKey.OTP, otp);
-      cassandraOperation.insertRecord(JsonKey.SUNBIRD, OTP_LOOKUP_TABLE_NAME, request, context);
+      int ttl = Integer.parseInt(PropertiesCache.getInstance().getProperty(JsonKey.SUNBIRD_OTP_LOOKUP_EXPIRATION));
+      cassandraOperation.insertRecordWithTTL(JsonKey.SUNBIRD, OTP_LOOKUP_TABLE_NAME, request, ttl, context);
   }
 
   @Override
