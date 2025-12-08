@@ -717,6 +717,7 @@ public final class JsonKey {
   public static final int ALLOWED_SEARCH_QUERY_STRING_DEFAULT = 100;
   public static final String ORGANISATION_TYPE_IDS = "organisation_type_ids";
   public static final String OTP_LOOKUP = "otp_lookup";
+  public static final String SUNBIRD_OTP_LOOKUP_EXPIRATION = "sunbird_otp_lookup_expiration";
 
   private JsonKey() {}
 }
