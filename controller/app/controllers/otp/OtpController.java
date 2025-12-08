@@ -81,4 +81,17 @@ public class OtpController extends BaseController {
                 getAllRequestHeaders(httpRequest),
                 httpRequest);
     }
+
+    public CompletionStage<Result> verifyOTPv4(Http.Request httpRequest) {
+        return handleRequest(
+                otpActor,
+                ActorOperations.VERIFY_OTP_V4.getValue(),
+                httpRequest.body().asJson(),
+                (request) -> {
+                    new OtpRequestValidator().validateVerifyOtpRequest((Request) request);
+                    return null;
+                },
+                getAllRequestHeaders(httpRequest),
+                httpRequest);
+    }
 }

@@ -52,7 +52,7 @@ public class OTPActor extends BaseActor {
     if (ActorOperations.GENERATE_OTP.getValue().equals(request.getOperation())) {
       generateOTP(request);
     } else if (ActorOperations.VERIFY_OTP.getValue().equals(request.getOperation())) {
-      verifyOTP(request);
+      verifyOTP(request, null);
     } else if (ActorOperations.GENERATE_OTP_V3.getValue().equals(request.getOperation())) {
       generateOTPV3(request);
     }
@@ -61,6 +61,9 @@ public class OTPActor extends BaseActor {
     }
     else if (ActorOperations.VERIFY_OTP_FROM_LOOKUP.getValue().equals(request.getOperation())) {
       verifyOTPFromLookup(request);
+    }
+    else if (ActorOperations.VERIFY_OTP_V4.getValue().equals(request.getOperation())) {
+        verifyOTP(request, JsonKey.VERSION_4);
     }
     else {
       onReceiveUnsupportedOperation();
@@ -120,7 +123,7 @@ public class OTPActor extends BaseActor {
     sender().tell(response, self());
   }
 
-  private void verifyOTP(Request request) {
+  private void verifyOTP(Request request, String version) {
     String type = (String) request.getRequest().get(JsonKey.TYPE);
     String key = (String) request.getRequest().get(JsonKey.KEY);
     String otpInRequest = (String) request.getRequest().get(JsonKey.OTP);
@@ -176,7 +179,9 @@ public class OTPActor extends BaseActor {
           request.getRequestContext(),
           "OTP_VALIDATION_SUCCESS:OTPActor:verifyOTP: Verified successfully Key = "
               + OTPUtil.maskId(key, type));
-      otpService.insertOTPLookup(type, key, otpInDB, request.getRequestContext());
+      if(JsonKey.VERSION_4.equals(version)) {
+          otpService.insertOTPLookup(type, key, otpInDB, request.getRequestContext());
+      }
       otpService.deleteOtp(type, key, request.getRequestContext());
       Response response = new Response();
       response.put(JsonKey.RESPONSE, JsonKey.SUCCESS);
@@ -443,18 +448,6 @@ public class OTPActor extends BaseActor {
         String key = (String) request.getRequest().get(JsonKey.KEY);
         String otpInRequest = (String) request.getRequest().get(JsonKey.OTP);
 
-        String userId = (String) request.getRequest().get(JsonKey.USER_ID);
-        if (StringUtils.isNotBlank(userId)) {
-            key = otpService.getEmailPhoneByUserId(userId, type, request.getRequestContext());
-            type = getType(type);
-            logger.info(
-                    request.getRequestContext(),
-                    "OTPActor:verifyOTPFromLookup:getEmailPhoneByUserId: called for userId = "
-                            + userId
-                            + " ,key = "
-                            + OTPUtil.maskId(key, type));
-        }
-
         Map<String, Object> otpLookupDetails =
                 otpService.getOTPLookupDetails(type, key, request.getRequestContext());
 
@@ -469,13 +462,11 @@ public class OTPActor extends BaseActor {
         }
 
         String otpInDB = (String) otpLookupDetails.get(JsonKey.OTP);
-        if (StringUtils.isBlank(otpInDB) || StringUtils.isBlank(otpInRequest)) {
+        if (StringUtils.isBlank(otpInDB)) {
             logger.info(
                     request.getRequestContext(),
                     "OTP_VALIDATION_FAILED : OTPActor:verifyOTPFromLookup: Invalid OTP for Key = "
                             + OTPUtil.maskId(key, type)
-                            + " otpInRequest = "
-                            + OTPUtil.maskOTP(otpInRequest)
                             + " otpInDB = "
                             + OTPUtil.maskOTP(otpInDB));
             ProjectCommonException.throwClientErrorException(ResponseCode.errorInvalidOTP);

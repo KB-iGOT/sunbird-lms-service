@@ -75,6 +75,7 @@ public enum ActorOperations {
   SEND_OTP("sendOTP", "OTPNOTI"),
   GENERATE_OTP_V3("generateOTPV3", "OTPCRT3"),
   VERIFY_OTP_V3("verifyOTPV3", "OTPVERFY3"),
+  VERIFY_OTP_V4("verifyOTPV4", "OTPVERFY4"),
   VERIFY_OTP_FROM_LOOKUP("verifyOTPFromLookup", "OTPVERFYLOOKUP"),
 
   GET_USER_TYPES("getUserTypes", "UTYPRED"),
