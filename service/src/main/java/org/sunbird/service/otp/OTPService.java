@@ -87,4 +87,34 @@ public class OTPService {
     otpDao.updateOTPDetailsV3(keyspaceName, tableName, request, compositeKey,context);
   }
 
+  /**
+   * Inserts OTP lookup details into the database without ttl.
+   */
+  public void insertOTPLookup(String type, String key, String otp, RequestContext context) {
+    otpDao.insertOTPLookup(type, key, otp, context);
+  }
+
+  /**
+   * Retrieves OTP lookup details from the database.
+   *
+   * @param type The type of the OTP (e.g., email, phone).
+   * @param key The key associated with the OTP.
+   * @param requestContext The request context.
+   * @return A map containing OTP lookup details.
+   */
+  public Map<String, Object> getOTPLookupDetails(String type, String key, RequestContext requestContext) {
+    return otpDao.getOTPLookupDetails(type, key, requestContext);
+  }
+
+  /**
+   * Deletes OTP lookup details from the database.
+   *
+   * @param type The type of the OTP (e.g., email, phone).
+   * @param key The key associated with the OTP.
+   * @param requestContext The request context.
+   */
+  public void deleteOTPLookup(String type, String key, RequestContext requestContext) {
+    otpDao.deleteOTPLookup(type, key, requestContext);
+  }
+
 }
