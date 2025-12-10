@@ -181,6 +181,13 @@ public class ElasticSearchHelper {
       for (Map.Entry<String, Object> en : nestedFilters.entrySet()) {
         query = createNestedFilterESOpperation(en, query, constraintsMap);
       }
+    } else if (JsonKey.WILDCARD_KEY.equalsIgnoreCase(key)) {
+        query = createWildcardQuery(entry, query);
+    } else if (JsonKey.ADDITIONAL_FILTER.equalsIgnoreCase(key)) {
+        Map<String, Object> additionalFilter = (Map<String, Object>) entry.getValue();
+        for (Map.Entry<String, Object> e : additionalFilter.entrySet()) {
+            query = query.must(createTermsQuery(e.getKey() + RAW_APPEND, Arrays.asList(e.getValue()), constraintsMap.get(key)));
+        }
     }
     long elapsedTime = calculateEndTime(startTime);
     logger.debug(
@@ -601,6 +608,7 @@ public class ElasticSearchHelper {
     search = getBasicBuiders(search, searchQueryMap);
     search = setOffset(search, searchQueryMap);
     search = getLimits(search, searchQueryMap);
+    addParentMapIdWildcardIfPresent(search, searchQueryMap);
     if (searchQueryMap.containsKey(JsonKey.GROUP_QUERY)) {
       search
           .getGroupQuery()
@@ -788,4 +796,92 @@ public class ElasticSearchHelper {
       return QueryBuilders.multiMatchQuery(query, fields);
     }
   }
+
+
+    private static void addParentMapIdWildcardIfPresent(SearchDTO search, Map<String, Object> searchQueryMap) {
+        if (searchQueryMap == null) return;
+
+        Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+        Object pmidObj = filterMap.get(JsonKey.PARENT_PATH_ID);
+        if (pmidObj == null) return;
+
+        // ensure properties list is initialized
+        if (search.getProperties() == null) {
+            search.setProperties(new ArrayList<>());
+        }
+        // normalize to a collection of strings
+        Collection<String> ids = new ArrayList<>();
+        if (pmidObj instanceof Collection) {
+            for (Object o : (Collection<?>) pmidObj) {
+                if (o != null) ids.add(o.toString());
+            }
+        } else {
+            ids.add(pmidObj.toString());
+        }
+
+        // build wildcard entries: either 1 OR clause with multiple wildcards or multiple property maps as needed
+        // Here we'll add a single "should" style map with wildcard terms for easier downstream handling.
+        List<Map<String, Object>> wildcardList = new ArrayList<>();
+        for (String id : ids) {
+            // wildcard pattern will match anywhere in the string
+            String pattern = "*" + id;
+            if (filterMap.containsKey(JsonKey.HIERARCHY_REQUEST_TYPE) &&
+                    ((String)filterMap.get(JsonKey.HIERARCHY_REQUEST_TYPE)).equalsIgnoreCase("all")) {
+                pattern = pattern + "*";
+            }
+            Map<String, Object> wildcardClause = new HashMap<>();
+
+            Map<String, Object> inner = new HashMap<>();
+            inner.put("parentPathId.raw", pattern);
+            wildcardClause.put("wildcard", inner);
+
+            wildcardList.add(wildcardClause);
+        }
+        if (wildcardList.size() == 1) {
+            search.getAdditionalProperties().remove(JsonKey.FILTERS);
+            search.getAdditionalProperties().putAll(wildcardList.get(0));
+            if (filterMap.containsKey(JsonKey.STATUS)) {
+                Map<String, Object> statusMap = new HashMap<>();
+                statusMap.put(JsonKey.STATUS, filterMap.get(JsonKey.STATUS));
+                search.getAdditionalProperties().put(JsonKey.ADDITIONAL_FILTER, statusMap);
+            }
+        }
+    }
+
+    private static BoolQueryBuilder createWildcardQuery(
+            Entry<String, Object> entry, BoolQueryBuilder query) {
+
+        Object value = entry.getValue();
+
+        if (value instanceof Map) {
+
+            Map<String, Object> mapVal = (Map<String, Object>) value;
+
+            for (Map.Entry<String, Object> e : mapVal.entrySet()) {
+                String field = e.getKey();
+                Object valObj = e.getValue();
+
+                if (valObj == null) continue;
+
+                String val = valObj.toString().trim().toLowerCase();
+                if (val.isEmpty()) continue;
+
+                // Add proper wildcard query
+                query.must(QueryBuilders.wildcardQuery(field, val));
+            }
+
+            return query;
+        }
+        if (value instanceof String) {
+            String val = value.toString().trim().toLowerCase();
+            if (!val.isEmpty()) {
+                // The entry key is the actual field
+                String field = entry.getKey();
+                query.must(QueryBuilders.wildcardQuery(field, val));
+            }
+        }
+
+        return query;
+    }
+
 }

@@ -40,6 +40,7 @@ public class SearchHandlerActor extends BaseActor {
 
   private final OrgService orgService = OrgServiceImpl.getInstance();
   private final UserService userService = UserServiceImpl.getInstance();
+  private final List<String> orgHierarchyLevelMap = List.of(ProjectUtil.getConfigValue(JsonKey.ORG_HIERARCHY_LEVEL_MAP).split(","));
 
   @Inject
   @Named("search_telemetry_actor")
@@ -70,6 +71,9 @@ public class SearchHandlerActor extends BaseActor {
       case "orgSearch":
       case "orgSearchV2":
         handleOrgSearchAsyncRequest(searchQueryMap, request);
+        break;
+      case "orgHierarchySearch":
+        handleOrgHierarchySearchAsyncRequest(searchQueryMap, request);
         break;
       default:
         onReceiveUnsupportedOperation();
@@ -567,5 +571,78 @@ public class SearchHandlerActor extends BaseActor {
   private Map<String, Object> getFuzzyFilterMap(Map<String, Object> searchQueryMap) {
     return (Map<String, Object>)
         ((Map<String, Object>) (searchQueryMap.get(JsonKey.FILTERS))).get(JsonKey.SEARCH_FUZZY);
+  }
+
+
+  private void handleOrgHierarchySearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) {
+      List<String> fields = (List<String>) searchQueryMap.get(JsonKey.FIELDS);
+      Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+
+      if (filterMap.containsKey(JsonKey.L0_ORG_ID)) {
+          createTheParentMapAndAddToFilter(filterMap);
+      }
+      Map<String,String> sortBy = new HashMap<>();
+      sortBy.put(JsonKey.ORG_NAME, "asc");
+      searchQueryMap.put("sort_by", sortBy);
+      SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(searchQueryMap);
+      Future<Map<String, Object>> futureResponse =
+              orgService.searchOrg(searchDto, request.getRequestContext());
+      Future<Response> response =
+              futureResponse.map(
+                      new Mapper<>() {
+                          @Override
+                          public Response apply(Map<String, Object> responseMap) {
+                              logger.debug(
+                                      request.getRequestContext(),
+                                      "SearchHandlerActor:handleOrgHierarchySearchAsyncRequest org search call ");
+                              Response response = new Response();
+                              Map<String, Object> orgDefaultFieldValue = new HashMap<>(Util.getOrgDefaultValue());
+                              getDefaultValues(orgDefaultFieldValue, fields);
+                              response.put(JsonKey.RESPONSE, responseMap);
+                              return response;
+                          }
+                      },
+                      getContext().dispatcher());
+      Patterns.pipe(response, getContext().dispatcher()).to(sender());
+      Request telemetryReq = new Request();
+      telemetryReq.getRequest().put("context", request.getContext());
+      telemetryReq.getRequest().put("searchFResponse", response);
+      telemetryReq.getRequest().put("indexType", ProjectUtil.EsType.organisation.getTypeName());
+      telemetryReq.getRequest().put("searchDto", searchDto);
+      telemetryReq.setOperation("generateSearchTelemetry");
+      try {
+          searchTelemetryGenerator.tell(telemetryReq, self());
+      } catch (Exception ex) {
+          logger.error("Exception while saving telemetry", ex);
+      }
+  }
+
+  private void createTheParentMapAndAddToFilter(Map<String, Object> filterMap) {
+      if (filterMap == null) return;
+
+      StringBuilder sb = new StringBuilder();
+      boolean foundAny = false;
+
+      for (String lvlKey : orgHierarchyLevelMap) {
+          if (lvlKey == null) continue; // defensive
+          if (!filterMap.containsKey(lvlKey)) continue;
+
+          Object val = filterMap.get(lvlKey);
+          if (val == null) continue;
+
+          String piece = val.toString().trim();
+          if (piece.isEmpty()) continue;
+
+          if (foundAny) {
+              sb.append('_');
+          }
+          sb.append(piece);
+          foundAny = true;
+      }
+
+      if (!foundAny) return;
+
+      String parentPathId = sb.toString();
+      filterMap.put(JsonKey.PARENT_PATH_ID, parentPathId);
   }
 }
