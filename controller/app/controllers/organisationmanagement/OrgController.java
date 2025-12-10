@@ -106,4 +106,20 @@ public class OrgController extends BaseController {
         ProjectUtil.EsType.organisation.getTypeName(),
         httpRequest);
   }
+
+  public CompletionStage<Result> searchOrgHierarchy(Http.Request httpRequest) {
+      return handleSearchRequest(
+              searchHandlerActor,
+              ActorOperations.ORG_HIERARCHY_SEARCH.getValue(),
+              httpRequest.body().asJson(),
+              orgRequest -> {
+                  new OrgRequestValidator().validateHierarchySearchRequest((Request) orgRequest);
+                  return null;
+              },
+              null,
+              null,
+              getAllRequestHeaders(httpRequest),
+              ProjectUtil.EsType.organisation.getTypeName(),
+              httpRequest);
+  }
 }

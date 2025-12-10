@@ -716,6 +716,14 @@ public final class JsonKey {
   public static final String ALLOWED_SEARCH_QUERY_STRING = "allowed_search_query_string";
   public static final int ALLOWED_SEARCH_QUERY_STRING_DEFAULT = 100;
   public static final String ORGANISATION_TYPE_IDS = "organisation_type_ids";
+  public static final String L0_ORG_ID = "levelZeroOrgId";
+  public static final String ORG_HIERARCHY_LEVEL_MAP = "org_hierarchy_level_map";
+  public static final String PARENT_PATH_ID = "parentPathId";
+  public static final String HIERARCHY_REQUEST_TYPE = "hierarchyRequestType";
+  public static final String WILDCARD_KEY = "wildCard";
+  public static final String ADDITIONAL_FILTER = "additionalFilter";
+  public static final String ORG_HIERARCHY_SEARCH_ALLOWED_REQUEST_FIELDS = "org_hierarchy_search_allowed_request_fields";
+  public static final String ORG_HIERARCHY_SEARCH_FILTERS_ALLOWED_FIELDS = "org_hierarchy_search_filters_allowed_fields";
 
   private JsonKey() {}
 }
