@@ -799,32 +799,32 @@ public class ElasticSearchHelper {
 
 
     private static void addParentMapIdWildcardIfPresent(SearchDTO search, Map<String, Object> searchQueryMap) {
-        if (searchQueryMap == null) return;
+        if (MapUtils.isEmpty(searchQueryMap)) return;
 
         Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
-        Object pmidObj = filterMap.get(JsonKey.PARENT_PATH_ID);
-        if (pmidObj == null) return;
+        Object parentPathIdObj = filterMap.get(JsonKey.PARENT_PATH_ID);
+        if (parentPathIdObj == null) return;
 
         // ensure properties list is initialized
-        if (search.getProperties() == null) {
+        if (CollectionUtils.isEmpty(search.getProperties())) {
             search.setProperties(new ArrayList<>());
         }
         // normalize to a collection of strings
-        Collection<String> ids = new ArrayList<>();
-        if (pmidObj instanceof Collection) {
-            for (Object o : (Collection<?>) pmidObj) {
-                if (o != null) ids.add(o.toString());
+        List<String> parentPathIdList = new ArrayList<>();
+        if (parentPathIdObj instanceof Collection) {
+            for (Object parentPathId : (Collection<?>) parentPathIdObj) {
+                if (parentPathId != null) parentPathIdList.add(parentPathId.toString());
             }
         } else {
-            ids.add(pmidObj.toString());
+          parentPathIdList.add(parentPathIdObj.toString());
         }
 
         // build wildcard entries: either 1 OR clause with multiple wildcards or multiple property maps as needed
         // Here we'll add a single "should" style map with wildcard terms for easier downstream handling.
         List<Map<String, Object>> wildcardList = new ArrayList<>();
-        for (String id : ids) {
+        for (String parentPathString : parentPathIdList) {
             // wildcard pattern will match anywhere in the string
-            String pattern = "*" + id;
+            String pattern = "*" + parentPathString;
             if (filterMap.containsKey(JsonKey.HIERARCHY_REQUEST_TYPE) &&
                     ((String)filterMap.get(JsonKey.HIERARCHY_REQUEST_TYPE)).equalsIgnoreCase("all")) {
                 pattern = pattern + "*";
@@ -850,26 +850,18 @@ public class ElasticSearchHelper {
 
     private static BoolQueryBuilder createWildcardQuery(
             Entry<String, Object> entry, BoolQueryBuilder query) {
-
         Object value = entry.getValue();
-
         if (value instanceof Map) {
-
             Map<String, Object> mapVal = (Map<String, Object>) value;
-
             for (Map.Entry<String, Object> e : mapVal.entrySet()) {
                 String field = e.getKey();
                 Object valObj = e.getValue();
-
                 if (valObj == null) continue;
-
                 String val = valObj.toString().trim().toLowerCase();
                 if (val.isEmpty()) continue;
-
                 // Add proper wildcard query
                 query.must(QueryBuilders.wildcardQuery(field, val));
             }
-
             return query;
         }
         if (value instanceof String) {
@@ -880,7 +872,6 @@ public class ElasticSearchHelper {
                 query.must(QueryBuilders.wildcardQuery(field, val));
             }
         }
-
         return query;
     }
 
