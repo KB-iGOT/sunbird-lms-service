@@ -115,6 +115,7 @@ public interface ResponseMessage {
     String ERROR_PARAM_EXISTS_FORMATTED = "This {0} is already registered with an existing User";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "Duplicate request: This {0} was processed recently and is still within TTL window.";
     String BE_JOB_REQUEST_EXCEPTION = "BE job request event could not be generated.";
+    String BULK_USER_CREATE_PROFILEDETAILS_NOT_MET_VALUE = "Bulk user creation failed as profileDetails is Empty";
   }
 
   interface Key {
@@ -197,5 +198,6 @@ public interface ResponseMessage {
     String ERROR_OTP_ATTEMPT_EXCEEDED = "0076";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "0077";
     String BE_JOB_REQUEST_EXCEPTION = "0078";
+    String BULK_USER_CREATE_PROFILEDETAILS_NOT_MET = "Bulk User Create ProfileDetails Not Met";
   }
 }

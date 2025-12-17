@@ -526,47 +526,24 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
-  private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
-    logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
+  private void createBulkUsers(Request actorMessage) {
     populateRoles(actorMessage, findRootOrgId(actorMessage));
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
   }
 
-  private void updateMinistryDetailsForUsers(Request actorMessage) throws JsonProcessingException {
-    logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:updateMinistryDetailsForUsers: starts");
+  private void updateMinistryDetailsForUsers(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
-    if (MapUtils.isNotEmpty((Map<?, ?>) userMap.get(JsonKey.PROFILE_DETAILS)) && userMap.containsKey(JsonKey.PROFILE_DETAILS)) {
-      logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:updateMinistryDetailsForUsers: profileDetails exists in userMap");
-      String existingProfileDetailsStr = (String) userMap.get(JsonKey.PROFILE_DETAILS);
-      if (StringUtils.isNotBlank(existingProfileDetailsStr)) {
-        logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:updateMinistryDetailsForUsers: parsing existing profileDetails JSON");
-        Map<String, Object> profileDetails = mapper.readValue(existingProfileDetailsStr, Map.class);
-        String channel = String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL));
-        logger.info(actorMessage.getRequestContext(), 
-            "SSOUserCreateActor:updateMinistryDetailsForUsers: fetching ministry details for channel: " + channel);
-        Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(
-            channel,
-            actorMessage.getRequestContext());
-        logger.info(actorMessage.getRequestContext(),
-            "SSOUserCreateActor:updateMinistryDetailsForUsers: adding ministry details - ID: " + 
-            ministryDetails.get(JsonKey.MINISTRY_STATE_ID) + ", Name: " + 
-            ministryDetails.get(JsonKey.MINISTRY_STATE_NAME) + ", Type: " + 
-            ministryDetails.get(JsonKey.SB_ORG_TYPE));
-        profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
-        profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
-        profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.SB_ORG_TYPE));
-        userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
-        logger.info(actorMessage.getRequestContext(), 
-            "SSOUserCreateActor:updateMinistryDetailsForUsers: ministry details successfully added to profileDetails");
-      } else {
-        logger.info(actorMessage.getRequestContext(), 
-            "SSOUserCreateActor:updateMinistryDetailsForUsers: profileDetails string is blank, skipping ministry details update");
-      }
-    } else {
-      logger.info(actorMessage.getRequestContext(), 
-          "SSOUserCreateActor:updateMinistryDetailsForUsers: profileDetails not found in userMap, skipping ministry details update");
+    Map<String, Object> profileDetailsMap = (Map<String, Object>) userMap.get(JsonKey.PROFILE_DETAILS);
+    if (MapUtils.isEmpty(profileDetailsMap)) {
+      ProjectCommonException.throwClientErrorException(ResponseCode.bulkUserCreateProfileValidation,
+              ResponseCode.bulkUserCreateProfileValidation.getErrorMessage());
     }
-    logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:updateMinistryDetailsForUsers: ends");
+    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(
+            String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)),
+            actorMessage.getRequestContext());
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.SB_ORG_TYPE));
   }
 }
