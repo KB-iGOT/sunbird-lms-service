@@ -81,6 +81,7 @@ public class SSOUserCreateActor extends UserBaseActor {
         break;
       case "bulkCreateUserV5":
         createBulkUsers(request);
+        break;
       default:
         onReceiveUnsupportedOperation();
     }
@@ -368,7 +369,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
-
+    profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.SB_ORG_TYPE));
     if (!additionalProperties.isEmpty()) {
       profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
     }
