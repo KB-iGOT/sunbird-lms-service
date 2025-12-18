@@ -526,13 +526,13 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
-  private void createBulkUsers(Request actorMessage) {
+  private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
     populateRoles(actorMessage, findRootOrgId(actorMessage));
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
   }
 
-  private void updateMinistryDetailsForUsers(Request actorMessage) {
+  private void updateMinistryDetailsForUsers(Request actorMessage) throws JsonProcessingException {
     Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetailsMap = (Map<String, Object>) userMap.get(JsonKey.PROFILE_DETAILS);
     if (MapUtils.isEmpty(profileDetailsMap)) {
@@ -545,5 +545,6 @@ public class SSOUserCreateActor extends UserBaseActor {
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.SB_ORG_TYPE));
+    userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetailsMap));
   }
 }
