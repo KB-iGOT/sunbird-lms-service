@@ -394,6 +394,7 @@ public class OrgServiceImpl implements OrgService {
     Map<String, Object> esResult = (Map<String, Object>) ElasticSearchHelper.getResponseFromFuture(esResultF);
     String ministryOrStateId = "";
     String ministryOrStateName = "";
+    String ministryOrStateType = "";
     if (MapUtils.isNotEmpty(esResult) && CollectionUtils.isNotEmpty((List<?>) esResult.get(JsonKey.CONTENT))) {
       Object esContentObj = esResult.get(JsonKey.CONTENT);
       if (esContentObj instanceof List) {
@@ -411,11 +412,13 @@ public class OrgServiceImpl implements OrgService {
               ministryOrStateId = (String) esContent.get(JsonKey.MINISTRY_STATE_ID);
               ministryOrStateName = (String) esContent.get(JsonKey.MINISTRY_STATE_NAME);
             }
+            ministryOrStateType= (String) esContent.get(JsonKey.MINISTRY_STATE_TYPE);
           }
         }
         Map<String, String> ministryInfo = new HashMap<>();
         ministryInfo.put(JsonKey.MINISTRY_STATE_ID, ministryOrStateId);
         ministryInfo.put(JsonKey.MINISTRY_STATE_NAME, ministryOrStateName);
+        ministryInfo.put(JsonKey.MINISTRY_STATE_TYPE, ministryOrStateType);
         return ministryInfo;
       }
     } else {
