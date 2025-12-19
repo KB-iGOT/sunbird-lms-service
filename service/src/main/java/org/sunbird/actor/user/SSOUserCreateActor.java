@@ -8,6 +8,7 @@ import java.util.*;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
@@ -72,12 +73,14 @@ public class SSOUserCreateActor extends UserBaseActor {
         break;
       case "selfRegisterUserV5":
       case "customRegisterUserV5":
-      case "bulkCreateUserV5":
       case "supportCreateUserV5":
         createUserV5(request);
         break;
       case "parichayCreateUserV5":
         createUserV5ForParichayUser(request);
+        break;
+      case "bulkCreateUserV5":
+        createBulkUsers(request);
         break;
       default:
         onReceiveUnsupportedOperation();
@@ -366,7 +369,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
-
+    profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     if (!additionalProperties.isEmpty()) {
       profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
     }
@@ -478,6 +481,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
+    profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
@@ -521,5 +525,27 @@ public class SSOUserCreateActor extends UserBaseActor {
       profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
     }
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
+  }
+
+  private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
+    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    updateMinistryDetailsForUsers(actorMessage);
+    createSSOUser(actorMessage);
+  }
+
+  private void updateMinistryDetailsForUsers(Request actorMessage) throws JsonProcessingException {
+    Map<String, Object> userMap = actorMessage.getRequest();
+    Map<String, Object> profileDetailsMap = (Map<String, Object>) userMap.get(JsonKey.PROFILE_DETAILS);
+    if (MapUtils.isEmpty(profileDetailsMap)) {
+      ProjectCommonException.throwClientErrorException(ResponseCode.bulkUserCreateProfileValidation,
+              ResponseCode.bulkUserCreateProfileValidation.getErrorMessage());
+    }
+    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(
+            String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)),
+            actorMessage.getRequestContext());
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
+    userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetailsMap));
   }
 }

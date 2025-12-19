@@ -172,6 +172,9 @@ public enum ResponseCode {
     BE_JOB_REQUEST_EXCEPTION(
             ResponseMessage.Key.BE_JOB_REQUEST_EXCEPTION,
             ResponseMessage.Message.BE_JOB_REQUEST_EXCEPTION),
+  bulkUserCreateProfileValidation(
+          ResponseMessage.Key.BULK_USER_CREATE_PROFILEDETAILS_NOT_MET,
+          ResponseMessage.Message.BULK_USER_CREATE_PROFILEDETAILS_NOT_MET_VALUE),
   OK(200),
   SUCCESS(200),
   CLIENT_ERROR(400),
