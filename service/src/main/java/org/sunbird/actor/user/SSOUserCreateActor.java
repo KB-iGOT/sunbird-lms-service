@@ -369,7 +369,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
-    profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.SB_ORG_TYPE));
+    profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     if (!additionalProperties.isEmpty()) {
       profileDetails.put(JsonKey.ADDITIONAL_PROPERTIES, additionalProperties);
     }
@@ -481,6 +481,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
+    profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
@@ -544,7 +545,7 @@ public class SSOUserCreateActor extends UserBaseActor {
             actorMessage.getRequestContext());
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
-    profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.SB_ORG_TYPE));
+    profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetailsMap));
   }
 }
