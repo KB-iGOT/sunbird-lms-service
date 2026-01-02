@@ -721,12 +721,15 @@ public final class JsonKey {
   public static final String HIERARCHY_REQUEST_TYPE = "hierarchyRequestType";
   public static final String WILDCARD_KEY = "wildCard";
   public static final String ADDITIONAL_FILTER = "additionalFilter";
+  public static final String ADVANCED_FILTERS = "advancedFilters";
   public static final String ORG_HIERARCHY_SEARCH_ALLOWED_REQUEST_FIELDS = "org_hierarchy_search_allowed_request_fields";
   public static final String ORG_HIERARCHY_SEARCH_FILTERS_ALLOWED_FIELDS = "org_hierarchy_search_filters_allowed_fields";
   public static final String OTP_LOOKUP = "otp_lookup";
   public static final String SUNBIRD_OTP_LOOKUP_EXPIRATION = "sunbird_otp_lookup_expiration";
   public static final String L0_ORG_ID = "levelZeroOrgId";
   public static final String SB_ORG_TYPE = "sbOrgType";
+  public static final String ORG_HIERARCHY_SEARCH_MINISTRY_FILTERS = "org_hierarchy_search_filter_criteria_ministry";
+  public static final String ORG_HIERARCHY_SEARCH_STATE_FILTERS = "org_hierarchy_search_filter_criteria_state";
 
   private JsonKey() {}
 }

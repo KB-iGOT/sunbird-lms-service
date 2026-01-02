@@ -2,9 +2,13 @@ package controllers.organisationmanagement;
 
 import akka.actor.ActorRef;
 import controllers.BaseController;
+
+import java.util.Map;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import org.sunbird.keys.JsonKey;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
 import org.sunbird.util.ProjectUtil;
@@ -22,6 +26,17 @@ public class OrgController extends BaseController {
   @Inject
   @Named("search_handler_actor")
   private ActorRef searchHandlerActor;
+
+  private final Map<String, Object> ministryFilters;
+  private final Map<String, Object> stateFilters;
+
+  public OrgController() {
+    this.ministryFilters = ProjectUtil.loadFilters(
+            JsonKey.ORG_HIERARCHY_SEARCH_MINISTRY_FILTERS);
+
+    this.stateFilters = ProjectUtil.loadFilters(
+            JsonKey.ORG_HIERARCHY_SEARCH_STATE_FILTERS);
+  }
 
   public CompletionStage<Result> createOrg(Http.Request httpRequest) {
     return handleRequest(
@@ -121,5 +136,47 @@ public class OrgController extends BaseController {
               getAllRequestHeaders(httpRequest),
               ProjectUtil.EsType.organisation.getTypeName(),
               httpRequest);
+  }
+
+  public CompletionStage<Result> searchOrgHierarchyMinistry(Http.Request httpRequest) {
+    return handleSearchRequest(
+            searchHandlerActor,
+            ActorOperations.ORG_HIERARCHY_MINISTRY_SEARCH.getValue(),
+            httpRequest.body().asJson(),
+            orgRequest -> {
+              Request request = (Request) orgRequest;
+              Object filtersObj = request.get(JsonKey.FILTERS);
+              if (filtersObj == null) {
+                request.getRequest().put(JsonKey.FILTERS, ministryFilters);
+              }
+              new OrgRequestValidator().validateHierarchySearchRequest((Request) orgRequest);
+              return null;
+            },
+            null,
+            null,
+            getAllRequestHeaders(httpRequest),
+            ProjectUtil.EsType.organisation.getTypeName(),
+            httpRequest);
+  }
+
+  public CompletionStage<Result> searchOrgHierarchyState(Http.Request httpRequest) {
+    return handleSearchRequest(
+            searchHandlerActor,
+            ActorOperations.ORG_HIERARCHY_STATE_SEARCH.getValue(),
+            httpRequest.body().asJson(),
+            orgRequest -> {
+              Request request = (Request) orgRequest;
+              Object filtersObj = request.get(JsonKey.FILTERS);
+              if (filtersObj == null) {
+                request.getRequest().put(JsonKey.FILTERS, stateFilters);
+              }
+              new OrgRequestValidator().validateHierarchySearchRequest((Request) orgRequest);
+              return null;
+            },
+            null,
+            null,
+            getAllRequestHeaders(httpRequest),
+            ProjectUtil.EsType.organisation.getTypeName(),
+            httpRequest);
   }
 }
