@@ -1,5 +1,6 @@
 package org.sunbird.util;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.i18n.phonenumbers.NumberParseException;
 import com.google.i18n.phonenumbers.PhoneNumberUtil;
@@ -625,6 +626,17 @@ public class ProjectUtil {
 
     public String getValue() {
       return value;
+    }
+  }
+
+  public static Map<String, Object> loadFilters(String key) {
+    try {
+      String json = ProjectUtil.getConfigValue(key);
+      return mapper.readValue(
+              json, new TypeReference<Map<String, Object>>() {});
+    } catch (Exception e) {
+      throw new IllegalStateException(
+              "Invalid search filter config for key: " + key, e);
     }
   }
 }

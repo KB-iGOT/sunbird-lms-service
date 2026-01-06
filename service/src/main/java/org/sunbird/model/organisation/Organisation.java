@@ -63,6 +63,7 @@ public class Organisation implements Serializable {
   private String customFieldsData;
   private Boolean isCca;
   private String parentPathId;
+  private String hierarchyLevel;
 
   public String getId() {
     return id;
@@ -418,4 +419,12 @@ public class Organisation implements Serializable {
     public void setParentPathId(String parentPathId) {
         this.parentPathId = parentPathId;
     }
+
+  public String getHierarchyLevel() {
+    return hierarchyLevel;
+  }
+
+  public void setHierarchyLevel(String hierarchyLevel) {
+    this.hierarchyLevel = hierarchyLevel;
+  }
 }

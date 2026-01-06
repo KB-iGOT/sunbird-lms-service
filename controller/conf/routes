@@ -120,6 +120,8 @@ POST    /v1/org/search		                    @controllers.organisationmanagement.
 POST    /v2/org/search		                    @controllers.organisationmanagement.OrgController.searchV2(request: play.mvc.Http.Request)
 PATCH   /v1/org/assign/key                      @controllers.organisationmanagement.KeyManagementController.assignKeys(request: play.mvc.Http.Request)
 POST    /v1/org/hierarchy/search		        @controllers.organisationmanagement.OrgController.searchOrgHierarchy(request: play.mvc.Http.Request)
+POST    /v1/org/hierarchy/ministry/search		@controllers.organisationmanagement.OrgController.searchOrgHierarchyMinistry(request: play.mvc.Http.Request)
+POST    /v1/org/hierarchy/state/search		    @controllers.organisationmanagement.OrgController.searchOrgHierarchyState(request: play.mvc.Http.Request)
 
 #Health check
 GET     /health                                 @controllers.healthmanager.HealthController.getHealth(request: play.mvc.Http.Request)
