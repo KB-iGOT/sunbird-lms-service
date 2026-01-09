@@ -583,12 +583,11 @@ public class SearchHandlerActor extends BaseActor {
       if (filterMap.containsKey(JsonKey.L0_ORG_ID)) {
           createTheParentMapAndAddToFilter(filterMap);
       }
-      /*if (!searchQueryMap.containsKey(JsonKey.QUERY)) {
+      if (!searchQueryMap.containsKey(JsonKey.QUERY)) {
         Map<String,String> sortBy = new HashMap<>();
-        sortBy.put("_score", "desc");
         sortBy.put(JsonKey.ORG_NAME, "asc");
         searchQueryMap.put("sort_by", sortBy);
-      }*/
+      }
       SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(searchQueryMap);
       Future<Map<String, Object>> futureResponse =
               orgService.searchOrg(searchDto, request.getRequestContext());
