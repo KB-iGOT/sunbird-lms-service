@@ -583,7 +583,8 @@ public class SearchHandlerActor extends BaseActor {
       if (filterMap.containsKey(JsonKey.L0_ORG_ID)) {
           createTheParentMapAndAddToFilter(filterMap);
       }
-      if (!searchQueryMap.containsKey(JsonKey.QUERY)) {
+      String queryString = (String)searchQueryMap.get(JsonKey.QUERY);
+      if (StringUtils.isBlank(queryString)) {
         Map<String,String> sortBy = new HashMap<>();
         sortBy.put(JsonKey.ORG_NAME, "asc");
         searchQueryMap.put("sort_by", sortBy);
