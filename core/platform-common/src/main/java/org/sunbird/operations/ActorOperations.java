@@ -5,7 +5,8 @@ import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 /**
- * This enum will contains different operation for a learner {addCourse, getCourse, update ,
+ * This enum will contains different operation for a learner {addCourse,
+ * getCourse, update ,
  * getContent}
  *
  * @author Manzarul
@@ -103,7 +104,7 @@ public enum ActorOperations {
   SELF_REGISTER_USERS_V5("selfRegisterUserV5", "USRCRT"),
   CUSTOM_REGISTER_USER_V5("customRegisterUserV5", "USRCRT"),
   BULK_CREATE_USER_V5("bulkCreateUserV5", "USRCRT"),
-  PARICHAY_CREATE_USER_V5("parichayCreateUserV5", "USRCRT"),
+  OAUTH_CREATE_USER_V5("oAuthCreateUserV5", "USRCRT"),
   CREATE_SUPPORT_USER_V5("supportCreateUserV5", "USRCRT"),
   V2_NOTIFICATION("v2Notification", "NOTI"),
   GET_MANAGED_USERS("getManagedUsers", "USRRED"),
@@ -159,10 +160,11 @@ public enum ActorOperations {
   USER_CURRENT_LOGIN("userCurrentLogin", "USRLOG"),
   USER_AUTO_SEARCH("userAutoSearch", "USRAUTOSER"),
   GET_SYSTEM_SETTING_V2("getSystemSettingV2", "SYSRED"),
-  USER_PUBLIC_SEARCH("userPublicSearch","USRPUBLICSEARCH"),
+  USER_PUBLIC_SEARCH("userPublicSearch", "USRPUBLICSEARCH"),
   ORG_HIERARCHY_SEARCH("orgHierarchySearch", "ORGHIERSER"),
   ORG_HIERARCHY_MINISTRY_SEARCH("orgHierarchyMinistrySearch", "ORGHIERMINISER"),
   ORG_HIERARCHY_STATE_SEARCH("orgHierarchyStateSearch", "ORGHIERSTATESER");
+
   private String value;
 
   private String operationCode;
