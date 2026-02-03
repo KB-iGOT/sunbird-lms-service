@@ -14,7 +14,8 @@ import org.sunbird.util.ProjectUtil;
 public class KeycloakUtil {
   private static final LoggerUtil logger = new LoggerUtil(KeycloakUtil.class);
 
-  private KeycloakUtil() {}
+  private KeycloakUtil() {
+  }
 
   public static String getAdminAccessToken(RequestContext context, String url) throws Exception {
     Map<String, String> headers = new HashMap<>();
@@ -25,27 +26,25 @@ public class KeycloakUtil {
     fields.put("grant_type", "client_credentials");
 
     String response = HttpClientUtil.postFormData(url, fields, headers, context);
-    logger.debug(context, "KeycloakUtil:getAdminAccessToken: Response = " + response);
+    logger.info(context, "KeycloakUtil:getAdminAccessToken: Response = " + response);
     Map<String, Object> responseMap = new ObjectMapper().readValue(response, Map.class);
     return (String) responseMap.get("access_token");
   }
 
   public static String getAdminAccessTokenWithDomain(RequestContext context) throws Exception {
-    String url =
-        ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_URL)
-            + "realms/"
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + "/protocol/openid-connect/token";
+    String url = ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_URL)
+        + "realms/"
+        + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
+        + "/protocol/openid-connect/token";
     String token = getAdminAccessToken(context, url);
     return token;
   }
 
   public static String getAdminAccessTokenWithoutDomain(RequestContext context) throws Exception {
-    String url =
-        ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/auth/realms/"
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + "/protocol/openid-connect/token";
+    String url = ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
+        + "/auth/realms/"
+        + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
+        + "/protocol/openid-connect/token";
     return getAdminAccessToken(context, url);
   }
 }
