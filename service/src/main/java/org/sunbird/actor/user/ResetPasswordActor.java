@@ -35,11 +35,10 @@ public class ResetPasswordActor extends BaseActor {
 
   private void resetPassword(Request request) throws Exception {
     String userId = (String) request.get(JsonKey.USER_ID);
-    logger.debug(request.getRequestContext(), "ResetPasswordActor:resetPassword: method called.");
+    logger.info(request.getRequestContext(), "ResetPasswordActor:resetPassword: method called.");
     User user = userService.getUserById(userId, request.getRequestContext());
-    boolean isDisabled =
-        KeycloakBruteForceAttackUtil.isUserAccountDisabled(
-            user.getUserId(), request.getRequestContext());
+    boolean isDisabled = KeycloakBruteForceAttackUtil.isUserAccountDisabled(
+        user.getUserId(), request.getRequestContext());
     if (isDisabled) {
       KeycloakBruteForceAttackUtil.unlockTempDisabledUser(
           user.getUserId(), request.getRequestContext());
@@ -55,8 +54,7 @@ public class ResetPasswordActor extends BaseActor {
     UserUtility.decryptUserData(userMap);
     userMap.put(JsonKey.USERNAME, userMap.get(JsonKey.USERNAME));
     userMap.put(JsonKey.REDIRECT_URI, resetPasswordService.getSunbirdLoginUrl());
-    String url =
-        resetPasswordService.getUserRequiredActionLink(userMap, false, request.getRequestContext());
+    String url = resetPasswordService.getUserRequiredActionLink(userMap, false, request.getRequestContext());
     userMap.put(JsonKey.SET_PASSWORD_LINK, url);
     if (StringUtils.isNotBlank(url)) {
       logger.debug(
@@ -77,9 +75,8 @@ public class ResetPasswordActor extends BaseActor {
   private void generateTelemetry(Request request) {
     Map<String, Object> targetObject;
     List<Map<String, Object>> correlatedObject = new ArrayList<>();
-    targetObject =
-        TelemetryUtil.generateTargetObject(
-            (String) request.get(JsonKey.USER_ID), TelemetryEnvKey.USER, JsonKey.UPDATE, null);
+    targetObject = TelemetryUtil.generateTargetObject(
+        (String) request.get(JsonKey.USER_ID), TelemetryEnvKey.USER, JsonKey.UPDATE, null);
     TelemetryUtil.generateCorrelatedObject(
         (String) request.get(JsonKey.USER_ID), TelemetryEnvKey.USER, null, correlatedObject);
     TelemetryUtil.telemetryProcessingCall(

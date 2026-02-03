@@ -14,10 +14,12 @@ import org.sunbird.util.ProjectUtil;
 public class KeycloakBruteForceAttackUtil {
   private static final LoggerUtil logger = new LoggerUtil(KeycloakBruteForceAttackUtil.class);
 
-  private KeycloakBruteForceAttackUtil() {}
+  private KeycloakBruteForceAttackUtil() {
+  }
 
-  private static String fedUserPrefix =
-      "f:" + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_KEYCLOAK_USER_FEDERATION_PROVIDER_ID) + ":";
+  private static String fedUserPrefix = "f:"
+      + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_KEYCLOAK_USER_FEDERATION_PROVIDER_ID) + ":";
+
   /**
    * Get status of a user in brute force detection
    *
@@ -26,13 +28,12 @@ public class KeycloakBruteForceAttackUtil {
    */
   public static boolean isUserAccountDisabled(String userId, RequestContext context)
       throws Exception {
-    String url =
-        ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/auth/admin/realms/"
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + "/attack-detection/brute-force/users/"
-            + fedUserPrefix
-            + userId;
+    String url = ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
+        + "/admin/realms/"
+        + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
+        + "/attack-detection/brute-force/users/"
+        + fedUserPrefix
+        + userId;
     String response = HttpClientUtil.get(url, getHeaders(context), context);
     logger.info(context, "KeycloakBruteForceAttackUtil:getUserStatus: Response = " + response);
     Map<String, Object> attackStatus = new ObjectMapper().readValue(response, Map.class);
@@ -50,13 +51,12 @@ public class KeycloakBruteForceAttackUtil {
    */
   public static boolean unlockTempDisabledUser(String userId, RequestContext context)
       throws Exception {
-    String url =
-        ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/auth/admin/realms/"
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + "/attack-detection/brute-force/users/"
-            + fedUserPrefix
-            + userId;
+    String url = ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
+        + "/admin/realms/"
+        + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
+        + "/attack-detection/brute-force/users/"
+        + fedUserPrefix
+        + userId;
     HttpClientUtil.delete(url, getHeaders(context), context);
     logger.info(context, "clear Brute Force For User for userId : " + userId);
     return true;
