@@ -69,15 +69,15 @@ public class SSOUserCreateActor extends UserBaseActor {
         createSSOUser(request);
         break;
       case "createUserV5":
-      createUserV5ByAdmin(request);
+        createUserV5ByAdmin(request);
         break;
       case "selfRegisterUserV5":
       case "customRegisterUserV5":
       case "supportCreateUserV5":
         createUserV5(request);
         break;
-      case "parichayCreateUserV5":
-        createUserV5ForParichayUser(request);
+      case "oAuthCreateUserV5":
+        createUserV5ForOAuthUser(request);
         break;
       case "bulkCreateUserV5":
         createBulkUsers(request);
@@ -114,12 +114,13 @@ public class SSOUserCreateActor extends UserBaseActor {
     if (StringUtils.isNotBlank(email)) {
       String emailRedisKey = EMAIL_KEY_PREFIX + email;
       if (isKeyInRedis(emailRedisKey, ttl)) {
-        String errorMsg = "Duplicate user creation request: " + email + " was processed recently and is still within the TTL window.";
+        String errorMsg = "Duplicate user creation request: " + email
+            + " was processed recently and is still within the TTL window.";
         logger.info(errorMsg);
         ProjectCommonException.throwClientErrorException(
-                ResponseCode.errorParamExists,
-                MessageFormat.format(
-                        ResponseCode.errorUserCreationDuplicateRequest.getErrorMessage(), JsonKey.EMAIL_CAPS));
+            ResponseCode.errorParamExists,
+            MessageFormat.format(
+                ResponseCode.errorUserCreationDuplicateRequest.getErrorMessage(), JsonKey.EMAIL_CAPS));
       } else {
         storeKeyInRedis(emailRedisKey, email, ttl);
       }
@@ -127,12 +128,13 @@ public class SSOUserCreateActor extends UserBaseActor {
     if (StringUtils.isNotBlank(phone)) {
       String phoneRedisKey = PHONE_KEY_PREFIX + phone;
       if (isKeyInRedis(phoneRedisKey, ttl)) {
-        String errorMsg = "Duplicate user creation request: " + phone + " was processed recently and is still within the TTL window.";
+        String errorMsg = "Duplicate user creation request: " + phone
+            + " was processed recently and is still within the TTL window.";
         logger.info(errorMsg);
         ProjectCommonException.throwClientErrorException(
-                ResponseCode.errorParamExists,
-                MessageFormat.format(
-                        ResponseCode.errorUserCreationDuplicateRequest.getErrorMessage(), JsonKey.PHONE_CAPS));
+            ResponseCode.errorParamExists,
+            MessageFormat.format(
+                ResponseCode.errorUserCreationDuplicateRequest.getErrorMessage(), JsonKey.PHONE_CAPS));
       } else {
         storeKeyInRedis(phoneRedisKey, phone, ttl);
       }
@@ -153,7 +155,7 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private boolean isKeyInRedis(String key, int ttl) {
     String data = RedisCacheUtil.get(key, null, ttl);
-      return StringUtils.isNotBlank(data);
+    return StringUtils.isNotBlank(data);
   }
 
   private void storeKeyInRedis(String key, String value, int ttl) {
@@ -165,7 +167,6 @@ public class SSOUserCreateActor extends UserBaseActor {
   private String normalizeStringValue(String value) {
     return (value == null || value.trim().equalsIgnoreCase("null")) ? "" : value.trim();
   }
-
 
   private void processSSOUser(Map<String, Object> userMap, String callerId, Request request) {
     Map<String, Object> requestMap;
@@ -196,8 +197,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     if (CollectionUtils.isNotEmpty(roles)) {
       requestMap.put(JsonKey.ROLES, roles);
       requestMap.put(JsonKey.ROLE_OPERATION, JsonKey.CREATE);
-      List<Map<String, Object>> formattedRoles =
-          userRoleService.updateUserRole(requestMap, request.getRequestContext());
+      List<Map<String, Object>> formattedRoles = userRoleService.updateUserRole(requestMap,
+          request.getRequestContext());
       requestMap.put(JsonKey.ROLES, formattedRoles);
     }
     Response resp = null;
@@ -210,9 +211,8 @@ public class SSOUserCreateActor extends UserBaseActor {
       if (StringUtils.isNotBlank(callerId) && callerId.equalsIgnoreCase(JsonKey.BULK_USER_UPLOAD)) {
         userRequest.put(JsonKey.ASSOCIATION_TYPE, AssociationMechanism.SYSTEM_UPLOAD);
       }
-      resp =
-          userService.saveUserAttributes(
-              userRequest, userProfileUpdateActor, request.getRequestContext());
+      resp = userService.saveUserAttributes(
+          userRequest, userProfileUpdateActor, request.getRequestContext());
     } else {
       logger.info(
           request.getRequestContext(), "SSOUserCreateActor:processSSOUser: User creation failure");
@@ -229,8 +229,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     syncResponse.putAll(response.getResult());
 
     if (null != resp && userMap.containsKey("sync") && (boolean) userMap.get("sync")) {
-      Map<String, Object> userDetails =
-          userService.getUserDetailsForES(userId, request.getRequestContext());
+      Map<String, Object> userDetails = userService.getUserDetailsForES(userId, request.getRequestContext());
       userService.saveUserToES(
           (String) userDetails.get(JsonKey.USER_ID), userDetails, request.getRequestContext());
       sender().tell(syncResponse, sender());
@@ -251,7 +250,8 @@ public class SSOUserCreateActor extends UserBaseActor {
       Map<String, Object> requestMap, Map<String, Boolean> userBooleanMap) {
     String rootOrgId = (String) requestMap.get(JsonKey.ROOT_ORG_ID);
     String custodianRootOrgId = DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_ID);
-    // if the user is creating for non-custodian(i.e state) the value is set as true else false
+    // if the user is creating for non-custodian(i.e state) the value is set as true
+    // else false
     userBooleanMap.put(JsonKey.STATE_VALIDATED, !custodianRootOrgId.equals(rootOrgId));
   }
 
@@ -305,27 +305,28 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> userMap = actorMessage.getRequest();
     String rootOrgId = "";
     if (userMap.get(JsonKey.CHANNEL) != null) {
-      rootOrgId = orgService.getRootOrgIdFromChannel((String) userMap.get(JsonKey.CHANNEL), actorMessage.getRequestContext());
+      rootOrgId = orgService.getRootOrgIdFromChannel((String) userMap.get(JsonKey.CHANNEL),
+          actorMessage.getRequestContext());
       if (StringUtils.isBlank(rootOrgId)) {
         throw new ProjectCommonException(
-                ResponseCode.invalidParameterValue,
-                ProjectUtil.formatMessage(
-                        ResponseCode.invalidParameterValue.getErrorMessage(),
-                        userMap.get(JsonKey.CHANNEL),
-                        JsonKey.CHANNEL),
-                ResponseCode.CLIENT_ERROR.getResponseCode());
+            ResponseCode.invalidParameterValue,
+            ProjectUtil.formatMessage(
+                ResponseCode.invalidParameterValue.getErrorMessage(),
+                userMap.get(JsonKey.CHANNEL),
+                JsonKey.CHANNEL),
+            ResponseCode.CLIENT_ERROR.getResponseCode());
       }
     } else {
       ProjectCommonException.throwClientErrorException(
-              ResponseCode.invalidParameter,
-              MessageFormat.format(
-                      ResponseCode.invalidParameter.getErrorMessage(),
-                      JsonKey.CHANNEL));
+          ResponseCode.invalidParameter,
+          MessageFormat.format(
+              ResponseCode.invalidParameter.getErrorMessage(),
+              JsonKey.CHANNEL));
     }
     return rootOrgId;
   }
 
-  private void populateRoles(Request actorMessage, String rootOrgId ) {
+  private void populateRoles(Request actorMessage, String rootOrgId) {
     Map<String, Object> userMap = (Map<String, Object>) actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
@@ -343,7 +344,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> professionalDetails = new HashMap<>();
     Map<String, Object> personalDetails = new HashMap<>();
 
-    Map<String, Object> personalDetailsRequest = (Map<String, Object>) userMap.getOrDefault(JsonKey.PERSONAL_DETAILS, Map.of());
+    Map<String, Object> personalDetailsRequest = (Map<String, Object>) userMap.getOrDefault(JsonKey.PERSONAL_DETAILS,
+        Map.of());
     if (!personalDetailsRequest.isEmpty()) {
       personalDetailsRequest.forEach((key, value) -> addIfNotEmpty(personalDetails, key, value));
 
@@ -366,7 +368,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.PROFILE_STATUS, "NOT-VERIFIED");
     profileDetails.put(JsonKey.MANDATORY_FIELDS_EXISTS, false);
-    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
+    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(
+        String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
@@ -392,8 +395,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     }
   }
 
-
-  private void checkIfMDOLeaderExist(Map<String,Object> userMap, Request actorMessage, String rootOrgId){
+  private void checkIfMDOLeaderExist(Map<String, Object> userMap, Request actorMessage, String rootOrgId) {
     List<String> roles = (List<String>) userMap.get(JsonKey.ROLES);
     if (roles.contains(JsonKey.MDO_LEADER)) {
       System.out.println("Role MDO_LEADER is present");
@@ -414,10 +416,11 @@ public class SSOUserCreateActor extends UserBaseActor {
       if (count.longValue() >= 1) {
         logger.info(actorMessage.getRequestContext(), "MDO Leader already exist in org");
         throw new ProjectCommonException(
-                ResponseCode.dataTypeError,
-                ProjectUtil.formatMessage(
-                        "MDO Leader already exist in org", JsonKey.ROLES, JsonKey.LIST),
-                ERROR_CODE);        }
+            ResponseCode.dataTypeError,
+            ProjectUtil.formatMessage(
+                "MDO Leader already exist in org", JsonKey.ROLES, JsonKey.LIST),
+            ERROR_CODE);
+      }
     }
   }
 
@@ -456,7 +459,8 @@ public class SSOUserCreateActor extends UserBaseActor {
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_DESIGNATION_STATUS,
           profileDetailsRequest.remove(JsonKey.PROFILE_DESIGNATION_STATUS));
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_STATUS, profileDetailsRequest.remove(JsonKey.PROFILE_STATUS));
-      addIfNotEmpty(profileDetails, JsonKey.PROFESSIONAL_DETAILS, profileDetailsRequest.remove(JsonKey.PROFESSIONAL_DETAILS));
+      addIfNotEmpty(profileDetails, JsonKey.PROFESSIONAL_DETAILS,
+          profileDetailsRequest.remove(JsonKey.PROFESSIONAL_DETAILS));
     } else {
       profileDetails.put(JsonKey.PROFILE_GROUP_STATUS, "NOT-VERIFIED");
       profileDetails.put(JsonKey.PROFILE_DESIGNATION_STATUS, "NOT-VERIFIED");
@@ -478,14 +482,15 @@ public class SSOUserCreateActor extends UserBaseActor {
       profileDetails.put(JsonKey.PERSONAL_DETAILS, personalDetails);
     }
 
-    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
+    Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(
+        String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)), actorMessage.getRequestContext());
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
-  private void createUserV5ForParichayUser(Request actorMessage) throws JsonProcessingException {
+  private void createUserV5ForOAuthUser(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     populateRoles(actorMessage, findRootOrgId(actorMessage));
     createBasicProfileDetailsForParichayUser(actorMessage);
@@ -538,11 +543,11 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> profileDetailsMap = (Map<String, Object>) userMap.get(JsonKey.PROFILE_DETAILS);
     if (MapUtils.isEmpty(profileDetailsMap)) {
       ProjectCommonException.throwClientErrorException(ResponseCode.bulkUserCreateProfileValidation,
-              ResponseCode.bulkUserCreateProfileValidation.getErrorMessage());
+          ResponseCode.bulkUserCreateProfileValidation.getErrorMessage());
     }
     Map<String, String> ministryDetails = orgService.getMinistryInfoFromChannel(
-            String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)),
-            actorMessage.getRequestContext());
+        String.valueOf(actorMessage.getRequest().get(JsonKey.CHANNEL)),
+        actorMessage.getRequestContext());
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
