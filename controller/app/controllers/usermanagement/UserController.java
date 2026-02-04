@@ -267,17 +267,25 @@ public class UserController extends BaseController {
     }
 
     public CompletionStage<Result> parichayCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, JsonKey.PARICHAY_USER_CREATE);
+    }
+
+    public CompletionStage<Result> oilIndiaCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, JsonKey.OILINDIA_USER_CREATE);
+    }
+
+    public CompletionStage<Result> oAuthUserCreateV5(Http.Request httpRequest, String sourceCreationType) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.PARICHAY_USER_CREATE);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, sourceCreationType);
         userMap.put(
                 JsonKey.CHANNEL, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
                 ssoUserCreateActor,
-                ActorOperations.PARICHAY_CREATE_USER_V5.getValue(),
+                ActorOperations.OAUTH_CREATE_USER_V5.getValue(),
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
