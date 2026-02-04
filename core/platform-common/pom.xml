@@ -61,7 +61,7 @@
         </dependency>
         <dependency>
             <groupId>com.typesafe.akka</groupId>
-            <artifactId>akka-slf4j_2.11</artifactId>
+            <artifactId>akka-slf4j_2.12</artifactId>
             <version>${learner.akka.version}</version>
         </dependency>
         <dependency>
@@ -126,7 +126,7 @@
                 </exclusion>
                 <exclusion>
                     <groupId>com.fasterxml.jackson.module</groupId>
-                    <artifactId>jackson-module-scala_2.11</artifactId>
+                    <artifactId>jackson-module-scala_2.12</artifactId>
                 </exclusion>
                 <exclusion>
                     <artifactId>slf4j-log4j12</artifactId>
