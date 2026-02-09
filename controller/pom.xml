@@ -33,12 +33,12 @@
 		</pluginRepository>
 	</pluginRepositories>
 	<properties>
-		<play2.version>2.7.2</play2.version>
+		<play2.version>2.7.9</play2.version>
 		<play2.plugin.version>1.0.0-rc5</play2.plugin.version>
 		<sbt-compiler.plugin.version>1.0.0</sbt-compiler.plugin.version>
 		<scala.major.version>2.12</scala.major.version>
 		<scala.version>2.12.21</scala.version>
-		<learner.akka.version>2.5.19</learner.akka.version>
+		<learner.akka.version>2.5.31</learner.akka.version>
 	</properties>
 
 	<dependencies>
@@ -47,7 +47,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.10.1</version>
+			<version>2.15.2</version>
 		</dependency>
 		<!-- Add actor here itself to avoid netty jar conflict. -->
 		<dependency>
@@ -96,7 +96,7 @@
 		<dependency>
 			<groupId>com.typesafe.play</groupId>
 			<artifactId>play-netty-server_2.12</artifactId>
-			<version>2.7.2</version>
+			<version>2.7.9</version>
 			<scope>runtime</scope>
 			<exclusions>
 				<exclusion>
@@ -181,9 +181,24 @@
 		</dependency>
 
 		<dependency>
-			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-slf4j_${scala.major.version}</artifactId>
-			<version>${learner.akka.version}</version>
+		<groupId>com.typesafe.akka</groupId>
+		<artifactId>akka-actor_${scala.major.version}</artifactId>
+		<version>${learner.akka.version}</version>
+	</dependency>
+	<dependency>
+		<groupId>com.typesafe.akka</groupId>
+		<artifactId>akka-stream_${scala.major.version}</artifactId>
+		<version>${learner.akka.version}</version>
+	</dependency>
+	<dependency>
+		<groupId>com.typesafe.akka</groupId>
+		<artifactId>akka-protobuf_${scala.major.version}</artifactId>
+		<version>${learner.akka.version}</version>
+	</dependency>
+	<dependency>
+		<groupId>com.typesafe.akka</groupId>
+		<artifactId>akka-slf4j_${scala.major.version}</artifactId>
+		<version>${learner.akka.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
