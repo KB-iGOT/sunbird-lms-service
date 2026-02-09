@@ -12,7 +12,7 @@
     <artifactId>service</artifactId>
     <version>1.0-SNAPSHOT</version>
     <properties>
-        <learner.akka.version>2.5.19</learner.akka.version>
+        <learner.akka.version>2.5.31</learner.akka.version>
         <maven.compiler.release>11</maven.compiler.release>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
