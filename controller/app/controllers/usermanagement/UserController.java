@@ -274,6 +274,10 @@ public class UserController extends BaseController {
         return oAuthUserCreateV5(httpRequest, JsonKey.OILINDIA_USER_CREATE);
     }
 
+    public CompletionStage<Result> ntpcCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, JsonKey.NTPC_USER_CREATE);
+    }
+
     public CompletionStage<Result> oAuthUserCreateV5(Http.Request httpRequest, String sourceCreationType) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);

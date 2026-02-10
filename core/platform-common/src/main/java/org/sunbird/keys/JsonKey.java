@@ -677,6 +677,7 @@ public final class JsonKey {
     public static final String BULK_USER_CREATE = "bulkUserCreate";
     public static final String PARICHAY_USER_CREATE = "parichayUserCreate";
     public static final String OILINDIA_USER_CREATE = "oilindiaUserCreate";
+    public static final String NTPC_USER_CREATE = "ntpcUserCreate";
     public static final String PRIMARY_EMAIL = "primaryEmail";
     public static final String DEPARTMENT_NAME = "departmentName";
     public static final String EMPLOYMENT_DETAILS = "employmentDetails";
