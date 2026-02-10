@@ -271,20 +271,23 @@ public class UserController extends BaseController {
     }
 
     public CompletionStage<Result> oilIndiaCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
-        return oAuthUserCreateV5(httpRequest, JsonKey.OILINDIA_USER_CREATE);
+        return oAuthUserCreateV5(httpRequest, JsonKey.OILINDIA_USER_CREATE, DataCacheHandler.getConfigSettings().get(JsonKey.OIL_INDIA_ORG_CHANNEL));
     }
 
     public CompletionStage<Result> ntpcCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
-        return oAuthUserCreateV5(httpRequest, JsonKey.NTPC_USER_CREATE);
+        return oAuthUserCreateV5(httpRequest, JsonKey.NTPC_USER_CREATE, DataCacheHandler.getConfigSettings().get(JsonKey.NTPC_ORG_CHANNEL));
     }
 
     public CompletionStage<Result> oAuthUserCreateV5(Http.Request httpRequest, String sourceCreationType) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, sourceCreationType, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
+    }
+
+    public CompletionStage<Result> oAuthUserCreateV5(Http.Request httpRequest, String sourceCreationType, String channel) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
         userMap.put(JsonKey.SOURCE_CREATION_TYPE, sourceCreationType);
-        userMap.put(
-                JsonKey.CHANNEL, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
+        userMap.put(JsonKey.CHANNEL, channel);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
