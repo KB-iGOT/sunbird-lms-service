@@ -23,7 +23,7 @@
 		<scoverage.plugin.version>1.1.1</scoverage.plugin.version>
 		<slf4j.version>1.6.1</slf4j.version>
 		<logback.version>1.0.7</logback.version>
-		<learner.akka.version>2.5.19</learner.akka.version>
+		<learner.akka.version>2.5.31</learner.akka.version>
 	</properties>
 	<dependencies>
         <dependency>
@@ -33,17 +33,17 @@
         </dependency>
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-actor_2.11</artifactId>
+			<artifactId>akka-actor_2.12</artifactId>
 			<version>${learner.akka.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-slf4j_2.11</artifactId>
+			<artifactId>akka-slf4j_2.12</artifactId>
 			<version>${learner.akka.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>com.typesafe.akka</groupId>
-			<artifactId>akka-remote_2.11</artifactId>
+			<artifactId>akka-remote_2.12</artifactId>
 			<version>${learner.akka.version}</version>
 		</dependency>
 		<dependency>
@@ -54,12 +54,12 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
-			<version>2.10.1</version>
+			<version>2.15.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.10.1</version>
+			<version>2.15.2</version>
 		</dependency>
 		
 		<!-- https://mvnrepository.com/artifact/com.googlecode.json-simple/json-simple -->
