@@ -247,6 +247,13 @@ public class ElasticSearchHelper {
         hierarchyOrQuery.minimumShouldMatch(1);
         query = query.must(hierarchyOrQuery);
       }
+    } else if (JsonKey.NESTED_KEY_FILTER_GROUPED.equalsIgnoreCase(key)) {
+      List<Map<String, Object>> groupedNestedFilters = (List<Map<String, Object>>) entry.getValue();
+      for (Map<String, Object> groupedFilter : groupedNestedFilters) {
+        String path = (String) groupedFilter.get(JsonKey.PATH);
+        Map<String, Object> filters = (Map<String, Object>) groupedFilter.get(JsonKey.FILTERS);
+        query = createGroupedNestedFilterQuery(path, filters, query, constraintsMap);
+      }
     }
     long elapsedTime = calculateEndTime(startTime);
     logger.debug(
@@ -328,6 +335,89 @@ public class ElasticSearchHelper {
               createTermQuery(key + RAW_APPEND, val, constraintsMap.get(key)),
               ScoreMode.None));
     }
+    return query;
+  }
+
+  /**
+   * Method to create grouped nested filter query where all filter conditions must match
+   * within the same nested document
+   *
+   * @param path the nested path
+   * @param filters map of filters to apply within the nested context
+   * @param query Object which will be updated
+   * @param constraintsMap constraints for key and values
+   * @return BoolQueryBuilder
+   */
+  @SuppressWarnings("unchecked")
+  private static BoolQueryBuilder createGroupedNestedFilterQuery(
+      String path,
+      Map<String, Object> filters,
+      BoolQueryBuilder query,
+      Map<String, Float> constraintsMap) {
+
+    // Create a nested bool query to group all conditions
+    BoolQueryBuilder nestedBoolQuery = QueryBuilders.boolQuery();
+
+    for (Map.Entry<String, Object> filterEntry : filters.entrySet()) {
+      String key = filterEntry.getKey();
+      Object val = filterEntry.getValue();
+
+      // Check if key already ends with .keyword (exact match field) or is a nested path field
+      boolean isKeywordField = key.endsWith(".keyword");
+      // Don't append .raw for nested path fields (e.g., orgCustomFields.orgId)
+      // Only append .raw for top-level fields that don't have .keyword
+      String finalKey;
+      if (isKeywordField || key.startsWith(path + ".")) {
+        // For .keyword fields or nested path fields, use as-is
+        finalKey = key;
+      } else {
+        // For other fields, append .raw
+        finalKey = key + RAW_APPEND;
+      }
+
+      if (val instanceof List && CollectionUtils.isNotEmpty((List) val)) {
+        if (((List) val).get(0) instanceof String) {
+          List<String> listVal = (List<String>) val;
+          if (!isKeywordField) {
+            listVal.replaceAll(String::toLowerCase);
+          }
+          nestedBoolQuery.must(createTermsQuery(finalKey, listVal, constraintsMap.get(key)));
+        } else {
+          nestedBoolQuery.must(createTermsQuery(finalKey, (List) val, constraintsMap.get(key)));
+        }
+      } else if (val instanceof Map) {
+        Map<String, Object> value = (Map<String, Object>) val;
+        Map<String, Object> rangeOperation = new HashMap<>();
+        Map<String, Object> lexicalOperation = new HashMap<>();
+        for (Map.Entry<String, Object> it : value.entrySet()) {
+          String operation = it.getKey();
+          if (operation.startsWith(LT) || operation.startsWith(GT)) {
+            rangeOperation.put(operation, it.getValue());
+          } else if (operation.startsWith(STARTS_WITH) || operation.startsWith(ENDS_WITH)) {
+            lexicalOperation.put(operation, it.getValue());
+          }
+        }
+        if (!rangeOperation.isEmpty()) {
+          nestedBoolQuery.must(createRangeQuery(finalKey, rangeOperation, constraintsMap.get(key)));
+        }
+        if (!lexicalOperation.isEmpty()) {
+          nestedBoolQuery.must(createLexicalQuery(finalKey, lexicalOperation, constraintsMap.get(key)));
+        }
+      } else if (val instanceof String) {
+        String stringVal = (String) val;
+        // Don't lowercase for .keyword fields (exact match)
+        if (!isKeywordField) {
+          stringVal = stringVal.toLowerCase();
+        }
+        nestedBoolQuery.must(createTermQuery(finalKey, stringVal, constraintsMap.get(key)));
+      } else {
+        nestedBoolQuery.must(createTermQuery(finalKey, val, constraintsMap.get(key)));
+      }
+    }
+
+    // Wrap all conditions in a single nested query
+    query.must(QueryBuilders.nestedQuery(path, nestedBoolQuery, ScoreMode.None));
+
     return query;
   }
 
@@ -770,6 +860,11 @@ public class ElasticSearchHelper {
       search
           .getAdditionalProperties()
           .put(JsonKey.NOT_EXISTS, searchQueryMap.get(JsonKey.NOT_EXISTS));
+    }
+    if (searchQueryMap.containsKey(JsonKey.NESTED_KEY_FILTER_GROUPED)) {
+      search
+          .getAdditionalProperties()
+          .put(JsonKey.NESTED_KEY_FILTER_GROUPED, searchQueryMap.get(JsonKey.NESTED_KEY_FILTER_GROUPED));
     }
     if (searchQueryMap.containsKey(JsonKey.SORT_BY)) {
       search

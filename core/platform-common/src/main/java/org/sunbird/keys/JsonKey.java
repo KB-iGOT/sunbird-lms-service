@@ -723,6 +723,13 @@ public final class JsonKey {
     public static final String SB_ORG_TYPE = "sbOrgType";
     public static final String ORG_HIERARCHY_SEARCH_MINISTRY_FILTERS = "org_hierarchy_search_filter_criteria_ministry";
     public static final String ORG_HIERARCHY_SEARCH_STATE_FILTERS = "org_hierarchy_search_filter_criteria_state";
+    public static final String NESTED_KEY_FILTER_GROUPED = "nestedFiltersGrouped";
+    public static final String ORG_CUSTOM_FIELDS = "orgCustomFields";
+    public static final String ORG_CUSTOM_FIELDS_PATH = "orgCustomFields.";
+    public static final String ORG_CUSTOM_FIELDS_FIELDS_PATH = "orgCustomFields.fields.";
+    public static final String ORG_CUSTOM_FIELDS_ORG_ID = "orgCustomFields.orgId";
+    public static final String KEYWORD_SUFFIX = ".keyword";
+    public static final String PATH = "path";
 
     private JsonKey() {
     }
