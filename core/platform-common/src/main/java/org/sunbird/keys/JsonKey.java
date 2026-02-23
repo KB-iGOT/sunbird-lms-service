@@ -677,7 +677,9 @@ public final class JsonKey {
     public static final String BULK_USER_CREATE = "bulkUserCreate";
     public static final String PARICHAY_USER_CREATE = "parichayUserCreate";
     public static final String OILINDIA_USER_CREATE = "oilindiaUserCreate";
+    public static final String OIL_INDIA_ORG_CHANNEL = "oilIndiaOrgChannel";
     public static final String NTPC_USER_CREATE = "ntpcUserCreate";
+    public static final String NTPC_ORG_CHANNEL = "ntpcOrgChannel";
     public static final String PRIMARY_EMAIL = "primaryEmail";
     public static final String DEPARTMENT_NAME = "departmentName";
     public static final String EMPLOYMENT_DETAILS = "employmentDetails";
@@ -721,6 +723,13 @@ public final class JsonKey {
     public static final String SB_ORG_TYPE = "sbOrgType";
     public static final String ORG_HIERARCHY_SEARCH_MINISTRY_FILTERS = "org_hierarchy_search_filter_criteria_ministry";
     public static final String ORG_HIERARCHY_SEARCH_STATE_FILTERS = "org_hierarchy_search_filter_criteria_state";
+    public static final String NESTED_KEY_FILTER_GROUPED = "nestedFiltersGrouped";
+    public static final String ORG_CUSTOM_FIELDS = "orgCustomFields";
+    public static final String ORG_CUSTOM_FIELDS_PATH = "orgCustomFields.";
+    public static final String ORG_CUSTOM_FIELDS_FIELDS_PATH = "orgCustomFields.fields.";
+    public static final String ORG_CUSTOM_FIELDS_ORG_ID = "orgCustomFields.orgId";
+    public static final String KEYWORD_SUFFIX = ".keyword";
+    public static final String PATH = "path";
 
     private JsonKey() {
     }
