@@ -189,7 +189,8 @@ public enum ResponseCode {
   IM_A_TEAPOT(418),
   extendUserProfileNotLoaded(ResponseMessage.Key.EXTENDED_USER_PROFILE_NOT_LOADED,
           ResponseMessage.Message.EXTENDED_USER_PROFILE_NOT_LOADED, 500),
-  roleProcessingInvalidOrgError(ResponseMessage.Key.ROLE_PROCESSING_INVALID_ORG, ResponseMessage.Message.ROLE_PROCESSING_INVALID_ORG);
+  roleProcessingInvalidOrgError(ResponseMessage.Key.ROLE_PROCESSING_INVALID_ORG, ResponseMessage.Message.ROLE_PROCESSING_INVALID_ORG),
+  unauthorizedRoleAssignment(ResponseMessage.Key.UNAUTHORIZED_ROLE_ASSIGNMENT, ResponseMessage.Message.UNAUTHORIZED_ROLE_ASSIGNMENT);
   private int responseCode;
   /** error code contains String value */
   private String errorCode;
