@@ -567,11 +567,10 @@ public class SSOUserCreateActor extends UserBaseActor {
     List<String> requestedRoles = (List<String>) userMap.get(JsonKey.ROLES);
     String requestedById = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
 
-    RoleRestrictionValidator.validateRoleAssignment(
-        requestedById,
-        requestedRoles,
-        actorMessage.getRequestContext(),
-        ERROR_CODE
-    );
+    if (StringUtils.isNotBlank(requestedById)) {
+      List<Map<String, Object>> requestingUserRoles = userRoleService.getUserRoles(requestedById, actorMessage.getRequestContext());
+
+      RoleRestrictionValidator.validateRoleAssignmentWithFetchedRoles(requestingUserRoles, requestedRoles, actorMessage.getRequestContext(), ERROR_CODE);
+    }
   }
 }

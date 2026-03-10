@@ -12,8 +12,6 @@ import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.model.systemsettings.SystemSetting;
 import org.sunbird.request.RequestContext;
-import org.sunbird.service.user.UserRoleService;
-import org.sunbird.service.user.impl.UserRoleServiceImpl;
 
 import java.util.*;
 
@@ -27,44 +25,8 @@ import java.util.*;
 public class RoleRestrictionValidator {
 
   private static final LoggerUtil logger = new LoggerUtil(RoleRestrictionValidator.class);
-  private static final UserRoleService userRoleService = UserRoleServiceImpl.getInstance();
   private static final SystemSettingDao systemSettingDao = new SystemSettingDaoImpl();
   private static final ObjectMapper mapper = new ObjectMapper();
-
-  /**
-   * Validates role assignment by fetching requesting user's roles from database.
-   *
-   * @param requestingUserId ID of the user requesting role assignment/creation
-   * @param rolesToAssign List of roles to be assigned/created
-   * @param context Request context for logging and DB access
-   * @param errorCode Error code to use in exception (typically CLIENT_ERROR)
-   * @throws ProjectCommonException if user is not authorized to assign the requested roles
-   */
-  public static void validateRoleAssignment(
-          String requestingUserId,
-          List<String> rolesToAssign,
-          RequestContext context,
-          int errorCode) {
-
-    if (CollectionUtils.isEmpty(rolesToAssign)) {
-      logger.info(context, "validateRoleAssignment: No roles to assign, skipping validation");
-      return;
-    }
-
-    if (StringUtils.isBlank(requestingUserId)) {
-      logger.error(context,
-              "validateRoleAssignment: No requesting user ID provided - cannot validate", null);
-      throw new ProjectCommonException(
-              ResponseCode.unauthorizedRoleAssignment,
-              "Cannot validate role assignment: requesting user not identified",
-              errorCode);
-    }
-
-    // Fetch the roles of the requesting user
-    List<Map<String, Object>> requestingUserRoles = userRoleService.getUserRoles(requestingUserId, context);
-
-    validateRoleAssignmentWithFetchedRoles(requestingUserRoles, rolesToAssign, context, errorCode);
-  }
 
   /**
    * Validates role assignment using pre-fetched roles (efficient when roles are already available).
