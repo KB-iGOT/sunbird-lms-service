@@ -80,7 +80,6 @@ public class UserOnBoardingNotificationActorTest {
     request.getRequest().put(JsonKey.USERNAME, "userName");
     request.getRequest().put(JsonKey.ROOT_ORG_ID, "rootOrgId");
     request.getRequest().put(JsonKey.EMAIL, "xyz@xyz.com");
-    request.getRequest().put(JsonKey.PASSWORD, "password");
     ActorRef subject = system.actorOf(props);
     subject.tell(request, probe.getRef());
     probe.expectNoMessage();
@@ -105,7 +104,6 @@ public class UserOnBoardingNotificationActorTest {
     request.getRequest().put(JsonKey.ROOT_ORG_ID, "rootOrgId");
     request.getRequest().put(JsonKey.SET_PASSWORD_LINK, "link");
     request.getRequest().put(JsonKey.PHONE, "9999999999");
-    request.getRequest().put(JsonKey.PASSWORD, "password");
     ActorRef subject = system.actorOf(props);
     subject.tell(request, probe.getRef());
     probe.expectNoMessage();
