@@ -16,8 +16,8 @@ public interface ResponseMessage {
         "Operation name is invalid. Please provide a valid operation name";
     String INVALID_REQUESTED_DATA = "Requested data for this operation is not valid.";
     String SUCCESS_MESSAGE = "Success";
-    String ERROR_DUPLICATE_ENTRY = "Value {0} for {1} is already in use.";
     String ERROR_PARAM_EXISTS = "{0} already exists";
+    String ERROR_DUPLICATE_ENTRY = "This organization is already in use.";
     String ERROR_INVALID_OTP = "Invalid OTP.";
     String DATA_TYPE_ERROR = "Data type of {0} should be {1}.";
     String ERROR_ATTRIBUTE_CONFLICT = "Either pass attribute {0} or {1} but not both.";
