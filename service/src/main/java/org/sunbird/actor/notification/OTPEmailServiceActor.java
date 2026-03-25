@@ -123,13 +123,16 @@ public class OTPEmailServiceActor extends BaseActor {
           writer,
           connection.getSession(),
           connection.getTransport());
+
+      logger.info(requestContext,
+              String.format("Email OTP Sent to: %s, Subject: %s, TimeTaken: %s",
+                      emails, request.get(JsonKey.SUBJECT), (System.currentTimeMillis() - startTime)));
     } catch (Exception e) {
       logger.error(
-          requestContext,
-          "EmailServiceActor:sendMail: Exception occurred with message = " + e.getMessage(),
-          e);
+              requestContext,
+              String.format("Failed to send Email OTP to: %s, Subject: %s, TimeTaken: %s, Exception: %s",
+                      emails, request.get(JsonKey.SUBJECT), (System.currentTimeMillis() - startTime), e.getMessage()), e);
     }
-    logger.info("Email Sent. Time taken (in ms): " + (System.currentTimeMillis() - startTime));
   }
 
   private void resetConnection(RequestContext context) {
