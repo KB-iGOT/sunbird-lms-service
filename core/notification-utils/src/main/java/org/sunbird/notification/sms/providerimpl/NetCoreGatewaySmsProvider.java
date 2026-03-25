@@ -85,10 +85,16 @@ public class NetCoreGatewaySmsProvider implements ISmsProvider {
                 try (CloseableHttpResponse response = httpClient.execute(post)) {
                     int responseCode = response.getStatusLine().getStatusCode();
                     String responseStr = EntityUtils.toString(response.getEntity());
-                    logger.info(String.format("SMS Sent to mobile: %s. ResponseCode: %s, Response Body: %s, TimeTaken: %s",
-                            mobileNumber, responseCode, responseStr, (System.currentTimeMillis() - startTime)));
+                    long timeTaken = System.currentTimeMillis() - startTime;
                     if (responseCode == 200) {
+                        logger.info(String.format(
+                                "SMS Sent to mobile: %s. ResponseCode: %s, TimeTaken: %s",
+                                mobileNumber, responseCode, timeTaken));
                         retVal = true;
+                    } else {
+                        logger.info(String.format(
+                                "SMS failed for mobile: %s. ResponseCode: %s, Response Body: %s, TimeTaken: %s",
+                                mobileNumber, responseCode, responseStr, (System.currentTimeMillis() - startTime)));
                     }
                 } catch (Exception e) {
                     logger.error(String.format("Failed to send SMS to mobile: %s, TimeTaken: %s, Exception: %s",
