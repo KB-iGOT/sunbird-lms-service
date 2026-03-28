@@ -730,6 +730,8 @@ public final class JsonKey {
     public static final String ORG_CUSTOM_FIELDS_ORG_ID = "orgCustomFields.orgId";
     public static final String KEYWORD_SUFFIX = ".keyword";
     public static final String PATH = "path";
+    public static final String SPV_ADMIN = "SPV_ADMIN";
+    public static final String ROLE_RESTRICTIONS = "roleRestrictions";
 
     private JsonKey() {
     }

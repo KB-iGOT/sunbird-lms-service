@@ -110,6 +110,7 @@ public interface ResponseMessage {
     String SERVER_ERROR = "server error";
     String EXTENDED_USER_PROFILE_NOT_LOADED = "Failed to load extendedProfileSchemaConfig from System_Settings table";
     String ROLE_PROCESSING_INVALID_ORG = "Error while processing assign role. Invalid Organisation Id";
+    String UNAUTHORIZED_ROLE_ASSIGNMENT = "You are not authorized to assign the requested roles";
     String ERROR_OTP_EXPIRED = "Time Limit for OTP Exceeded, Please Try Again.";
     String ERROR_OTP_ATTEMPT_EXCEEDED = "The maximum number of attempts for OTP verification has been exceeded. Please try again.";
     String ERROR_PARAM_EXISTS_FORMATTED = "This {0} is already registered with an existing User";
@@ -194,6 +195,7 @@ public interface ResponseMessage {
     String INVALID_CSV_FILE = "0074";
     String EXTENDED_USER_PROFILE_NOT_LOADED = "EXTENDED_USER_PROFILE_NOT_LOADED";
     String ROLE_PROCESSING_INVALID_ORG = "ROLE_PROCESSING_INVALID_ORG_ID";
+    String UNAUTHORIZED_ROLE_ASSIGNMENT = "UNAUTHORIZED_ROLE_ASSIGNMENT";
     String ERROR_OTP_EXPIRED = "0075";
     String ERROR_OTP_ATTEMPT_EXCEEDED = "0076";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "0077";

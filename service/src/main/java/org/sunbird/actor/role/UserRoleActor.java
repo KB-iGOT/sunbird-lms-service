@@ -29,6 +29,7 @@ import org.sunbird.telemetry.dto.TelemetryEnvKey;
 import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.PropertiesCache;
+import org.sunbird.util.RoleRestrictionValidator;
 import org.sunbird.util.Util;
 
 public class UserRoleActor extends UserBaseActor {
@@ -95,6 +96,17 @@ public class UserRoleActor extends UserBaseActor {
     if (CollectionUtils.isNotEmpty(assignRoles)) {
       boolean isTryingToAssignMdoLeader = assignRoles.contains(JsonKey.MDO_LEADER);
       List<Map<String, Object>> existingRoles = userRoleService.readUserRole(userId, actorMessage.getRequestContext());
+
+      String requestingUserId = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
+      if (StringUtils.isNotBlank(requestingUserId)) {
+        RoleRestrictionValidator.validateRoleAssignmentWithFetchedRoles(
+                existingRoles,
+                assignRoles,
+                actorMessage.getRequestContext(),
+                ResponseCode.CLIENT_ERROR.getResponseCode()
+        );
+      }
+
       boolean isExistingMdoLeader = existingRoles.stream()
               .anyMatch(role -> JsonKey.MDO_LEADER.equals(role.get(JsonKey.ROLE)));
       if (isTryingToAssignMdoLeader && !isExistingMdoLeader) {

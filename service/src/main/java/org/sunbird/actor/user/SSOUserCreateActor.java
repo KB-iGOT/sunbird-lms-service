@@ -427,6 +427,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void createUserV5ByAdmin(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     populateRoles(actorMessage, findRootOrgId(actorMessage));
+    validateOrgAndRoles(actorMessage);
     createBasisProfileDetailsByAdmin(actorMessage);
     createSSOUser(actorMessage);
   }
@@ -552,5 +553,24 @@ public class SSOUserCreateActor extends UserBaseActor {
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetailsMap));
+  }
+
+  /**
+   * Validates if the requesting user has the authority to create users with the specified roles.
+   * Delegates to RoleRestrictionValidator for shared validation logic.
+   *
+   * @param actorMessage Request containing user details and context
+   * @throws ProjectCommonException if user is not authorized to assign the requested roles
+   */
+  private void validateOrgAndRoles(Request actorMessage) {
+    Map<String, Object> userMap = actorMessage.getRequest();
+    List<String> requestedRoles = (List<String>) userMap.get(JsonKey.ROLES);
+    String requestedById = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
+
+    if (StringUtils.isNotBlank(requestedById)) {
+      List<Map<String, Object>> requestingUserRoles = userRoleService.getUserRoles(requestedById, actorMessage.getRequestContext());
+
+      RoleRestrictionValidator.validateRoleAssignmentWithFetchedRoles(requestingUserRoles, requestedRoles, actorMessage.getRequestContext(), ERROR_CODE);
+    }
   }
 }
