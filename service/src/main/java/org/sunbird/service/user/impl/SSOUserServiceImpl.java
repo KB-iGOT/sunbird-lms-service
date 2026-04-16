@@ -28,6 +28,8 @@ import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.StringFormatter;
 import org.sunbird.util.user.UserUtil;
 import org.sunbird.util.ProjectUtil;
+import org.sunbird.model.organisation.Organisation;
+ 
 
 public class SSOUserServiceImpl implements SSOUserService {
 
