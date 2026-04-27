@@ -156,7 +156,7 @@ public class TenantMigrationActor extends BaseActor {
       userFlagValue += Integer.parseInt(String.valueOf(userDetails.get(JsonKey.FLAGS_VALUE)));
     }
     request.getRequest().put(JsonKey.FLAGS_VALUE, userFlagValue);
-    Map<String, Object> userUpdateRequest = createUserUpdateRequest(request,userDetails.get("profileDetails"));
+    Map<String, Object> userUpdateRequest = createUserUpdateRequest(request,userDetails.get(JsonKey.PROFILE_DETAILS));
     // Update user channel and rootOrgId
     Response response =
         tenantServiceImpl.migrateUser(userUpdateRequest, request.getRequestContext());
