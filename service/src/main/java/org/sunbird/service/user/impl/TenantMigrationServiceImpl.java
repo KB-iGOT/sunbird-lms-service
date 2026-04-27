@@ -51,6 +51,9 @@ public class TenantMigrationServiceImpl implements TenantMigrationService {
           OrgServiceImpl.getInstance()
               .getRootOrgIdFromChannel(channel, request.getRequestContext());
       request.getRequest().put(JsonKey.ROOT_ORG_ID, rootOrgId);
+      Map<String, String> ministryDetails = OrgServiceImpl.getInstance().getMinistryInfoFromChannel(
+              channel, request.getRequestContext());
+      request.getRequest().put(JsonKey.MINISTRY_DETAILS, ministryDetails);
     }
   }
 

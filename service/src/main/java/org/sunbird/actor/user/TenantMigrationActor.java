@@ -55,6 +55,7 @@ public class TenantMigrationActor extends BaseActor {
   private final UserLookUpServiceImpl userLookUpService = new UserLookUpServiceImpl();
   private final UserService userService = UserServiceImpl.getInstance();
   private final UserConsentService userConsentService = UserConsentServiceImpl.getInstance();
+  private final ObjectMapper objectMapper = new ObjectMapper();
 
   @Inject
   @Named("user_external_identity_management_actor")
@@ -155,7 +156,7 @@ public class TenantMigrationActor extends BaseActor {
       userFlagValue += Integer.parseInt(String.valueOf(userDetails.get(JsonKey.FLAGS_VALUE)));
     }
     request.getRequest().put(JsonKey.FLAGS_VALUE, userFlagValue);
-    Map<String, Object> userUpdateRequest = createUserUpdateRequest(request);
+    Map<String, Object> userUpdateRequest = createUserUpdateRequest(request,userDetails.get("profileDetails"));
     // Update user channel and rootOrgId
     Response response =
         tenantServiceImpl.migrateUser(userUpdateRequest, request.getRequestContext());
@@ -303,11 +304,10 @@ public class TenantMigrationActor extends BaseActor {
     userExtIdsReq.put(JsonKey.USER_ID, request.getRequest().get(JsonKey.USER_ID));
     userExtIdsReq.put(JsonKey.EXTERNAL_IDS, request.getRequest().get(JsonKey.EXTERNAL_IDS));
     try {
-      ObjectMapper mapper = new ObjectMapper();
       Timeout t = new Timeout(Duration.create(10, TimeUnit.SECONDS));
       // Update channel to orgId  for provider field in usr_external_identiy table
       UserUtil.updateExternalIdsProviderWithOrgId(userExtIdsReq, request.getRequestContext());
-      User user = mapper.convertValue(userExtIdsReq, User.class);
+      User user = objectMapper.convertValue(userExtIdsReq, User.class);
       UserUtil.validateExternalIds(user, JsonKey.CREATE, request.getRequestContext());
       userExtIdsReq.put(JsonKey.EXTERNAL_IDS, user.getExternalIds());
       Request userRequest = new Request();
@@ -340,7 +340,7 @@ public class TenantMigrationActor extends BaseActor {
     return response;
   }
 
-  private Map<String, Object> createUserUpdateRequest(Request request) {
+  private Map<String, Object> createUserUpdateRequest(Request request, Object profileDetails ) {
     Map<String, Object> userRequest = new HashMap<>();
     userRequest.put(JsonKey.ID, request.getRequest().get(JsonKey.USER_ID));
     userRequest.put(JsonKey.CHANNEL, request.getRequest().get(JsonKey.CHANNEL));
@@ -358,6 +358,33 @@ public class TenantMigrationActor extends BaseActor {
           (int) request.getRequest().get(JsonKey.STATUS) == ProjectUtil.Status.ACTIVE.getValue()
               ? false
               : true);
+    }
+    if (request.getRequest().containsKey(JsonKey.MINISTRY_DETAILS)
+        && request.getRequest().get(JsonKey.MINISTRY_DETAILS) != null) {
+      try {
+        Map<String, Object> profileDetailsMap = null;
+        if (profileDetails instanceof Map) {
+          profileDetailsMap = new HashMap<>((Map<String, Object>) profileDetails);
+        } else if (profileDetails instanceof String) {
+          profileDetailsMap = objectMapper.readValue((String) profileDetails, Map.class);
+        } else {
+          profileDetailsMap = new HashMap<>();
+        }
+        Map<String, Object> ministryDetails =
+            (Map<String, Object>) request.getRequest().get(JsonKey.MINISTRY_DETAILS);
+        if (ministryDetails.containsKey(JsonKey.MINISTRY_STATE_ID)) {
+          profileDetailsMap.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
+        }
+        if (ministryDetails.containsKey(JsonKey.MINISTRY_STATE_NAME)) {
+          profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
+        }
+        userRequest.put(JsonKey.PROFILE_DETAILS, objectMapper.writeValueAsString(profileDetailsMap));
+      } catch (Exception e) {
+        logger.error(
+            request.getRequestContext(),
+            "TenantMigrationActor:createUserUpdateRequest: Failed to update ministryDetails in profileDetails",
+            e);
+      }
     }
     return userRequest;
   }
