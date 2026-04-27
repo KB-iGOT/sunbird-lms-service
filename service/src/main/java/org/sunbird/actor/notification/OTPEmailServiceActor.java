@@ -22,12 +22,14 @@ import org.sunbird.service.notification.NotificationService;
 import org.sunbird.util.ProjectUtil;
 
 public class OTPEmailServiceActor extends BaseActor {
-    public final LoggerUtil logger = new LoggerUtil(EmailServiceActor.class);
+  public final LoggerUtil logger = new LoggerUtil(OTPEmailServiceActor.class);
   private final NotificationService notificationService = new NotificationService();
   private final OTPSendGridConnection connection = new OTPSendGridConnection();
   private final String resetInterval =
       ProjectUtil.getConfigValue("sendgrid_connection_reset_interval");
   private volatile long timer;
+  private static final RuntimeException EMAIL_SEND_FAILURE =
+          new RuntimeException("Email send returned false");
 
   @Override
   public void onReceive(Request request) throws Throwable {
@@ -101,6 +103,7 @@ public class OTPEmailServiceActor extends BaseActor {
       String template,
       RequestContext requestContext) {
     long startTime = System.currentTimeMillis();
+    String subject = String.valueOf(request.get(JsonKey.SUBJECT));
     try {
       SendEmail sendEmail = new SendEmail();
       Velocity.init();
@@ -116,20 +119,30 @@ public class OTPEmailServiceActor extends BaseActor {
           || (!connection.getTransport().isConnected())) {
         resetConnection(requestContext);
       }
-      sendEmail.send(
-          emails.toArray(new String[emails.size()]),
-          (String) request.get(JsonKey.SUBJECT),
-          context,
-          writer,
-          connection.getSession(),
-          connection.getTransport());
+      boolean sentStatus = sendEmail.send(
+              emails.toArray(new String[emails.size()]),
+              (String) request.get(JsonKey.SUBJECT),
+              context,
+              writer,
+              connection.getSession(),
+              connection.getTransport());
+
+      long timeTaken = System.currentTimeMillis() - startTime;
+      if (sentStatus) {
+        logger.info(requestContext,
+                String.format("Email OTP Sent to: %s, Subject: %s, TimeTaken: %s",
+                        emails, subject, timeTaken));
+      } else {
+        logger.error(requestContext,
+                String.format("Failed to send Email OTP to: %s, Subject: %s, TimeTaken: %s",
+                        emails, subject, timeTaken), EMAIL_SEND_FAILURE);
+      }
     } catch (Exception e) {
       logger.error(
-          requestContext,
-          "EmailServiceActor:sendMail: Exception occurred with message = " + e.getMessage(),
-          e);
+              requestContext,
+              String.format("Failed to send Email OTP to: %s, Subject: %s, TimeTaken: %s, Exception: %s",
+                      emails, subject, (System.currentTimeMillis() - startTime), e.getMessage()), e);
     }
-    logger.info("Email Sent. Time taken (in ms): " + (System.currentTimeMillis() - startTime));
   }
 
   private void resetConnection(RequestContext context) {

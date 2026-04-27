@@ -16,6 +16,7 @@ public class OTPDaoImpl implements OTPDao {
   private final LoggerUtil logger = new LoggerUtil(OTPDaoImpl.class);
   private final CassandraOperation cassandraOperation = ServiceFactory.getInstance();
   private static final String TABLE_NAME = JsonKey.OTP;
+  private static final String OTP_LOOKUP_TABLE_NAME = JsonKey.OTP_LOOKUP;
   private static volatile OTPDao otpDao;
 
   public static OTPDao getInstance() {
@@ -165,6 +166,41 @@ public class OTPDaoImpl implements OTPDao {
     String expirationInSeconds = PropertiesCache.getInstance().getProperty(JsonKey.OTP_EXPIRATION_TIME_TOKEN);
     int ttl = Integer.valueOf(expirationInSeconds)/1000;
     cassandraOperation.updateRecordWithTTL(keyspaceName, tableName, request, compositeKey,ttl,context);
+  }
+
+  @Override
+  public void insertOTPLookup(String type, String key, String otp, RequestContext context) {
+      Map<String, Object> request = new HashMap<>();
+      request.put(JsonKey.TYPE, type);
+      request.put(JsonKey.KEY, key);
+      request.put(JsonKey.OTP, otp);
+      int ttl = Integer.parseInt(PropertiesCache.getInstance().getProperty(JsonKey.SUNBIRD_OTP_LOOKUP_EXPIRATION));
+      cassandraOperation.insertRecordWithTTL(JsonKey.SUNBIRD, OTP_LOOKUP_TABLE_NAME, request, ttl, context);
+  }
+
+  @Override
+  public Map<String, Object> getOTPLookupDetails(String type, String key, RequestContext context) {
+    Map<String, Object> request = new HashMap<>();
+    request.put(JsonKey.TYPE, type);
+    request.put(JsonKey.KEY, key);
+    List<String> fields = new ArrayList<>();
+    fields.add(JsonKey.TYPE);
+    fields.add(JsonKey.KEY);
+    fields.add(JsonKey.OTP);
+    Response result = cassandraOperation.getRecordById(JsonKey.SUNBIRD, OTP_LOOKUP_TABLE_NAME, request, fields, context);
+    List<Map<String, Object>> otpMapList = (List<Map<String, Object>>) result.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isEmpty(otpMapList)) {
+      return null;
+    }
+    return otpMapList.get(0);
+  }
+
+  @Override
+  public void deleteOTPLookup(String type, String key, RequestContext context) {
+    Map<String, String> compositeKeyMap = new HashMap<>();
+    compositeKeyMap.put(JsonKey.TYPE, type);
+    compositeKeyMap.put(JsonKey.KEY, key);
+    cassandraOperation.deleteRecord(JsonKey.SUNBIRD, OTP_LOOKUP_TABLE_NAME, compositeKeyMap, context);
   }
 
 }

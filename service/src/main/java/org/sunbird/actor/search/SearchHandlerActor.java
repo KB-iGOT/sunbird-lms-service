@@ -40,6 +40,7 @@ public class SearchHandlerActor extends BaseActor {
 
   private final OrgService orgService = OrgServiceImpl.getInstance();
   private final UserService userService = UserServiceImpl.getInstance();
+  private final List<String> orgHierarchyLevelMap = List.of(ProjectUtil.getConfigValue(JsonKey.ORG_HIERARCHY_LEVEL_MAP).split(","));
 
   @Inject
   @Named("search_telemetry_actor")
@@ -70,6 +71,11 @@ public class SearchHandlerActor extends BaseActor {
       case "orgSearch":
       case "orgSearchV2":
         handleOrgSearchAsyncRequest(searchQueryMap, request);
+        break;
+      case "orgHierarchySearch":
+      case "orgHierarchyMinistrySearch":
+      case "orgHierarchyStateSearch":
+        handleOrgHierarchySearchAsyncRequest(searchQueryMap, request);
         break;
       default:
         onReceiveUnsupportedOperation();
@@ -153,6 +159,7 @@ public class SearchHandlerActor extends BaseActor {
     UserUtility.encryptUserSearchFilterQueryData(searchQueryMap);
     extractOrFilter(searchQueryMap);
     modifySearchQueryReqForNewRoleStructure(searchQueryMap);
+    handleOrgCustomFieldsFilter(searchQueryMap);
     SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(searchQueryMap);
     searchDto.setExcludedFields(Arrays.asList(ProjectUtil.excludes));
     Map<String, Object> result = userService.searchUser(searchDto, request.getRequestContext());
@@ -278,6 +285,96 @@ public class SearchHandlerActor extends BaseActor {
     }
   }
 
+  /**
+   * Handle orgCustomFields filter by grouping all orgCustomFields.* filters into a single nested query.
+   * This ensures all conditions match within the same nested object.
+   *
+   * @param searchQueryMap the search query map
+   */
+  private void handleOrgCustomFieldsFilter(Map<String, Object> searchQueryMap) {
+    Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+    if (MapUtils.isEmpty(filterMap)) {
+      return;
+    }
+
+    Map<String, Object> orgCustomFieldsFilters = new HashMap<>();
+    List<String> keysToRemove = new ArrayList<>();
+
+    // Check for nested object format: orgCustomFields: {field: value}
+    if (filterMap.containsKey(JsonKey.ORG_CUSTOM_FIELDS)
+        && filterMap.get(JsonKey.ORG_CUSTOM_FIELDS) instanceof Map) {
+      Map<String, Object> orgCustomFieldsMap =
+          (Map<String, Object>) filterMap.get(JsonKey.ORG_CUSTOM_FIELDS);
+
+      String orgIdValue = null;
+      if (orgCustomFieldsMap.containsKey(JsonKey.ORG_ID)) {
+        orgIdValue = (String) orgCustomFieldsMap.get(JsonKey.ORG_ID);
+      } else if (filterMap.containsKey(JsonKey.ROOT_ORG_ID)) {
+        // Extract orgId from rootOrgId (handle both String and List format)
+        Object rootOrgId = filterMap.get(JsonKey.ROOT_ORG_ID);
+        if (rootOrgId instanceof String) {
+          orgIdValue = (String) rootOrgId;
+        } else if (rootOrgId instanceof List && !((List<?>) rootOrgId).isEmpty()) {
+          orgIdValue = (String) ((List<?>) rootOrgId).get(0);
+        }
+      }
+
+      // Add orgId filter if we have one
+      if (StringUtils.isNotBlank(orgIdValue)) {
+        orgCustomFieldsFilters.put(JsonKey.ORG_CUSTOM_FIELDS_ORG_ID, orgIdValue);
+      }
+
+      for (Map.Entry<String, Object> entry : orgCustomFieldsMap.entrySet()) {
+        String fieldName = entry.getKey();
+        Object fieldValue = entry.getValue();
+
+        // Skip orgId as it's already handled above
+        if (JsonKey.ORG_ID.equals(fieldName)) {
+          continue;
+        }
+
+        // Use field name as-is (must match exactly as stored in Elasticsearch)
+        // e.g., "Force HQ One" -> orgCustomFields.fields.Force HQ One.keyword
+        orgCustomFieldsFilters.put(
+            JsonKey.ORG_CUSTOM_FIELDS_FIELDS_PATH + fieldName + JsonKey.KEYWORD_SUFFIX,
+            fieldValue);
+      }
+
+      keysToRemove.add(JsonKey.ORG_CUSTOM_FIELDS);
+    } else {
+      // Handle flat format: orgCustomFields.field.keyword: value (backward compatibility)
+      for (Map.Entry<String, Object> entry : filterMap.entrySet()) {
+        String key = entry.getKey();
+        if (key.startsWith(JsonKey.ORG_CUSTOM_FIELDS_PATH)) {
+          orgCustomFieldsFilters.put(key, entry.getValue());
+          keysToRemove.add(key);
+        }
+      }
+    }
+
+    // If orgCustomFields filters found, convert to grouped nested filter
+    if (!orgCustomFieldsFilters.isEmpty()) {
+      // Remove from regular filters
+      for (String key : keysToRemove) {
+        filterMap.remove(key);
+      }
+
+      // Add to grouped nested filters
+      Map<String, Object> groupedNestedFilter = new HashMap<>();
+      groupedNestedFilter.put(JsonKey.PATH, JsonKey.ORG_CUSTOM_FIELDS);
+      groupedNestedFilter.put(JsonKey.FILTERS, orgCustomFieldsFilters);
+
+      List<Map<String, Object>> nestedFiltersGrouped =
+              (List<Map<String, Object>>) searchQueryMap.get(JsonKey.NESTED_KEY_FILTER_GROUPED);
+
+      if (nestedFiltersGrouped == null) {
+        nestedFiltersGrouped = new ArrayList<>();
+        searchQueryMap.put(JsonKey.NESTED_KEY_FILTER_GROUPED, nestedFiltersGrouped);
+      }
+
+      nestedFiltersGrouped.add(groupedNestedFilter);
+    }
+  }
   private void handleOrgSearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) {
     List<String> fields = (List<String>) searchQueryMap.get(JsonKey.FIELDS);
     Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
@@ -567,5 +664,81 @@ public class SearchHandlerActor extends BaseActor {
   private Map<String, Object> getFuzzyFilterMap(Map<String, Object> searchQueryMap) {
     return (Map<String, Object>)
         ((Map<String, Object>) (searchQueryMap.get(JsonKey.FILTERS))).get(JsonKey.SEARCH_FUZZY);
+  }
+
+
+  private void handleOrgHierarchySearchAsyncRequest(Map<String, Object> searchQueryMap, Request request) {
+      List<String> fields = (List<String>) searchQueryMap.get(JsonKey.FIELDS);
+      Map<String, Object> filterMap = (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+
+      if (filterMap.containsKey(JsonKey.L0_ORG_ID)) {
+          createTheParentMapAndAddToFilter(filterMap);
+      }
+      String queryString = (String)searchQueryMap.get(JsonKey.QUERY);
+      if (StringUtils.isBlank(queryString)) {
+        Map<String,String> sortBy = new HashMap<>();
+        sortBy.put(JsonKey.ORG_NAME, "asc");
+        searchQueryMap.put("sort_by", sortBy);
+      }
+      SearchDTO searchDto = ElasticSearchHelper.createSearchDTO(searchQueryMap);
+      Future<Map<String, Object>> futureResponse =
+              orgService.searchOrg(searchDto, request.getRequestContext());
+      Future<Response> response =
+              futureResponse.map(
+                      new Mapper<>() {
+                          @Override
+                          public Response apply(Map<String, Object> responseMap) {
+                              logger.debug(
+                                      request.getRequestContext(),
+                                      "SearchHandlerActor:handleOrgHierarchySearchAsyncRequest org search call ");
+                              Response response = new Response();
+                              Map<String, Object> orgDefaultFieldValue = new HashMap<>(Util.getOrgDefaultValue());
+                              getDefaultValues(orgDefaultFieldValue, fields);
+                              response.put(JsonKey.RESPONSE, responseMap);
+                              return response;
+                          }
+                      },
+                      getContext().dispatcher());
+      Patterns.pipe(response, getContext().dispatcher()).to(sender());
+      Request telemetryReq = new Request();
+      telemetryReq.getRequest().put("context", request.getContext());
+      telemetryReq.getRequest().put("searchFResponse", response);
+      telemetryReq.getRequest().put("indexType", ProjectUtil.EsType.organisation.getTypeName());
+      telemetryReq.getRequest().put("searchDto", searchDto);
+      telemetryReq.setOperation("generateSearchTelemetry");
+      try {
+          searchTelemetryGenerator.tell(telemetryReq, self());
+      } catch (Exception ex) {
+          logger.error("Exception while saving telemetry", ex);
+      }
+  }
+
+  private void createTheParentMapAndAddToFilter(Map<String, Object> filterMap) {
+      if (filterMap == null) return;
+
+      StringBuilder sb = new StringBuilder();
+      boolean foundAny = false;
+
+      for (String lvlKey : orgHierarchyLevelMap) {
+          if (lvlKey == null) continue; // defensive
+          if (!filterMap.containsKey(lvlKey)) continue;
+
+          Object val = filterMap.get(lvlKey);
+          if (val == null) continue;
+
+          String piece = val.toString().trim();
+          if (piece.isEmpty()) continue;
+
+          if (foundAny) {
+              sb.append('_');
+          }
+          sb.append(piece);
+          foundAny = true;
+      }
+
+      if (!foundAny) return;
+
+      String parentPathId = sb.toString();
+      filterMap.put(JsonKey.PARENT_PATH_ID, parentPathId);
   }
 }

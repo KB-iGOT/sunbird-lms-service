@@ -62,6 +62,8 @@ public class UserController extends BaseController {
   @Named("user_self_declaration_management_actor")
   private ActorRef userSelfDeclarationManagementActor;
 
+  private final ObjectMapper mapper = new ObjectMapper();
+
   public CompletionStage<Result> createUser(Http.Request httpRequest) {
     return handleRequest(
         ssoUserCreateActor,
@@ -265,17 +267,32 @@ public class UserController extends BaseController {
     }
 
     public CompletionStage<Result> parichayCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, JsonKey.PARICHAY_USER_CREATE);
+    }
+
+    public CompletionStage<Result> oilIndiaCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, JsonKey.OILINDIA_USER_CREATE, DataCacheHandler.getConfigSettings().get(JsonKey.OIL_INDIA_ORG_CHANNEL));
+    }
+
+    public CompletionStage<Result> ntpcCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, JsonKey.NTPC_USER_CREATE, DataCacheHandler.getConfigSettings().get(JsonKey.NTPC_ORG_CHANNEL));
+    }
+
+    public CompletionStage<Result> oAuthUserCreateV5(Http.Request httpRequest, String sourceCreationType) throws JsonProcessingException {
+        return oAuthUserCreateV5(httpRequest, sourceCreationType, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
+    }
+
+    public CompletionStage<Result> oAuthUserCreateV5(Http.Request httpRequest, String sourceCreationType, String channel) throws JsonProcessingException {
         Map<String, Object> requestMap = new ObjectMapper().readValue(
                 httpRequest.body().asJson().toString(), Map.class);
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.PARICHAY_USER_CREATE);
-        userMap.put(
-                JsonKey.CHANNEL, DataCacheHandler.getConfigSettings().get(JsonKey.CUSTODIAN_ORG_CHANNEL));
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, sourceCreationType);
+        userMap.put(JsonKey.CHANNEL, channel);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
                 ssoUserCreateActor,
-                ActorOperations.PARICHAY_CREATE_USER_V5.getValue(),
+                ActorOperations.OAUTH_CREATE_USER_V5.getValue(),
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
@@ -644,6 +661,30 @@ public class UserController extends BaseController {
                 null,
                 getAllRequestHeaders(httpRequest),
                 ProjectUtil.EsType.user.getTypeName(),
+                httpRequest);
+    }
+
+    public CompletionStage<Result> createSupportUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = mapper.readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.SUPPORT_USER_CREATE);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.CREATE_SUPPORT_USER_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    request.getRequest().put("sync", true);
+                    new UserRequestValidator().validateCreateUserRequest(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
                 httpRequest);
     }
 }

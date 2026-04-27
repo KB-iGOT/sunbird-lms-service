@@ -126,6 +126,7 @@ public class OrganisationManagementActor extends BaseActor {
       request.put(JsonKey.IS_TENANT, false);
       request.put(JsonKey.IS_SSO_ROOTORG_ENABLED, false);
     }
+    request.computeIfAbsent(JsonKey.IS_CCA, k -> false);
     // This will remove all extra unnecessary parameter from request
     ObjectMapper mapper = new ObjectMapper();
     Organisation org = mapper.convertValue(request, Organisation.class);
@@ -479,6 +480,7 @@ public class OrganisationManagementActor extends BaseActor {
           ResponseCode.RESOURCE_NOT_FOUND.getResponseCode());
     }
     result.putAll(Util.getOrgDefaultValue());
+    result.computeIfAbsent(JsonKey.IS_CCA, k -> false);
     result.remove(JsonKey.CONTACT_DETAILS);
     Response response = new Response();
     response.put(JsonKey.RESPONSE, result);

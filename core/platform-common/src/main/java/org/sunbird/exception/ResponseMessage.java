@@ -16,8 +16,8 @@ public interface ResponseMessage {
         "Operation name is invalid. Please provide a valid operation name";
     String INVALID_REQUESTED_DATA = "Requested data for this operation is not valid.";
     String SUCCESS_MESSAGE = "Success";
-    String ERROR_DUPLICATE_ENTRY = "Value {0} for {1} is already in use.";
     String ERROR_PARAM_EXISTS = "{0} already exists";
+    String ERROR_DUPLICATE_ENTRY = "This organization is already in use.";
     String ERROR_INVALID_OTP = "Invalid OTP.";
     String DATA_TYPE_ERROR = "Data type of {0} should be {1}.";
     String ERROR_ATTRIBUTE_CONFLICT = "Either pass attribute {0} or {1} but not both.";
@@ -114,6 +114,8 @@ public interface ResponseMessage {
     String ERROR_OTP_ATTEMPT_EXCEEDED = "The maximum number of attempts for OTP verification has been exceeded. Please try again.";
     String ERROR_PARAM_EXISTS_FORMATTED = "This {0} is already registered with an existing User";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "Duplicate request: This {0} was processed recently and is still within TTL window.";
+    String BE_JOB_REQUEST_EXCEPTION = "BE job request event could not be generated.";
+    String BULK_USER_CREATE_PROFILEDETAILS_NOT_MET_VALUE = "Bulk user creation failed as profileDetails is Empty";
   }
 
   interface Key {
@@ -195,5 +197,7 @@ public interface ResponseMessage {
     String ERROR_OTP_EXPIRED = "0075";
     String ERROR_OTP_ATTEMPT_EXCEEDED = "0076";
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "0077";
+    String BE_JOB_REQUEST_EXCEPTION = "0078";
+    String BULK_USER_CREATE_PROFILEDETAILS_NOT_MET = "Bulk User Create ProfileDetails Not Met";
   }
 }

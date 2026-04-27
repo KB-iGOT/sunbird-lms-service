@@ -61,6 +61,9 @@ public class Organisation implements Serializable {
   private String orgHierarchyFrameworkId;
   private String orgHierarchyFrameworkStatus;
   private String customFieldsData;
+  private Boolean isCca;
+  private String parentPathId;
+  private String hierarchyLevel;
 
   public String getId() {
     return id;
@@ -398,5 +401,30 @@ public class Organisation implements Serializable {
 
   public void setCustomFieldsData(String customFieldsData) {
     this.customFieldsData = customFieldsData;
+  }
+
+  @JsonProperty(value = "isCCA")
+  public Boolean getCca() {
+    return isCca;
+  }
+
+  public void setCca(Boolean cca) {
+    this.isCca = cca;
+  }
+
+    public String getParentPathId() {
+        return parentPathId;
+    }
+
+    public void setParentPathId(String parentPathId) {
+        this.parentPathId = parentPathId;
+    }
+
+  public String getHierarchyLevel() {
+    return hierarchyLevel;
+  }
+
+  public void setHierarchyLevel(String hierarchyLevel) {
+    this.hierarchyLevel = hierarchyLevel;
   }
 }

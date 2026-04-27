@@ -169,6 +169,12 @@ public enum ResponseCode {
           ResponseMessage.Key.ERROR_PARAM_EXISTS, ResponseMessage.Message.ERROR_PARAM_EXISTS_FORMATTED),
   errorUserCreationDuplicateRequest(
           ResponseMessage.Key.ERROR_USER_CREATION_DUPLICATE_REQUEST, ResponseMessage.Message.ERROR_USER_CREATION_DUPLICATE_REQUEST),
+    BE_JOB_REQUEST_EXCEPTION(
+            ResponseMessage.Key.BE_JOB_REQUEST_EXCEPTION,
+            ResponseMessage.Message.BE_JOB_REQUEST_EXCEPTION),
+  bulkUserCreateProfileValidation(
+          ResponseMessage.Key.BULK_USER_CREATE_PROFILEDETAILS_NOT_MET,
+          ResponseMessage.Message.BULK_USER_CREATE_PROFILEDETAILS_NOT_MET_VALUE),
   OK(200),
   SUCCESS(200),
   CLIENT_ERROR(400),

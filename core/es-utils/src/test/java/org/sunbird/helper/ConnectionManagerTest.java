@@ -39,7 +39,7 @@ public class ConnectionManagerTest {
 
   // @Test
   public void testGetRestClientNull() {
-    RestHighLevelClient client = ConnectionManager.getRestClient();
+    RestHighLevelClient client = ConnectionManager.getRestClient(false);
     Assert.assertNull(client);
   }
 }
