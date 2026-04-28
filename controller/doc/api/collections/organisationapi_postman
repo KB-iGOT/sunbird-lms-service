@@ -250,7 +250,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkMTc1MDIwNDdlODc0ODZjOTM0ZDQ1ODdlYTQ4MmM3MyJ9.7LWocwCn5rrCScFQYOne8_Op2EOo-xTCK5JCFarHKSs",
+                "value": "",
                 "description": {
                   "content": "All User APIs require authorization for use. Specify the authorization key received from the administrator when placing the request for use of the API."
                 },
@@ -514,7 +514,7 @@
               },
               {
                 "key": "Authorization",
-                "value": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJkMTc1MDIwNDdlODc0ODZjOTM0ZDQ1ODdlYTQ4MmM3MyJ9.7LWocwCn5rrCScFQYOne8_Op2EOo-xTCK5JCFarHKSs",
+                "value": "",
                 "description": {
                   "content": "All User APIs require authorization for use. Specify the authorization key received from the administrator when placing the request for use of the API."
                 },
