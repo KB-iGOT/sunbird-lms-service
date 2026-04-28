@@ -87,6 +87,9 @@ public class RequestInterceptor {
     apiHeaderIgnoreMap.put("/v5/cb/user/self/register", var);
     apiHeaderIgnoreMap.put("/v5/cb/user/custom/register", var);
     apiHeaderIgnoreMap.put("/v5/cb/user/parichay/create", var);
+    apiHeaderIgnoreMap.put("/v1/org/hierarchy/search", var);
+    apiHeaderIgnoreMap.put("/v1/org/hierarchy/ministry/search", var);
+    apiHeaderIgnoreMap.put("/v1/org/hierarchy/state/search", var);
   }
 
   private static String getUserRequestedFor(Http.Request request) {

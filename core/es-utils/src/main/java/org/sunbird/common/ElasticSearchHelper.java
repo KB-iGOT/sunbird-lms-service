@@ -181,6 +181,72 @@ public class ElasticSearchHelper {
       for (Map.Entry<String, Object> en : nestedFilters.entrySet()) {
         query = createNestedFilterESOpperation(en, query, constraintsMap);
       }
+    } else if (JsonKey.WILDCARD_KEY.equalsIgnoreCase(key)) {
+        query = createWildcardQuery(entry, query);
+    } else if (JsonKey.ADDITIONAL_FILTER.equalsIgnoreCase(key)) {
+        Map<String, Object> additionalFilter = (Map<String, Object>) entry.getValue();
+        for (Map.Entry<String, Object> e : additionalFilter.entrySet()) {
+            query = query.must(createTermsQuery(e.getKey() + RAW_APPEND, Arrays.asList(e.getValue()), constraintsMap.get(key)));
+        }
+    } else if (JsonKey.ADVANCED_FILTERS.equalsIgnoreCase(key)) {
+
+      Map<String, Object> advancedFilters =
+              (Map<String, Object>) entry.getValue();
+
+      List<String> hierarchyLevels =
+              (List<String>) advancedFilters.get("includeHierarchyLevels");
+
+      if (hierarchyLevels != null && !hierarchyLevels.isEmpty()) {
+
+        BoolQueryBuilder hierarchyOrQuery = QueryBuilders.boolQuery();
+
+        for (String level : hierarchyLevels) {
+
+          BoolQueryBuilder perLevelAndQuery = QueryBuilders.boolQuery();
+
+          //IMPORTANT: hierarchyLevel.raw is lowercased in index
+          perLevelAndQuery.must(
+                  createTermsQuery(
+                          "hierarchyLevel" + RAW_APPEND,
+                          Arrays.asList(level.toLowerCase()),
+                          constraintsMap.get(key)
+                  )
+          );
+
+          if ("levelZero".equalsIgnoreCase(level)) {
+
+            Object sbOrgType = advancedFilters.get("ministryOrStateType");
+
+            if (sbOrgType != null) {
+              perLevelAndQuery.must(
+                      createTermsQuery(
+                              "sbOrgType" + RAW_APPEND,
+                              Arrays.asList(sbOrgType),
+                              constraintsMap.get(key)
+                      )
+              );
+            }
+
+          } else {
+            Object ministryOrStateType = advancedFilters.get("ministryOrStateType");
+
+            if (ministryOrStateType != null) {
+              perLevelAndQuery.must(
+                      createTermsQuery(
+                              "ministryOrStateType" + RAW_APPEND,
+                              Arrays.asList(ministryOrStateType),
+                              constraintsMap.get(key)
+                      )
+              );
+            }
+          }
+
+          hierarchyOrQuery.should(perLevelAndQuery);
+        }
+
+        hierarchyOrQuery.minimumShouldMatch(1);
+        query = query.must(hierarchyOrQuery);
+      }
     }
     long elapsedTime = calculateEndTime(startTime);
     logger.debug(
@@ -601,6 +667,7 @@ public class ElasticSearchHelper {
     search = getBasicBuiders(search, searchQueryMap);
     search = setOffset(search, searchQueryMap);
     search = getLimits(search, searchQueryMap);
+    addParentMapIdWildcardIfPresent(search, searchQueryMap);
     if (searchQueryMap.containsKey(JsonKey.GROUP_QUERY)) {
       search
           .getGroupQuery()
@@ -788,4 +855,100 @@ public class ElasticSearchHelper {
       return QueryBuilders.multiMatchQuery(query, fields);
     }
   }
+
+
+  private static void addParentMapIdWildcardIfPresent(SearchDTO search, Map<String, Object> searchQueryMap) {
+    if (MapUtils.isEmpty(searchQueryMap)) return;
+    Map<String, Object> filterMap =
+            (Map<String, Object>) searchQueryMap.get(JsonKey.FILTERS);
+
+    if (MapUtils.isEmpty(filterMap)) return;
+
+    if (search.getAdditionalProperties() == null) {
+      search.setAdditionalProperties(new HashMap<>());
+    }
+
+    if (filterMap.containsKey(JsonKey.ADVANCED_FILTERS)) {
+      search.getAdditionalProperties()
+              .put(JsonKey.ADVANCED_FILTERS,
+                      filterMap.get(JsonKey.ADVANCED_FILTERS));
+      filterMap.remove(JsonKey.ADVANCED_FILTERS);
+    }
+
+    Object parentPathIdObj = filterMap.get(JsonKey.PARENT_PATH_ID);
+    if (parentPathIdObj == null) return;
+
+    if (CollectionUtils.isEmpty(search.getProperties())) {
+      search.setProperties(new ArrayList<>());
+    }
+
+    List<String> parentPathIdList = new ArrayList<>();
+    if (parentPathIdObj instanceof Collection) {
+      for (Object parentPathId : (Collection<?>) parentPathIdObj) {
+        if (parentPathId != null) {
+          parentPathIdList.add(parentPathId.toString());
+        }
+      }
+    } else {
+      parentPathIdList.add(parentPathIdObj.toString());
+    }
+
+    List<Map<String, Object>> wildcardList = new ArrayList<>();
+
+    for (String parentPathString : parentPathIdList) {
+
+      String pattern = "*" + parentPathString;
+
+      if ("all".equalsIgnoreCase(
+              (String) filterMap.get(JsonKey.HIERARCHY_REQUEST_TYPE))) {
+        pattern = pattern + "*";
+      }
+
+      Map<String, Object> wildcardClause = new HashMap<>();
+      Map<String, Object> inner = new HashMap<>();
+      inner.put("parentPathId.raw", pattern);
+      wildcardClause.put("wildcard", inner);
+
+      wildcardList.add(wildcardClause);
+    }
+
+    // Apply wildcard when single entry
+    if (wildcardList.size() == 1) {
+      search.getAdditionalProperties().remove(JsonKey.FILTERS);
+      search.getAdditionalProperties().putAll(wildcardList.get(0));
+      if (filterMap.containsKey(JsonKey.STATUS)) {
+        Map<String, Object> statusMap = new HashMap<>();
+        statusMap.put(JsonKey.STATUS, filterMap.get(JsonKey.STATUS));
+        search.getAdditionalProperties().put(JsonKey.ADDITIONAL_FILTER, statusMap);
+      }
+    }
+  }
+
+    private static BoolQueryBuilder createWildcardQuery(
+            Entry<String, Object> entry, BoolQueryBuilder query) {
+        Object value = entry.getValue();
+        if (value instanceof Map) {
+            Map<String, Object> mapVal = (Map<String, Object>) value;
+            for (Map.Entry<String, Object> e : mapVal.entrySet()) {
+                String field = e.getKey();
+                Object valObj = e.getValue();
+                if (valObj == null) continue;
+                String val = valObj.toString().trim().toLowerCase();
+                if (val.isEmpty()) continue;
+                // Add proper wildcard query
+                query.must(QueryBuilders.wildcardQuery(field, val));
+            }
+            return query;
+        }
+        if (value instanceof String) {
+            String val = value.toString().trim().toLowerCase();
+            if (!val.isEmpty()) {
+                // The entry key is the actual field
+                String field = entry.getKey();
+                query.must(QueryBuilders.wildcardQuery(field, val));
+            }
+        }
+        return query;
+    }
+
 }
