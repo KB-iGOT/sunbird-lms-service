@@ -745,13 +745,13 @@ public class UserProfileReadService {
         );
       Map<String, Object> map = new HashMap<>();
       if (userDetailsMap.get("first_login") == null) {
-        map.put(JsonKey.ID, userId);
+        map.put(JsonKey.CONSENT_USER_ID, userId);
         map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
-        cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER, map, actorMessage.getRequestContext());
+        cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
         Map<String, Object> dataMap = new HashMap<>();
         Map<String, Object> requestMap = new HashMap<>();
-        requestMap.put(JsonKey.ID, map.get(JsonKey.ID));
+        requestMap.put(JsonKey.ID, map.get(JsonKey.CONSENT_USER_ID));
         requestMap.put(JsonKey.LAST_LOGIN, map.get(JsonKey.LAST_LOGIN));
         requestMap.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
         requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
@@ -763,9 +763,9 @@ public class UserProfileReadService {
         userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
         InstructionEventGenerator.userUpdateEvent("", onboardUserOnFirstLogin, userUpdateMap);
       } else {
-            map.put(JsonKey.ID, userId);
+            map.put(JsonKey.CONSENT_USER_ID, userId);
             map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
-            cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER, map, actorMessage.getRequestContext());
+            cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
             map.put(JsonKey.FIRST_LOGIN,userDetailsMap.get(JsonKey.FIRST_LOGIN));
         }
         response.put(JsonKey.FIRST_LOGIN,map.get(JsonKey.FIRST_LOGIN));
