@@ -98,6 +98,8 @@ public class SSOUserServiceImpl implements SSOUserService {
     try {
       response = userService.createUser(requestMap, request.getRequestContext());
       userLookupService.insertRecords(userLookUpData, request.getRequestContext());
+      logger.info(request.getRequestContext(), "SSOUserServiceImpl:createUserAndPassword: requestMap: " +requestMap);
+      logger.info(request.getRequestContext(), "SSOUserServiceImpl:createUserAndPassword: userMap: " +userMap);
       userLoginDao.insertUserLogin(userMap, request.getRequestContext());
       isPasswordUpdated = UserUtil.updatePassword(userMap, request.getRequestContext());
 
