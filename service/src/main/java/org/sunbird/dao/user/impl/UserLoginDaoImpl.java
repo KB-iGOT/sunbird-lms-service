@@ -46,6 +46,7 @@ public class UserLoginDaoImpl implements UserLoginDao {
                     JsonKey.USER_LOGIN,
                     userLoginMap,
                     context);
+            logger.info("UserLoginDaoImpl:insertUserLogin inserted data successfully:for userId "+ userId);
         } catch (Exception ex) {
             logger.error("Exception in UserLoginDaoImpl:insertRecords called for userId: ", ex);
         }
