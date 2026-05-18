@@ -731,6 +731,7 @@ public final class JsonKey {
     public static final String KEYWORD_SUFFIX = ".keyword";
     public static final String PATH = "path";
     public static final String MINISTRY_DETAILS = "ministryDetails";
+    public static final String USER_LOGIN = "user_logins";
 
 
     private JsonKey() {
