@@ -108,19 +108,19 @@ public class UserDaoImpl implements UserDao {
   public Map<String, Object> getLastLoginInfoById(String userId, RequestContext context) {
     try {
       Response response =
-          cassandraOperation.getRecordsByProperty(KEY_SPACE_NAME, JsonKey.USER_LOGIN, JsonKey.CONSENT_USER_ID,Collections.singletonList(userId),context);
+              cassandraOperation.getRecordsByProperty(KEY_SPACE_NAME, JsonKey.USER_LOGIN, JsonKey.CONSENT_USER_ID, Collections.singletonList(userId), context);
       List<Map<String, Object>> responseList =
-          (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+              (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
       if (CollectionUtils.isNotEmpty(responseList)) {
         logger.debug(
-            context,
-            "getLastLoginInfoById: Successfully retrieved login info for user: " + userId);
+                context,
+                "getLastLoginInfoById: Successfully retrieved login info for user: " + userId);
         return responseList.get(0);
       }
     } catch (Exception e) {
       logger.info(
-          context,
-          "getLastLoginInfoById: Error retrieving login info for user: " + userId + ", Error: " + e.getMessage());
+              context,
+              "getLastLoginInfoById: Error retrieving login info for user: " + userId + ", Error: " + e.getMessage());
     }
     return null;
   }

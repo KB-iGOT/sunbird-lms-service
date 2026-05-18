@@ -19,33 +19,35 @@ import java.util.Map;
  * @author Ramya Ranganathan
  */
 public class UserLoginDaoImpl implements UserLoginDao {
-  private final LoggerUtil logger = new LoggerUtil(UserLoginDaoImpl.class);
+    private final LoggerUtil logger = new LoggerUtil(UserLoginDaoImpl.class);
 
-  private final CassandraOperation cassandraOperation = ServiceFactory.getInstance();
-  private static UserLoginDao userLoginDao = null;
-  public static UserLoginDao getInstance() {
-    if (userLoginDao == null) {
-      userLoginDao = new UserLoginDaoImpl();
+    private final CassandraOperation cassandraOperation = ServiceFactory.getInstance();
+    private static UserLoginDao userLoginDao = null;
+
+    public static UserLoginDao getInstance() {
+        if (userLoginDao == null) {
+            userLoginDao = new UserLoginDaoImpl();
+        }
+        return userLoginDao;
     }
-    return userLoginDao;
-  }
 
-  public void insertUserLogin(Map<String, Object> userMap, RequestContext context) {
-    try {
-      String userId = (String) userMap.get(JsonKey.USER_ID);
-      logger.info(context, "UserLoginDaoImpl:insertRecords called for userId: " + userId);
-      Map<String, Object> userLoginMap = new HashMap<>();
-      Instant currentTimestamp = Instant.now();
-      userLoginMap.put(JsonKey.CONSENT_USER_ID, userId);
-      userLoginMap.put(JsonKey.FIRST_LOGIN, currentTimestamp);
-      userLoginMap.put(JsonKey.LAST_LOGIN, currentTimestamp);
+    public void insertUserLogin(Map<String, Object> userMap, RequestContext context) {
+        try {
+            String userId = (String) userMap.get(JsonKey.USER_ID);
+            logger.info(context, "UserLoginDaoImpl:insertRecords called for userId: " + userId);
+            Map<String, Object> userLoginMap = new HashMap<>();
+            Instant currentTimestamp = Instant.now();
+            userLoginMap.put(JsonKey.CONSENT_USER_ID, userId);
+            userLoginMap.put(JsonKey.FIRST_LOGIN, currentTimestamp);
+            userLoginMap.put(JsonKey.LAST_LOGIN, currentTimestamp);
 
-      cassandraOperation.insertRecord(
-              JsonKey.SUNBIRD,
-              JsonKey.USER_LOGIN,
-              userLoginMap,
-              context);
-    }catch (Exception ex) {
-      logger.error("Exception in UserLoginDaoImpl:insertRecords called for userId: ", ex);
+            cassandraOperation.insertRecord(
+                    JsonKey.SUNBIRD,
+                    JsonKey.USER_LOGIN,
+                    userLoginMap,
+                    context);
+        } catch (Exception ex) {
+            logger.error("Exception in UserLoginDaoImpl:insertRecords called for userId: ", ex);
+        }
     }
-  }}
+}

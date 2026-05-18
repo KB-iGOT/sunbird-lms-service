@@ -91,7 +91,7 @@ public class SSOUserServiceImpl implements SSOUserService {
   }
 
   public Response createUserAndPassword(
-      Map<String, Object> requestMap, Map<String, Object> userMap, Request request) {
+          Map<String, Object> requestMap, Map<String, Object> userMap, Request request) {
     Response response = null;
     boolean isPasswordUpdated = false;
     Map<String, Object> userLookUpData = new HashMap<>(userMap);
@@ -101,11 +101,10 @@ public class SSOUserServiceImpl implements SSOUserService {
       userLoginDao.insertUserLogin(userMap, request.getRequestContext());
       isPasswordUpdated = UserUtil.updatePassword(userMap, request.getRequestContext());
 
-    }  catch (Exception e) {
+    } catch (Exception e) {
       // Catch any exception to prevent silent failures
-      logger.info("SSOUserServiceImpl:createUserAndPassword: Exception occurred during user creation"+e.getMessage());
-      throw e;
-    }finally {
+      logger.info("SSOUserServiceImpl:createUserAndPassword: Exception occurred during user creation" + e.getMessage());
+    } finally {
       if (response == null) {
         response = new Response();
       }
