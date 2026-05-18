@@ -8,6 +8,7 @@ import org.sunbird.logging.LoggerUtil;
 import org.sunbird.request.RequestContext;
 
 import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Map;
@@ -34,8 +35,8 @@ public class UserLoginDaoImpl implements UserLoginDao {
       String userId = (String) userMap.get(JsonKey.USER_ID);
       logger.info(context, "UserLoginDaoImpl:insertRecords called for userId: " + userId);
       Map<String, Object> userLoginMap = new HashMap<>();
-      Timestamp currentTimestamp = new Timestamp(Calendar.getInstance().getTime().getTime());
-
+      Timestamp currentTimestamp1 = new Timestamp(Calendar.getInstance().getTime().getTime());
+      Instant currentTimestamp = Instant.now();
       userLoginMap.put(JsonKey.CONSENT_USER_ID, userId);
       userLoginMap.put(JsonKey.FIRST_LOGIN, currentTimestamp);
       userLoginMap.put(JsonKey.LAST_LOGIN, currentTimestamp);
