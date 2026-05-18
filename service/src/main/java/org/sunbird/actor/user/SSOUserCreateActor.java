@@ -192,6 +192,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     setStateValidation(requestMap, userFlagsMap);
     int userFlagValue = userFlagsToNum(userFlagsMap);
     requestMap.put(JsonKey.FLAGS_VALUE, userFlagValue);
+    logger.info("SSOUserCreateActor:createUserAndPassword: starts : ");
     Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
     // update roles to user_roles
     if (CollectionUtils.isNotEmpty(roles)) {
