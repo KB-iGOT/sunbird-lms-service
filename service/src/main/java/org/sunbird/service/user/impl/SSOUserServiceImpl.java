@@ -1,14 +1,11 @@
 package org.sunbird.service.user.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserCreateRequestValidator;
+import org.sunbird.dao.user.UserLoginDao;
+import org.sunbird.dao.user.impl.UserLoginDaoImpl;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
@@ -30,6 +27,12 @@ import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.StringFormatter;
 import org.sunbird.util.user.UserUtil;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class SSOUserServiceImpl implements SSOUserService {
 
   private final LoggerUtil logger = new LoggerUtil(SSOUserServiceImpl.class);
@@ -39,7 +42,7 @@ public class SSOUserServiceImpl implements SSOUserService {
   private final UserService userService = UserServiceImpl.getInstance();
   private final UserLookupService userLookupService = UserLookUpServiceImpl.getInstance();
   private final OrgService orgService = OrgServiceImpl.getInstance();
-
+  private final UserLoginDao userLoginDao = UserLoginDaoImpl.getInstance();
   public static SSOUserService getInstance() {
     if (ssoUserService == null) {
       ssoUserService = new SSOUserServiceImpl();
@@ -88,15 +91,21 @@ public class SSOUserServiceImpl implements SSOUserService {
   }
 
   public Response createUserAndPassword(
-      Map<String, Object> requestMap, Map<String, Object> userMap, Request request) {
+          Map<String, Object> requestMap, Map<String, Object> userMap, Request request) {
     Response response = null;
     boolean isPasswordUpdated = false;
     Map<String, Object> userLookUpData = new HashMap<>(userMap);
     try {
       response = userService.createUser(requestMap, request.getRequestContext());
       userLookupService.insertRecords(userLookUpData, request.getRequestContext());
+      logger.info(request.getRequestContext(), "SSOUserServiceImpl:createUserAndPassword: requestMap: " +requestMap);
+      logger.info(request.getRequestContext(), "SSOUserServiceImpl:createUserAndPassword: userMap: " +userMap);
+      userLoginDao.insertUserLogin(userMap, request.getRequestContext());
       isPasswordUpdated = UserUtil.updatePassword(userMap, request.getRequestContext());
 
+    } catch (Exception e) {
+      // Catch any exception to prevent silent failures
+      logger.info("SSOUserServiceImpl:createUserAndPassword: Exception occurred during user creation" + e.getMessage());
     } finally {
       if (response == null) {
         response = new Response();
