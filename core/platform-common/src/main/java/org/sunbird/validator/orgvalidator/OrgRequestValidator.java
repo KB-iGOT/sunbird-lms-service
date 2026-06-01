@@ -2,6 +2,7 @@ package org.sunbird.validator.orgvalidator;
 
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,9 +17,24 @@ import org.sunbird.util.ProjectUtil;
 public class OrgRequestValidator extends BaseOrgRequestValidator {
 
   private static final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
+  private static final String DEFAULT_ORG_NAME_PATTERN = "^[a-zA-Z0-9\\s&.,\\-'()]+$";
+  private static Pattern orgNamePattern = null;
+
   private final List<String> orgHierarchySearchAllowedRequestFields = List.of(ProjectUtil.getConfigValue(JsonKey.ORG_HIERARCHY_SEARCH_ALLOWED_REQUEST_FIELDS).split(","));
   private final List<String> orgHierarchySearchFiltersAllowedFields = List.of(ProjectUtil.getConfigValue(JsonKey.ORG_HIERARCHY_SEARCH_FILTERS_ALLOWED_FIELDS).split(","));
   private final List<String> orgHierarchySearchAllowedRequestAllFields = Stream.concat(orgHierarchySearchAllowedRequestFields.stream(), Stream.of("id", "userId", "requestedBy")).collect(Collectors.toList());
+
+  private static Pattern getOrgNamePattern() {
+    if (orgNamePattern == null) {
+      try {
+        String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_NAME_VALIDATION_PATTERN);
+        orgNamePattern = Pattern.compile(StringUtils.isNotBlank(patternStr) ? patternStr : DEFAULT_ORG_NAME_PATTERN);
+      } catch (Exception e) {
+        orgNamePattern = Pattern.compile(DEFAULT_ORG_NAME_PATTERN);
+      }
+    }
+    return orgNamePattern;
+  }
 
 
   public void validateCreateOrgRequest(Request orgRequest) {
@@ -30,6 +46,7 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
         (String) orgRequest.getRequest().get(JsonKey.ORG_NAME),
         ResponseCode.mandatoryParamsMissing,
         JsonKey.ORG_NAME);
+    validateOrganizationName((String) orgRequest.getRequest().get(JsonKey.ORG_NAME));
     if (!(orgRequest.getRequest().containsKey(JsonKey.IS_TENANT))
         || (orgRequest.getRequest().containsKey(JsonKey.IS_TENANT)
             && null == orgRequest.getRequest().get(JsonKey.IS_TENANT))) {
@@ -55,6 +72,29 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
               ResponseCode.invalidParameterValue.getErrorMessage(),
               orgRequest.getRequest().get(JsonKey.LICENSE),
               JsonKey.LICENSE),
+          ERROR_CODE);
+    }
+  }
+
+  /**
+   * Validates the organization name to prevent HTML, JavaScript, or markup content.
+   * Allowed characters: alphanumeric, spaces, and common business name characters (&, ., ,, -, ', (, ))
+   *
+   * @param orgName the organization name to validate
+   * @throws ProjectCommonException if the organization name contains invalid characters
+   */
+  private void validateOrganizationName(String orgName) {
+    if (StringUtils.isBlank(orgName)) {
+      return;
+    }
+
+    if (!getOrgNamePattern().matcher(orgName).matches()) {
+      throw new ProjectCommonException(
+          ResponseCode.invalidParameterValue,
+          MessageFormat.format(
+              ResponseCode.invalidParameterValue.getErrorMessage(),
+              orgName,
+              JsonKey.ORG_NAME) + " - Only alphanumeric characters, spaces are allowed.",
           ERROR_CODE);
     }
   }
