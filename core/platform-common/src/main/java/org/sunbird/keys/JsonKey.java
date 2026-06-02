@@ -733,6 +733,9 @@ public final class JsonKey {
     public static final String MINISTRY_DETAILS = "ministryDetails";
     public static final String USER_LOGIN = "user_logins";
     public static final String ORG_NAME_VALIDATION_PATTERN = "org_name_validation_pattern";
+    public static final String ORG_NAME_MAX_LENGTH = "org_name_max_length";
+    public static final String DEFAULT_ORG_NAME_PATTERN = "^[a-zA-Z0-9\\s&.,\\-'()]+$";
+    public static final int DEFAULT_ORG_NAME_MAX_LENGTH = 1000;
 
 
     private JsonKey() {

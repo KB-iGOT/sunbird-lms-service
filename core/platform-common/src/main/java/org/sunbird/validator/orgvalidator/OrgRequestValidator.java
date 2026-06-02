@@ -2,7 +2,6 @@ package org.sunbird.validator.orgvalidator;
 
 import java.text.MessageFormat;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -17,24 +16,10 @@ import org.sunbird.util.ProjectUtil;
 public class OrgRequestValidator extends BaseOrgRequestValidator {
 
   private static final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
-  private static final String DEFAULT_ORG_NAME_PATTERN = "^[a-zA-Z0-9\\s&.,\\-'()]+$";
-  private static Pattern orgNamePattern = null;
 
   private final List<String> orgHierarchySearchAllowedRequestFields = List.of(ProjectUtil.getConfigValue(JsonKey.ORG_HIERARCHY_SEARCH_ALLOWED_REQUEST_FIELDS).split(","));
   private final List<String> orgHierarchySearchFiltersAllowedFields = List.of(ProjectUtil.getConfigValue(JsonKey.ORG_HIERARCHY_SEARCH_FILTERS_ALLOWED_FIELDS).split(","));
   private final List<String> orgHierarchySearchAllowedRequestAllFields = Stream.concat(orgHierarchySearchAllowedRequestFields.stream(), Stream.of("id", "userId", "requestedBy")).collect(Collectors.toList());
-
-  private static Pattern getOrgNamePattern() {
-    if (orgNamePattern == null) {
-      try {
-        String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_NAME_VALIDATION_PATTERN);
-        orgNamePattern = Pattern.compile(StringUtils.isNotBlank(patternStr) ? patternStr : DEFAULT_ORG_NAME_PATTERN);
-      } catch (Exception e) {
-        orgNamePattern = Pattern.compile(DEFAULT_ORG_NAME_PATTERN);
-      }
-    }
-    return orgNamePattern;
-  }
 
 
   public void validateCreateOrgRequest(Request orgRequest) {
@@ -46,7 +31,20 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
         (String) orgRequest.getRequest().get(JsonKey.ORG_NAME),
         ResponseCode.mandatoryParamsMissing,
         JsonKey.ORG_NAME);
-    validateOrganizationName((String) orgRequest.getRequest().get(JsonKey.ORG_NAME));
+
+    String orgName = (String) orgRequest.getRequest().get(JsonKey.ORG_NAME);
+    validateOrganizationName(orgName);
+
+    if (orgRequest.getRequest().containsKey(JsonKey.DESCRIPTION)) {
+      String description = (String) orgRequest.getRequest().get(JsonKey.DESCRIPTION);
+      if (StringUtils.isNotBlank(description)) {
+        validateOrganizationName(description);
+        String maxLengthStr = ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH);
+        int maxLength = StringUtils.isNotBlank(maxLengthStr) ? Integer.parseInt(maxLengthStr) : JsonKey.DEFAULT_ORG_NAME_MAX_LENGTH;
+        validateFieldLength(description, JsonKey.DESCRIPTION, maxLength);
+      }
+    }
+
     if (!(orgRequest.getRequest().containsKey(JsonKey.IS_TENANT))
         || (orgRequest.getRequest().containsKey(JsonKey.IS_TENANT)
             && null == orgRequest.getRequest().get(JsonKey.IS_TENANT))) {
@@ -88,13 +86,28 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
       return;
     }
 
-    if (!getOrgNamePattern().matcher(orgName).matches()) {
+    String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_NAME_VALIDATION_PATTERN);
+    String pattern = StringUtils.isNotBlank(patternStr) ? patternStr : JsonKey.DEFAULT_ORG_NAME_PATTERN;
+
+    if (!orgName.matches(pattern)) {
       throw new ProjectCommonException(
           ResponseCode.invalidParameterValue,
           MessageFormat.format(
               ResponseCode.invalidParameterValue.getErrorMessage(),
               orgName,
               JsonKey.ORG_NAME) + " - Only alphanumeric characters, spaces are allowed.",
+          ERROR_CODE);
+    }
+  }
+
+  private void validateFieldLength(String fieldValue, String fieldName, int maxLength) {
+    if (StringUtils.isNotBlank(fieldValue) && fieldValue.length() > maxLength) {
+      throw new ProjectCommonException(
+          ResponseCode.invalidParameterValue,
+          MessageFormat.format(
+              ResponseCode.invalidParameterValue.getErrorMessage(),
+              fieldValue,
+              fieldName) + " - Maximum allowed length is " + maxLength + " characters",
           ERROR_CODE);
     }
   }

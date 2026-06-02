@@ -471,4 +471,100 @@ public class OrgValidatorTest {
     }
     assertEquals(null, requestObj.get("ext"));
   }
+
+  @Test
+  public void testValidateCreateOrgWithValidDescription() {
+    Request request = new Request();
+    Map<String, Object> requestObj = new HashMap<>();
+    requestObj.put(JsonKey.ORG_NAME, "Test Organization");
+    requestObj.put(JsonKey.DESCRIPTION, "This is a valid description for testing");
+    requestObj.put(JsonKey.IS_TENANT, false);
+    requestObj.put(JsonKey.ORG_TYPE, "board");
+    request.setRequest(requestObj);
+    try {
+      new OrgRequestValidator().validateCreateOrgRequest(request);
+      requestObj.put("ext", "success");
+    } catch (ProjectCommonException e) {
+      Assert.assertNull(e);
+    }
+    assertEquals("success", requestObj.get("ext"));
+  }
+
+  @Test
+  public void testValidateCreateOrgWithInvalidDescriptionPattern() {
+    Request request = new Request();
+    Map<String, Object> requestObj = new HashMap<>();
+    requestObj.put(JsonKey.ORG_NAME, "Test Organization");
+    requestObj.put(JsonKey.DESCRIPTION, "Description with <script>alert('xss')</script>");
+    requestObj.put(JsonKey.IS_TENANT, false);
+    requestObj.put(JsonKey.ORG_TYPE, "board");
+    request.setRequest(requestObj);
+    try {
+      new OrgRequestValidator().validateCreateOrgRequest(request);
+      requestObj.put("ext", "success");
+    } catch (ProjectCommonException e) {
+      assertEquals(ResponseCode.invalidParameterValue.getErrorCode(), e.getErrorCode());
+      assertEquals(ResponseCode.CLIENT_ERROR.getResponseCode(), e.getErrorResponseCode());
+      Assert.assertTrue(e.getMessage().contains("Only alphanumeric characters"));
+    }
+    assertEquals(null, requestObj.get("ext"));
+  }
+
+  @Test
+  public void testValidateCreateOrgWithExceedingDescriptionLength() {
+    Request request = new Request();
+    Map<String, Object> requestObj = new HashMap<>();
+    requestObj.put(JsonKey.ORG_NAME, "Test Organization");
+    // Create a string with 1001 characters
+    String longDescription = "a".repeat(1001);
+    requestObj.put(JsonKey.DESCRIPTION, longDescription);
+    requestObj.put(JsonKey.IS_TENANT, false);
+    requestObj.put(JsonKey.ORG_TYPE, "board");
+    request.setRequest(requestObj);
+    try {
+      new OrgRequestValidator().validateCreateOrgRequest(request);
+      requestObj.put("ext", "success");
+    } catch (ProjectCommonException e) {
+      assertEquals(ResponseCode.invalidParameterValue.getErrorCode(), e.getErrorCode());
+      assertEquals(ResponseCode.CLIENT_ERROR.getResponseCode(), e.getErrorResponseCode());
+      Assert.assertTrue(e.getMessage().contains("Maximum allowed length is 1000 characters"));
+    }
+    assertEquals(null, requestObj.get("ext"));
+  }
+
+  @Test
+  public void testValidateCreateOrgWithEmptyDescription() {
+    Request request = new Request();
+    Map<String, Object> requestObj = new HashMap<>();
+    requestObj.put(JsonKey.ORG_NAME, "Test Organization");
+    requestObj.put(JsonKey.DESCRIPTION, "");
+    requestObj.put(JsonKey.IS_TENANT, false);
+    requestObj.put(JsonKey.ORG_TYPE, "board");
+    request.setRequest(requestObj);
+    try {
+      new OrgRequestValidator().validateCreateOrgRequest(request);
+      requestObj.put("ext", "success");
+    } catch (ProjectCommonException e) {
+      Assert.assertNull(e);
+    }
+    assertEquals("success", requestObj.get("ext"));
+  }
+
+  @Test
+  public void testValidateCreateOrgWithDescriptionSpecialChars() {
+    Request request = new Request();
+    Map<String, Object> requestObj = new HashMap<>();
+    requestObj.put(JsonKey.ORG_NAME, "Test Organization");
+    requestObj.put(JsonKey.DESCRIPTION, "Test & Co., Ltd. - (India's Division)");
+    requestObj.put(JsonKey.IS_TENANT, false);
+    requestObj.put(JsonKey.ORG_TYPE, "board");
+    request.setRequest(requestObj);
+    try {
+      new OrgRequestValidator().validateCreateOrgRequest(request);
+      requestObj.put("ext", "success");
+    } catch (ProjectCommonException e) {
+      Assert.assertNull(e);
+    }
+    assertEquals("success", requestObj.get("ext"));
+  }
 }
