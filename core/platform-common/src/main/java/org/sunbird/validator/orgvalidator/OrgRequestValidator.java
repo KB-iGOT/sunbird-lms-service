@@ -31,17 +31,7 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
         ResponseCode.mandatoryParamsMissing,
         JsonKey.ORG_NAME);
 
-    String orgName = (String) orgRequest.getRequest().get(JsonKey.ORG_NAME);
-    validateOrganizationName(orgName);
-
-    if (orgRequest.getRequest().containsKey(JsonKey.DESCRIPTION)) {
-      String description = (String) orgRequest.getRequest().get(JsonKey.DESCRIPTION);
-      if (StringUtils.isNotBlank(description)) {
-        validateOrganizationName(description);
-        int maxLength = StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH)) ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH)) : JsonKey.DEFAULT_ORG_DESCRIPTION_MAX_LENGTH;
-        validateFieldLength(description, JsonKey.DESCRIPTION, maxLength);
-      }
-    }
+    validateOrgNameAndDescription(orgRequest);
 
     if (!(orgRequest.getRequest().containsKey(JsonKey.IS_TENANT))
         || (orgRequest.getRequest().containsKey(JsonKey.IS_TENANT)
@@ -69,6 +59,26 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
               orgRequest.getRequest().get(JsonKey.LICENSE),
               JsonKey.LICENSE),
           ERROR_CODE);
+    }
+  }
+
+  private void validateOrgNameAndDescription(Request orgRequest) {
+    if (orgRequest.getRequest().containsKey(JsonKey.ORG_NAME)) {
+      String orgName = (String) orgRequest.getRequest().get(JsonKey.ORG_NAME);
+      if (StringUtils.isNotBlank(orgName)) {
+        validateOrganizationName(orgName);
+      }
+    }
+
+    if (orgRequest.getRequest().containsKey(JsonKey.DESCRIPTION)) {
+      String description = (String) orgRequest.getRequest().get(JsonKey.DESCRIPTION);
+      if (StringUtils.isNotBlank(description)) {
+        validateOrganizationName(description);
+        int maxLength = StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
+            ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
+            : JsonKey.DEFAULT_ORG_DESCRIPTION_MAX_LENGTH;
+        validateFieldLength(description, JsonKey.DESCRIPTION, maxLength);
+      }
     }
   }
 
@@ -113,6 +123,8 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
 
   public void validateUpdateOrgRequest(Request request) {
     validateOrgReference(request);
+    validateOrgNameAndDescription(request);
+
     if (request.getRequest().containsKey(JsonKey.ROOT_ORG_ID)
         && StringUtils.isEmpty((String) request.getRequest().get(JsonKey.ROOT_ORG_ID))) {
       throw new ProjectCommonException(
