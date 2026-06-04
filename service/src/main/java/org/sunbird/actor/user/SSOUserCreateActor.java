@@ -12,6 +12,8 @@ import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
+import org.sunbird.dao.user.UserDao;
+import org.sunbird.dao.user.impl.UserDaoImpl;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
@@ -44,6 +46,8 @@ public class SSOUserCreateActor extends UserBaseActor {
   private final SSOUserService ssoUserService = SSOUserServiceImpl.getInstance();
   private final int ERROR_CODE = ResponseCode.CLIENT_ERROR.getResponseCode();
   private final OrgService orgService = OrgServiceImpl.getInstance();
+  private final UserDao userDao = UserDaoImpl.getInstance();
+  private final RoleAssignmentValidator roleAssignmentValidator = new RoleAssignmentValidator();
   private static final String EMAIL_KEY_PREFIX = "sso:email:";
   private static final String PHONE_KEY_PREFIX = "sso:phone:";
 
@@ -185,6 +189,39 @@ public class SSOUserCreateActor extends UserBaseActor {
     requestMap = UserUtil.encryptUserData(userMap);
     // removing roles from requestMap, so it won't get save in user table
     List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
+
+    // Validate roles BEFORE user creation
+    if (CollectionUtils.isNotEmpty(roles)) {
+      String requestingUserId = (String) request.getContext().get(JsonKey.REQUESTED_BY);
+      String targetOrgId = (String) requestMap.get(JsonKey.ROOT_ORG_ID);
+
+      if (StringUtils.isNotBlank(requestingUserId)) {
+        List<String> properties = new ArrayList<>();
+        properties.add(JsonKey.ID);
+        properties.add(JsonKey.ROOT_ORG_ID);
+        Response userPropertiesResponse = userDao.getUserPropertiesById(
+                Collections.singletonList(requestingUserId),
+                properties,
+                request.getRequestContext()
+        );
+
+        String requestingUserOrgId = null;
+        List<Map<String, Object>> userList = (List<Map<String, Object>>) userPropertiesResponse.get(JsonKey.RESPONSE);
+        if (CollectionUtils.isNotEmpty(userList)) {
+          requestingUserOrgId = (String) userList.get(0).get(JsonKey.ROOT_ORG_ID);
+        }
+
+        roleAssignmentValidator.validateRoleAssignment(
+                requestingUserId,
+                requestingUserOrgId,
+                targetOrgId,
+                null, // targetUserId is null for new user creation - all roles will be validated
+                roles,
+                request.getRequestContext()
+        );
+      }
+    }
+
     removeUnwanted(requestMap);
     requestMap.put(JsonKey.IS_DELETED, false);
     Map<String, Boolean> userFlagsMap = new HashMap<>();
@@ -194,7 +231,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     requestMap.put(JsonKey.FLAGS_VALUE, userFlagValue);
     logger.info(request.getRequestContext(), "SSOUserCreateActor:createUserAndPassword: " +userMap);
     Response response = ssoUserService.createUserAndPassword(requestMap, userMap, request);
-    // update roles to user_roles
+
+    // Assign roles to user_roles AFTER user creation
     if (CollectionUtils.isNotEmpty(roles)) {
       requestMap.put(JsonKey.ROLES, roles);
       requestMap.put(JsonKey.ROLE_OPERATION, JsonKey.CREATE);
