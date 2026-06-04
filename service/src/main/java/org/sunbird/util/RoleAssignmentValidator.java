@@ -88,8 +88,7 @@ public class RoleAssignmentValidator {
     if (CollectionUtils.isEmpty(adminRoles)) {
       throw new ProjectCommonException(
               ResponseCode.unAuthorized,
-              String.format("Users with ADMIN roles are authorized to create or assign roles to other users",
-                      String.join(", ", adminRoles)),
+              "User is not authorized to create or assign roles. Only users with ADMIN roles can perform this action.",
               ResponseCode.UNAUTHORIZED.getResponseCode()
       );
     }
