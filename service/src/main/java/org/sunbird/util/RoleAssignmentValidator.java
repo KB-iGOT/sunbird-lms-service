@@ -76,7 +76,8 @@ public class RoleAssignmentValidator {
     List<Map<String, Object>> requestingUserRoles = userRoleService.getUserRoles(requestingUserId, null, context);
 
     if (CollectionUtils.isEmpty(requestingUserRoles)) {
-      throw new ProjectCommonException(ResponseCode.unAuthorized, "Requesting user has no roles assigned to perform this operation",
+      throw new ProjectCommonException(ResponseCode.userNoRolesAssigned,
+              ResponseCode.userNoRolesAssigned.getErrorMessage(),
               ResponseCode.UNAUTHORIZED.getResponseCode());
     }
 
@@ -87,8 +88,8 @@ public class RoleAssignmentValidator {
 
     if (CollectionUtils.isEmpty(adminRoles)) {
       throw new ProjectCommonException(
-              ResponseCode.unAuthorized,
-              "User is not authorized to create or assign roles. Only users with ADMIN roles can perform this action.",
+              ResponseCode.userNotAuthorizedAdminRolesRequired,
+              ResponseCode.userNotAuthorizedAdminRolesRequired.getErrorMessage(),
               ResponseCode.UNAUTHORIZED.getResponseCode()
       );
     }
@@ -99,8 +100,8 @@ public class RoleAssignmentValidator {
     Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
     if (null == targetOrg) {
       throw new ProjectCommonException(
-              ResponseCode.invalidParameterValue,
-              "Target organization not found",
+              ResponseCode.targetOrgNotFound,
+              ResponseCode.targetOrgNotFound.getErrorMessage(),
               ResponseCode.CLIENT_ERROR.getResponseCode()
       );
     }
@@ -108,8 +109,8 @@ public class RoleAssignmentValidator {
     if (!requestingUserOrgId.equalsIgnoreCase(targetOrgId)) {
       if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
         throw new ProjectCommonException(
-                ResponseCode.unAuthorized,
-                "Requesting user does not have authority over the target organization",
+                ResponseCode.userNoAuthorityOverTargetOrg,
+                ResponseCode.userNoAuthorityOverTargetOrg.getErrorMessage(),
                 ResponseCode.UNAUTHORIZED.getResponseCode()
         );
       }
@@ -118,8 +119,8 @@ public class RoleAssignmentValidator {
     String ministryOrStateType = targetOrg.getMinistryOrStateType();
     if (StringUtils.isBlank(ministryOrStateType)) {
       throw new ProjectCommonException(
-              ResponseCode.invalidParameterValue,
-              "Target organization does not have a ministryOrStateType defined",
+              ResponseCode.targetOrgNoMinistryStateType,
+              ResponseCode.targetOrgNoMinistryStateType.getErrorMessage(),
               ResponseCode.CLIENT_ERROR.getResponseCode()
       );
     }
@@ -127,8 +128,8 @@ public class RoleAssignmentValidator {
     SystemSetting orgTypeListSetting = systemSettingsService.getSystemSettingByKey(JsonKey.ORG_TYPE_LIST, context);
     if (null == orgTypeListSetting || StringUtils.isBlank(orgTypeListSetting.getValue())) {
       throw new ProjectCommonException(
-              ResponseCode.SERVER_ERROR,
-              "Organization type configuration not found in system settings",
+              ResponseCode.orgTypeConfigNotFound,
+              ResponseCode.orgTypeConfigNotFound.getErrorMessage(),
               ResponseCode.SERVER_ERROR.getResponseCode()
       );
     }
@@ -144,8 +145,8 @@ public class RoleAssignmentValidator {
 
       if (CollectionUtils.isEmpty(orgTypeList)) {
         throw new ProjectCommonException(
-                ResponseCode.SERVER_ERROR,
-                "Organization type list is empty in system settings",
+                ResponseCode.orgTypeListEmpty,
+                ResponseCode.orgTypeListEmpty.getErrorMessage(),
                 ResponseCode.SERVER_ERROR.getResponseCode()
         );
       }
@@ -160,8 +161,8 @@ public class RoleAssignmentValidator {
 
       if (null == matchingOrgType) {
         throw new ProjectCommonException(
-                ResponseCode.invalidParameterValue,
-                String.format("No role configuration found for organization type: %s", ministryOrStateType),
+                ResponseCode.noRoleConfigForOrgType,
+                String.format(ResponseCode.noRoleConfigForOrgType.getErrorMessage(), ministryOrStateType),
                 ResponseCode.CLIENT_ERROR.getResponseCode()
         );
       }
@@ -170,8 +171,8 @@ public class RoleAssignmentValidator {
 
       if (CollectionUtils.isEmpty(allowedRoles)) {
         throw new ProjectCommonException(
-                ResponseCode.invalidParameterValue,
-                String.format("No roles are defined for organization type: %s", ministryOrStateType),
+                ResponseCode.noRolesDefinedForOrgType,
+                String.format(ResponseCode.noRolesDefinedForOrgType.getErrorMessage(), ministryOrStateType),
                 ResponseCode.CLIENT_ERROR.getResponseCode()
         );
       }
@@ -182,8 +183,8 @@ public class RoleAssignmentValidator {
 
       if (CollectionUtils.isNotEmpty(invalidRoles)) {
         throw new ProjectCommonException(
-                ResponseCode.invalidParameterValue,
-                String.format("The following roles are not allowed for organization type '%s': %s. Allowed roles are: %s",
+                ResponseCode.rolesNotAllowedForOrgType,
+                String.format(ResponseCode.rolesNotAllowedForOrgType.getErrorMessage(),
                         ministryOrStateType,
                         String.join(", ", invalidRoles),
                         String.join(", ", allowedRoles)),
@@ -195,8 +196,8 @@ public class RoleAssignmentValidator {
         throw (ProjectCommonException) e;
       }
       throw new ProjectCommonException(
-              ResponseCode.SERVER_ERROR,
-              "Error validating roles against organization type: " + e.getMessage(),
+              ResponseCode.errorValidatingRolesAgainstOrgType,
+              String.format(ResponseCode.errorValidatingRolesAgainstOrgType.getErrorMessage(), e.getMessage()),
               ResponseCode.SERVER_ERROR.getResponseCode()
       );
     }

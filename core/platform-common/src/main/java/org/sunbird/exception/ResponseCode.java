@@ -175,6 +175,40 @@ public enum ResponseCode {
   bulkUserCreateProfileValidation(
           ResponseMessage.Key.BULK_USER_CREATE_PROFILEDETAILS_NOT_MET,
           ResponseMessage.Message.BULK_USER_CREATE_PROFILEDETAILS_NOT_MET_VALUE),
+  userNoRolesAssigned(
+          ResponseMessage.Key.USER_NO_ROLES_ASSIGNED,
+          ResponseMessage.Message.USER_NO_ROLES_ASSIGNED),
+  userNotAuthorizedAdminRolesRequired(
+          ResponseMessage.Key.USER_NOT_AUTHORIZED_ADMIN_ROLES_REQUIRED,
+          ResponseMessage.Message.USER_NOT_AUTHORIZED_ADMIN_ROLES_REQUIRED),
+  targetOrgNotFound(
+          ResponseMessage.Key.TARGET_ORG_NOT_FOUND,
+          ResponseMessage.Message.TARGET_ORG_NOT_FOUND),
+  userNoAuthorityOverTargetOrg(
+          ResponseMessage.Key.USER_NO_AUTHORITY_OVER_TARGET_ORG,
+          ResponseMessage.Message.USER_NO_AUTHORITY_OVER_TARGET_ORG),
+  targetOrgNoMinistryStateType(
+          ResponseMessage.Key.TARGET_ORG_NO_MINISTRY_STATE_TYPE,
+          ResponseMessage.Message.TARGET_ORG_NO_MINISTRY_STATE_TYPE),
+  orgTypeConfigNotFound(
+          ResponseMessage.Key.ORG_TYPE_CONFIG_NOT_FOUND,
+          ResponseMessage.Message.ORG_TYPE_CONFIG_NOT_FOUND),
+  orgTypeListEmpty(
+          ResponseMessage.Key.ORG_TYPE_LIST_EMPTY,
+          ResponseMessage.Message.ORG_TYPE_LIST_EMPTY),
+  noRoleConfigForOrgType(
+          ResponseMessage.Key.NO_ROLE_CONFIG_FOR_ORG_TYPE,
+          ResponseMessage.Message.NO_ROLE_CONFIG_FOR_ORG_TYPE),
+  noRolesDefinedForOrgType(
+          ResponseMessage.Key.NO_ROLES_DEFINED_FOR_ORG_TYPE,
+          ResponseMessage.Message.NO_ROLES_DEFINED_FOR_ORG_TYPE),
+  rolesNotAllowedForOrgType(
+          ResponseMessage.Key.ROLES_NOT_ALLOWED_FOR_ORG_TYPE,
+          ResponseMessage.Message.ROLES_NOT_ALLOWED_FOR_ORG_TYPE),
+  errorValidatingRolesAgainstOrgType(
+          ResponseMessage.Key.ERROR_VALIDATING_ROLES_AGAINST_ORG_TYPE,
+          ResponseMessage.Message.ERROR_VALIDATING_ROLES_AGAINST_ORG_TYPE),
+
   OK(200),
   SUCCESS(200),
   CLIENT_ERROR(400),
