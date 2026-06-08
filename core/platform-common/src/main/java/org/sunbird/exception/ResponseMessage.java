@@ -210,8 +210,6 @@ public interface ResponseMessage {
     String ERROR_USER_CREATION_DUPLICATE_REQUEST = "0077";
     String BE_JOB_REQUEST_EXCEPTION = "0078";
     String BULK_USER_CREATE_PROFILEDETAILS_NOT_MET = "Bulk User Create ProfileDetails Not Met";
-
-    // Role Assignment Validation Keys
     String USER_NO_ROLES_ASSIGNED = "0079";
     String USER_NOT_AUTHORIZED_ADMIN_ROLES_REQUIRED = "0080";
     String TARGET_ORG_NOT_FOUND = "0081";
