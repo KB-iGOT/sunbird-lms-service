@@ -85,9 +85,6 @@ public class UserRoleActor extends UserBaseActor {
     String targetOrgId = (String) requestMap.get(JsonKey.ORGANISATION_ID);
     String requestingUserOrgId = null;
 
-    boolean isPrivate = actorMessage.getContext().get(JsonKey.PRIVATE) != null
-        && (boolean) actorMessage.getContext().get(JsonKey.PRIVATE);
-
     actorMessage.getContext().put(JsonKey.USER_ID, userId);
     Response userProfileDataResponse = profileReadService.getUserProfileData(actorMessage);
     Map<String, Object> userProfileDataMap = (Map<String, Object>) userProfileDataResponse.get(JsonKey.RESPONSE);
@@ -105,15 +102,7 @@ public class UserRoleActor extends UserBaseActor {
     }
 
     if (StringUtils.isNotBlank(requestingUserId)) {
-      List<String> properties = new ArrayList<>();
-      properties.add(JsonKey.ID);
-      properties.add(JsonKey.ROOT_ORG_ID);
-      Response userPropertiesResponse = userDao.getUserPropertiesById(Arrays.asList(requestingUserId), properties, actorMessage.getRequestContext());
-
-      List<Map<String, Object>> userList = (List<Map<String, Object>>) userPropertiesResponse.get(JsonKey.RESPONSE);
-      if (CollectionUtils.isNotEmpty(userList)) {
-        requestingUserOrgId = (String) userList.get(0).get(JsonKey.ROOT_ORG_ID);
-      }
+        requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, actorMessage.getRequestContext());
     }
 
     List<String> assignRoles = null;
@@ -132,15 +121,21 @@ public class UserRoleActor extends UserBaseActor {
       }
     }
 
-
     if (CollectionUtils.isNotEmpty(assignRoles) && StringUtils.isNotBlank(requestingUserId)) {
-      String targetUserIdForValidation = isPrivate ? null : userId;
+      if (StringUtils.isBlank(requestingUserOrgId)) {
+        logger.info(actorMessage.getRequestContext(), "Requesting user org id is blank");
+        throw new ProjectCommonException(ResponseCode.invalidParameter,
+                "Requesting user org id is blank", ResponseCode.CLIENT_ERROR.getResponseCode());
+      }
 
       roleAssignmentValidator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId,
-              targetUserIdForValidation,
+              userId,
               assignRoles,
               actorMessage.getRequestContext()
       );
+    }else {
+      throw new ProjectCommonException(ResponseCode.invalidParameter,
+              "Requesting userId is blank", ResponseCode.CLIENT_ERROR.getResponseCode());
     }
     if (CollectionUtils.isNotEmpty(assignRoles)) {
       boolean isTryingToAssignMdoLeader = assignRoles.contains(JsonKey.MDO_LEADER);

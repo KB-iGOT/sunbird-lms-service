@@ -21,12 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Utility class for validating role assignments.
- * Ensures users with _ADMIN roles cannot assign roles and validates role assignments
- * against organization type configuration.
- * Only validates NEW roles being added, not existing roles.
- */
 public class RoleAssignmentValidator {
 
   private static final ObjectMapper objectMapper = new ObjectMapper();
@@ -34,45 +28,51 @@ public class RoleAssignmentValidator {
   private final OrgService orgService = OrgServiceImpl.getInstance();
   private final SystemSettingsService systemSettingsService = new SystemSettingsService();
 
-  /**
-   * Validates role assignment - only new roles are validated, not existing ones.
-   */
   public void validateRoleAssignment(String requestingUserId, String requestingUserOrgId, String targetOrgId, String targetUserId, List<String> rolesToAssign, RequestContext context) {
-    validateRequestingUserRoles(requestingUserId, context);
+    List<String> requestingUserRoles = validateRequestingUserRoles(requestingUserId, context);
+    boolean isSpv = false;
+    if (requestingUserRoles.contains(JsonKey.SPV_ADMIN)) {
+      isSpv = true;
+    }
+
     List<String> newRoles = getNewRoles(targetUserId, rolesToAssign, context);
+    Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
+    if (null == targetOrg) {
+      throw new ProjectCommonException(
+              ResponseCode.targetOrgNotFound,
+              ResponseCode.targetOrgNotFound.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode()
+      );
+    }
+    isAuthorizedForOrg(isSpv,targetOrgId, requestingUserOrgId, targetOrg);
+
     if (CollectionUtils.isNotEmpty(newRoles)) {
-      validateRolesAgainstOrgType(requestingUserOrgId, targetOrgId, newRoles, context);
+      validateRolesAgainstOrgType(requestingUserOrgId, targetOrgId, newRoles, isSpv, targetOrg, context);
     }
   }
 
-  /**
-   * getnew roles that need validation (excludes existing roles if user exists).
-   */
   private List<String> getNewRoles(String targetUserId, List<String> requestedRoles, RequestContext context) {
     // For new user creation, all roles are new
     if (StringUtils.isBlank(targetUserId)) {
       return requestedRoles;
     }
 
-    // Fetch existing roles for target user
     List<Map<String, Object>> existingRoles = userRoleService.getUserRoles(targetUserId, null, context);
     List<String> existingRoleNames = existingRoles.stream()
             .map(roleMap -> (String) roleMap.get(JsonKey.ROLE))
             .filter(role -> role != null)
             .collect(Collectors.toList());
 
-    // Return only roles not already assigned
     List<String> newRoles = new ArrayList<>();
     if (CollectionUtils.isNotEmpty(requestedRoles)) {
       newRoles = requestedRoles.stream()
               .filter(role -> !existingRoleNames.contains(role))
               .collect(Collectors.toList());
     }
-
     return newRoles;
   }
 
-  private void validateRequestingUserRoles(String requestingUserId, RequestContext context) {
+  private List<String> validateRequestingUserRoles(String requestingUserId, RequestContext context) {
     List<Map<String, Object>> requestingUserRoles = userRoleService.getUserRoles(requestingUserId, null, context);
 
     if (CollectionUtils.isEmpty(requestingUserRoles)) {
@@ -93,29 +93,10 @@ public class RoleAssignmentValidator {
               ResponseCode.UNAUTHORIZED.getResponseCode()
       );
     }
+    return adminRoles;
   }
 
-  private void validateRolesAgainstOrgType(String requestingUserOrgId, String targetOrgId, List<String> rolesToAssign, RequestContext context) {
-
-    Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
-    if (null == targetOrg) {
-      throw new ProjectCommonException(
-              ResponseCode.targetOrgNotFound,
-              ResponseCode.targetOrgNotFound.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode()
-      );
-    }
-
-    if (!requestingUserOrgId.equalsIgnoreCase(targetOrgId)) {
-      if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
-        throw new ProjectCommonException(
-                ResponseCode.userNoAuthorityOverTargetOrg,
-                ResponseCode.userNoAuthorityOverTargetOrg.getErrorMessage(),
-                ResponseCode.UNAUTHORIZED.getResponseCode()
-        );
-      }
-    }
-
+  private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
     String ministryOrStateType = targetOrg.getMinistryOrStateType();
     if (StringUtils.isBlank(ministryOrStateType)) {
       throw new ProjectCommonException(
@@ -125,6 +106,21 @@ public class RoleAssignmentValidator {
       );
     }
 
+    if (!isSpv) {
+      if (!requestingUserOrgId.equalsIgnoreCase(targetOrgId)) {
+        if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
+          throw new ProjectCommonException(
+                  ResponseCode.userNoAuthorityOverTargetOrg,
+                  ResponseCode.userNoAuthorityOverTargetOrg.getErrorMessage(),
+                  ResponseCode.UNAUTHORIZED.getResponseCode()
+          );
+        }
+      }
+    }
+  }
+
+  private void validateRolesAgainstOrgType(String requestingUserOrgId, String targetOrgId, List<String> rolesToAssign, boolean isSpv, Organisation targetOrg, RequestContext context) {
+    String ministryOrStateType = targetOrg.getMinistryOrStateType();
     SystemSetting orgTypeListSetting = systemSettingsService.getSystemSettingByKey(JsonKey.ORG_TYPE_LIST, context);
     if (null == orgTypeListSetting || StringUtils.isBlank(orgTypeListSetting.getValue())) {
       throw new ProjectCommonException(

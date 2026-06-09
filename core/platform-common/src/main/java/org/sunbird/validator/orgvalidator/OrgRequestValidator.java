@@ -66,14 +66,17 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
     if (orgRequest.getRequest().containsKey(JsonKey.ORG_NAME)) {
       String orgName = (String) orgRequest.getRequest().get(JsonKey.ORG_NAME);
       if (StringUtils.isNotBlank(orgName)) {
-        validateOrganizationName(orgName);
+          validateOrganizationField(orgName);
+          validateFieldLength(orgName, JsonKey.ORG_NAME, StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH))
+                  ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH))
+                  : JsonKey.DEFAULT_ORG_NAME_MAX_LENGTH);
       }
     }
 
     if (orgRequest.getRequest().containsKey(JsonKey.DESCRIPTION)) {
       String description = (String) orgRequest.getRequest().get(JsonKey.DESCRIPTION);
       if (StringUtils.isNotBlank(description)) {
-        validateOrganizationName(description);
+          validateOrganizationField(description);
         int maxLength = StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
             ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
             : JsonKey.DEFAULT_ORG_DESCRIPTION_MAX_LENGTH;
@@ -89,24 +92,18 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
    * @param orgName the organization name to validate
    * @throws ProjectCommonException if the organization name contains invalid characters
    */
-  private void validateOrganizationName(String orgName) {
-    if (StringUtils.isBlank(orgName)) {
-      return;
-    }
-
-    String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_NAME_VALIDATION_PATTERN);
-    String pattern = StringUtils.isNotBlank(patternStr) ? patternStr : JsonKey.DEFAULT_ORG_NAME_PATTERN;
+  private void validateOrganizationField(String orgName) {
+    String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_FIELD_VALIDATION_PATTERN);
+    String pattern = StringUtils.isNotBlank(patternStr) ? patternStr : JsonKey.DEFAULT_ORG_FIELD_PATTERN;
 
     if (!orgName.matches(pattern)) {
       throw new ProjectCommonException(
           ResponseCode.invalidParameterValue,
           MessageFormat.format(
               ResponseCode.invalidParameterValue.getErrorMessage(),
-              orgName,
-              JsonKey.ORG_NAME) + " - Only alphanumeric characters, spaces are allowed.",
+              orgName) + " - Only alphanumeric characters, spaces are allowed.",
           ERROR_CODE);
     }
-    validateFieldLength(orgName, JsonKey.ORG_NAME, StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH)) ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH)) : JsonKey.DEFAULT_ORG_NAME_MAX_LENGTH);
   }
 
   private void validateFieldLength(String fieldValue, String fieldName, int maxLength) {

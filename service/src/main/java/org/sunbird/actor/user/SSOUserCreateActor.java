@@ -187,7 +187,6 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.ID, userId);
     userMap.put(JsonKey.USER_ID, userId);
     requestMap = UserUtil.encryptUserData(userMap);
-    // removing roles from requestMap, so it won't get save in user table
     List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
 
     // Validate roles BEFORE user creation
@@ -196,19 +195,13 @@ public class SSOUserCreateActor extends UserBaseActor {
       String targetOrgId = (String) requestMap.get(JsonKey.ROOT_ORG_ID);
 
       if (StringUtils.isNotBlank(requestingUserId)) {
-        List<String> properties = new ArrayList<>();
-        properties.add(JsonKey.ID);
-        properties.add(JsonKey.ROOT_ORG_ID);
-        Response userPropertiesResponse = userDao.getUserPropertiesById(
-                Collections.singletonList(requestingUserId),
-                properties,
-                request.getRequestContext()
-        );
-
-        String requestingUserOrgId = null;
-        List<Map<String, Object>> userList = (List<Map<String, Object>>) userPropertiesResponse.get(JsonKey.RESPONSE);
-        if (CollectionUtils.isNotEmpty(userList)) {
-          requestingUserOrgId = (String) userList.get(0).get(JsonKey.ROOT_ORG_ID);
+        String requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, request.getRequestContext());
+        if (StringUtils.isBlank(requestingUserOrgId)) {
+          throw new ProjectCommonException(
+                  ResponseCode.invalidRequestData,
+                  "Unable to fetch requesting user's root org ID",
+                  ResponseCode.CLIENT_ERROR.getResponseCode()
+          );
         }
 
         roleAssignmentValidator.validateRoleAssignment(
@@ -219,7 +212,17 @@ public class SSOUserCreateActor extends UserBaseActor {
                 roles,
                 request.getRequestContext()
         );
+      } else {
+        throw new ProjectCommonException(
+                ResponseCode.unAuthorized,
+                "requesting userid is null",
+                ResponseCode.UNAUTHORIZED.getResponseCode());
       }
+    } else {
+      throw new ProjectCommonException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.ROLES),
+              ERROR_CODE);
     }
 
     removeUnwanted(requestMap);

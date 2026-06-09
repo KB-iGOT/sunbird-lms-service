@@ -107,6 +107,12 @@ public class RoleAssignmentValidatorTest {
         mockRequestingUserAsAdmin(requestingUserId);
         mockExistingUserRoles(targetUserId, Arrays.asList("PUBLIC")); // Same as request
 
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing for same org
+        targetOrg.setMinistryOrStateType("state");
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
         // Should not throw exception (no new roles to validate)
         try {
             validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
@@ -215,32 +221,32 @@ public class RoleAssignmentValidatorTest {
     }
 
     /**
-     * Test Case 3: Verify SPV_ADMIN able to create user in any organisation
-     * Expected: Validation should pass if org hierarchy allows
+     * Test Case 3: Verify SPV_ADMIN able to create user in any organisation (cross-org)
+     * Expected: Validation should pass - SPV_ADMIN bypasses org hierarchy check
      */
     @Test
-    public void testSPVAdminCreateUserInChildOrg_Success() {
+    public void testSPVAdminCreateUserInDifferentOrg_Success() {
         String requestingUserId = "spvAdmin123";
         String requestingUserOrgId = "spvOrg123";
-        String targetOrgId = "childOrg456";
+        String targetOrgId = "completelyDifferentOrg999"; // Different org, not child
         String targetUserId = null; // New user creation
         List<String> rolesToAssign = Arrays.asList("PUBLIC");
 
         mockRequestingUserWithRole(requestingUserId, "SPV_ADMIN");
 
-        // Mock target org with SPV as parent
+        // Mock target org with completely different parent
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
-        targetOrg.setMinistryOrStateId(requestingUserOrgId); // Parent org
-        targetOrg.setMinistryOrStateType("spv");
+        targetOrg.setMinistryOrStateId("someOtherParent888"); // Different parent
+        targetOrg.setMinistryOrStateType("state");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
-        // Should not throw exception
+        // Should not throw exception - SPV_ADMIN can assign to any org
         try {
             validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
         } catch (Exception e) {
-            fail("SPV_ADMIN should be able to create user in child org: " + e.getMessage());
+            fail("SPV_ADMIN should be able to create user in any org (cross-org): " + e.getMessage());
         }
     }
 
@@ -412,6 +418,12 @@ public class RoleAssignmentValidatorTest {
         mockRequestingUserAsAdmin(requestingUserId);
         mockExistingUserRoles(targetUserId, Arrays.asList("PUBLIC")); // Already has the role
 
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
+        targetOrg.setMinistryOrStateType("state");
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
         // Should not throw exception (no new roles to validate)
         try {
             validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
@@ -448,6 +460,100 @@ public class RoleAssignmentValidatorTest {
             } catch (Exception e) {
                 fail("Bulk user creation should succeed for user " + i + ": " + e.getMessage());
             }
+        }
+    }
+
+    /**
+     * Test Case 11: Verify SPV_ADMIN can assign roles across completely unrelated organizations
+     * Expected: Validation should pass - SPV_ADMIN has cross-org privileges
+     */
+    @Test
+    public void testSPVAdminCrossOrgRoleAssignment_Success() {
+        String requestingUserId = "spvAdmin123";
+        String requestingUserOrgId = "spvOrg123";
+        String targetOrgId = "unrelatedOrg999";
+        String targetUserId = "existingUser456";
+        List<String> rolesToAssign = Arrays.asList("PUBLIC", "CONTENT_CREATOR");
+
+        mockRequestingUserWithRole(requestingUserId, "SPV_ADMIN");
+        mockExistingUserRoles(targetUserId, Collections.emptyList()); // No existing roles
+
+        // Mock target org with no relation to requesting user's org
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId("differentParent888");
+        targetOrg.setMinistryOrStateType("district");
+
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
+        // Should not throw exception
+        try {
+            validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
+        } catch (Exception e) {
+            fail("SPV_ADMIN should have cross-org privileges: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test Case 12: Verify non-SPV_ADMIN cannot assign roles across unrelated organizations
+     * Expected: 401 unauthorized error
+     */
+    @Test
+    public void testNonSPVAdminCrossOrgRoleAssignment_UnauthorizedError() {
+        String requestingUserId = "mdoAdmin123";
+        String requestingUserOrgId = "stateOrg123";
+        String targetOrgId = "unrelatedOrg999";
+        String targetUserId = "existingUser456";
+        List<String> rolesToAssign = Arrays.asList("PUBLIC");
+
+        mockRequestingUserWithRole(requestingUserId, "MDO_ADMIN");
+        mockExistingUserRoles(targetUserId, Collections.emptyList());
+
+        // Mock target org with no relation to requesting user's org
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId("differentParent888");
+        targetOrg.setMinistryOrStateType("state");
+
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
+        try {
+            validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
+            fail("Should throw exception for cross-org assignment by non-SPV_ADMIN");
+        } catch (ProjectCommonException e) {
+            assertEquals("Should be unauthorized error code", 401, e.getErrorResponseCode());
+            assertTrue("Should contain authority message", e.getMessage().contains("authority"));
+        }
+    }
+
+    /**
+     * Test Case 13: Verify SPV_ADMIN with invalid role for org type still gets validation error
+     * Expected: Client error - SPV_ADMIN bypasses org hierarchy, not role type validation
+     */
+    @Test
+    public void testSPVAdminAssignInvalidRoleForOrgType_ClientError() {
+        String requestingUserId = "spvAdmin123";
+        String requestingUserOrgId = "spvOrg123";
+        String targetOrgId = "districtOrg999";
+        String targetUserId = null;
+        List<String> rolesToAssign = Arrays.asList("MDO_ADMIN"); // Not allowed for district org
+
+        mockRequestingUserWithRole(requestingUserId, "SPV_ADMIN");
+
+        // Mock district org - MDO_ADMIN not allowed for district type
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId("someParent");
+        targetOrg.setMinistryOrStateType("district");
+
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
+        try {
+            validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
+            fail("Should throw exception for invalid role type even for SPV_ADMIN");
+        } catch (ProjectCommonException e) {
+            // Expected - role not allowed for this org type
+            assertTrue("Should have error message about role type", e.getMessage().contains("not allowed") || e.getMessage().contains("roles"));
         }
     }
 
