@@ -97,8 +97,8 @@ public class RoleAssignmentValidator {
   }
 
   private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
-    String ministryOrStateType = targetOrg.getMinistryOrStateType();
-    if (StringUtils.isBlank(ministryOrStateType)) {
+    String sbOrgType = targetOrg.getSbOrgType();
+    if (StringUtils.isBlank(sbOrgType)) {
       throw new ProjectCommonException(
               ResponseCode.targetOrgNoMinistryStateType,
               ResponseCode.targetOrgNoMinistryStateType.getErrorMessage(),
@@ -120,7 +120,7 @@ public class RoleAssignmentValidator {
   }
 
   private void validateRolesAgainstOrgType(String requestingUserOrgId, String targetOrgId, List<String> rolesToAssign, boolean isSpv, Organisation targetOrg, RequestContext context) {
-    String ministryOrStateType = targetOrg.getMinistryOrStateType();
+    String sbOrgType = targetOrg.getSbOrgType();
     SystemSetting orgTypeListSetting = systemSettingsService.getSystemSettingByKey(JsonKey.ORG_TYPE_LIST, context);
     if (null == orgTypeListSetting || StringUtils.isBlank(orgTypeListSetting.getValue())) {
       throw new ProjectCommonException(
@@ -150,7 +150,7 @@ public class RoleAssignmentValidator {
       Map<String, Object> matchingOrgType = orgTypeList.stream()
               .filter(orgType -> {
                 String name = (String) orgType.get(JsonKey.NAME);
-                return name != null && name.equalsIgnoreCase(ministryOrStateType);
+                return name != null && name.equalsIgnoreCase(sbOrgType);
               })
               .findFirst()
               .orElse(null);
@@ -158,7 +158,7 @@ public class RoleAssignmentValidator {
       if (null == matchingOrgType) {
         throw new ProjectCommonException(
                 ResponseCode.noRoleConfigForOrgType,
-                String.format(ResponseCode.noRoleConfigForOrgType.getErrorMessage(), ministryOrStateType),
+                String.format(ResponseCode.noRoleConfigForOrgType.getErrorMessage(), sbOrgType),
                 ResponseCode.CLIENT_ERROR.getResponseCode()
         );
       }
@@ -168,7 +168,7 @@ public class RoleAssignmentValidator {
       if (CollectionUtils.isEmpty(allowedRoles)) {
         throw new ProjectCommonException(
                 ResponseCode.noRolesDefinedForOrgType,
-                String.format(ResponseCode.noRolesDefinedForOrgType.getErrorMessage(), ministryOrStateType),
+                String.format(ResponseCode.noRolesDefinedForOrgType.getErrorMessage(), sbOrgType),
                 ResponseCode.CLIENT_ERROR.getResponseCode()
         );
       }
@@ -181,7 +181,7 @@ public class RoleAssignmentValidator {
         throw new ProjectCommonException(
                 ResponseCode.rolesNotAllowedForOrgType,
                 String.format(ResponseCode.rolesNotAllowedForOrgType.getErrorMessage(),
-                        ministryOrStateType,
+                        sbOrgType,
                         String.join(", ", invalidRoles),
                         String.join(", ", allowedRoles)),
                 ResponseCode.CLIENT_ERROR.getResponseCode()

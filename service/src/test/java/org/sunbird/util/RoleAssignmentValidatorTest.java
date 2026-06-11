@@ -110,7 +110,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing for same org
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception (no new roles to validate)
@@ -209,7 +209,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing for root org
-        targetOrg.setMinistryOrStateType("spv");
+        targetOrg.setSbOrgType("spv");
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception
@@ -238,7 +238,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("someOtherParent888"); // Different parent
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -269,7 +269,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception
@@ -298,7 +298,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(requestingUserOrgId); // Parent org
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -328,7 +328,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("differentStateOrg999"); // Different parent
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -360,7 +360,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception
@@ -390,7 +390,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId);
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -421,7 +421,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception (no new roles to validate)
@@ -449,7 +449,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Simulate bulk creation (multiple new users)
@@ -482,7 +482,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("differentParent888");
-        targetOrg.setMinistryOrStateType("district");
+        targetOrg.setSbOrgType("district");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -513,7 +513,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("differentParent888");
-        targetOrg.setMinistryOrStateType("state");
+        targetOrg.setSbOrgType("state");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -544,7 +544,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("someParent");
-        targetOrg.setMinistryOrStateType("district");
+        targetOrg.setSbOrgType("district");
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
