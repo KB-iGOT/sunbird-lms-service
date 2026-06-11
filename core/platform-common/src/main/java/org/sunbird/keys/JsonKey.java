@@ -574,6 +574,7 @@ public final class JsonKey {
     public static final String DEFAULT_MONTH_DATE = "defaultMonthDate";
     public static final String DOB_VALIDATION_DONE = "dobValidationDone";
     public static final String IS_TENANT = "isTenant";
+    public static final String IS_NGO = "isNgo";
     public static final String ORG_LOCATION = "orgLocation";
     public static final String IS_SCHOOL = "isSchool";
     public static final String ORGANISATION_TYPE = "organisationType";
@@ -732,8 +733,15 @@ public final class JsonKey {
     public static final String PATH = "path";
     public static final String MINISTRY_DETAILS = "ministryDetails";
     public static final String USER_LOGIN = "user_logins";
-
-
+    public static final String NGO_USER_CREATE = "ngoUserCreate";
+    public static final String VOLUNTEER_ORG_CHANNEL = "volunteerOrgChannel";
+    public static final String VOLUNTEER_ROLE = "volunteerRole";
+    public static final String X_AUTH_TOKEN = "x-auth-token";
+    public static final String NGO_ADMIN="NGO_ADMIN";
+    public static final String NGO="ngo";
+    public static final String VOLUNTEER="VOLUNTEER";
+    public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
+    public static final String TRUE = "true";
     private JsonKey() {
     }
 }

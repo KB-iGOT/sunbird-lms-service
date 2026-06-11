@@ -9,6 +9,7 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.location.validator.LocationRequestValidator;
+import org.sunbird.common.Constants;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
@@ -292,6 +293,29 @@ public class OrganisationRequestValidator {
           MessageFormat.format(
               ResponseCode.errorDuplicateEntry.getErrorMessage(), channel, JsonKey.CHANNEL),
           ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
+  }
+  // Add method to enforce org type visibility rules
+  public void validateOrgTypeVisibility(int requestedOrgType, String requestingOrgId, RequestContext context) {
+
+    Map<String, Object> orgType = orgService.getOrgById(requestingOrgId, context);
+
+    if (MapUtils.isEmpty(orgType)) {
+      throw new ProjectCommonException(
+              ResponseCode.invalidValue,
+              Constants.INCORRECT_DATA,
+              ResponseCode.invalidValue.getResponseCode());
+    }
+
+    int requestingOrgType = (int) orgType.get(JsonKey.ORGANISATION_TYPE);
+
+    // NGO cannot read/access GOVT org data
+    if (requestedOrgType!=requestingOrgType) {
+        throw new ProjectCommonException(
+                ResponseCode.unAuthorized,
+                Constants.NGO_ORG_ACCESS_ERROR,
+                ResponseCode.UNAUTHORIZED.getResponseCode());
+
     }
   }
 }

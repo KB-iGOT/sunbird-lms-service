@@ -124,6 +124,8 @@ PATCH   /v1/org/assign/key                      @controllers.organisationmanagem
 POST    /v1/org/hierarchy/search		        @controllers.organisationmanagement.OrgController.searchOrgHierarchy(request: play.mvc.Http.Request)
 POST    /v1/org/hierarchy/ministry/search		@controllers.organisationmanagement.OrgController.searchOrgHierarchyMinistry(request: play.mvc.Http.Request)
 POST    /v1/org/hierarchy/state/search		    @controllers.organisationmanagement.OrgController.searchOrgHierarchyState(request: play.mvc.Http.Request)
+POST    /v1/ngo/org/read                        @controllers.organisationmanagement.NgoOrgController.getNgoOrgDetails(request: play.mvc.Http.Request)
+
 
 #Health check
 GET     /health                                 @controllers.healthmanager.HealthController.getHealth(request: play.mvc.Http.Request)
@@ -154,3 +156,10 @@ POST    /v1/system/settings/set                 @controllers.systemsettings.Syst
 GET     /v2/system/settings/get/:field          @controllers.systemsettings.SystemSettingsController.getSystemSettingV2(field:String, request: play.mvc.Http.Request)
 POST    /v5/user/public/search					@controllers.usermanagement.UserController.userPublicSearch(request: play.mvc.Http.Request)
 POST    /v5/cb/support/user/create              @controllers.usermanagement.UserController.createSupportUserV5(request: play.mvc.Http.Request)
+
+#NGO/Volunteer Org creation
+POST    /v5/cb/user/volunteer/create             @controllers.usermanagement.VolunteerUserController.createVolunteerUserV5(request: play.mvc.Http.Request)
+POST    /v5/cb/user/volunteer/read               @controllers.usermanagement.VolunteerUserController.getVolunteerUserDetails(request: play.mvc.Http.Request)
+POST    /v5/cb/user/volunteer/update             @controllers.usermanagement.VolunteerUserController.updateVolunteerUser(request: play.mvc.Http.Request)
+POST    /v5/cb/user/volunteer/bulkcreate         @controllers.usermanagement.VolunteerUserController.bulkCreateUserV5(request: play.mvc.Http.Request)
+

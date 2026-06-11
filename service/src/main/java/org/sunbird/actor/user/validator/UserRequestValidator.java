@@ -1,12 +1,5 @@
 package org.sunbird.actor.user.validator;
 
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -23,6 +16,14 @@ import org.sunbird.util.FormApiUtil;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.StringFormatter;
 import org.sunbird.validator.BaseRequestValidator;
+
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class UserRequestValidator extends BaseRequestValidator {
 
@@ -1012,6 +1013,7 @@ public class UserRequestValidator extends BaseRequestValidator {
       case JsonKey.PARICHAY_USER_CREATE:
       case JsonKey.OILINDIA_USER_CREATE:
       case JsonKey.NTPC_USER_CREATE:
+      case JsonKey.NGO_USER_CREATE:
         break;
       default:
         ProjectCommonException.throwClientErrorException(
@@ -1022,4 +1024,112 @@ public class UserRequestValidator extends BaseRequestValidator {
     }
   }
 
+  public void validateVolunteerUserCreate(Request userRequest, String userToken) {
+    Map<String, Object> userMap = userRequest.getRequest();
+    if (StringUtils.isBlank(userToken)) {
+      createClientError(
+              ResponseCode.mandatoryHeaderParamsMissing, JsonKey.X_AUTHENTICATED_USER_TOKEN);
+    }
+
+    // Check mandatory fields
+    validateParam(
+            (String) userMap.get(JsonKey.FIRST_NAME),
+            ResponseCode.mandatoryParamsMissing,
+            JsonKey.FIRST_NAME);
+
+    String phone = (String) userMap.get(JsonKey.PHONE);
+    if (StringUtils.isBlank(phone)) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(
+                      ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.PHONE));
+    }
+
+    // Validate phone format if present (country code, format)
+    phoneValidation(userRequest);
+
+    // Validate roles data type if present
+    if (userMap.containsKey(JsonKey.ROLES) && null != userMap.get(JsonKey.ROLES)) {
+      if (!(userMap.get(JsonKey.ROLES) instanceof List)) {
+        throw new ProjectCommonException(
+                ResponseCode.dataTypeError,
+                ProjectUtil.formatMessage(
+                        ResponseCode.dataTypeError.getErrorMessage(), JsonKey.ROLES, JsonKey.LIST),
+                ERROR_CODE);
+      }
+    }
+
+    // Validate channel and organisation mapping (inherited from existing flow)
+    if (StringUtils.isNotBlank((String) userMap.get(JsonKey.CHANNEL))) {
+      // Channel will be validated in SSOUserServiceImpl.validateChannelAndOrganisationId
+    }
+
+    // Email is optional, but if provided must be valid
+    if (StringUtils.isNotBlank((String) userMap.get(JsonKey.EMAIL))) {
+      if (!ProjectUtil.isEmailvalid((String) userMap.get(JsonKey.EMAIL))) {
+        ProjectCommonException.throwClientErrorException(
+                ResponseCode.dataFormatError,
+                MessageFormat.format(ResponseCode.dataFormatError.getErrorMessage(), JsonKey.EMAIL));
+      }
+    }
+
+    // External IDs are optional for volunteers
+    if (userMap.containsKey(JsonKey.EXTERNAL_IDS)) {
+      externalIdsValidation(userRequest, JsonKey.CREATE);
+    }
+
+    // Validate source creation type
+    validateSourceCreationType(userRequest);
+  }
+
+
+  public void validateUserAuthentication(
+          Request request, String authUserToken, String sourceUserToken) {
+    if (StringUtils.isBlank(authUserToken)) {
+      createClientError(
+              ResponseCode.mandatoryHeaderParamsMissing, JsonKey.X_AUTHENTICATED_USER_TOKEN);
+    }
+    if (StringUtils.isBlank(sourceUserToken)) {
+      createClientError(ResponseCode.mandatoryHeaderParamsMissing, JsonKey.X_SOURCE_USER_TOKEN);
+    }
+  }
+
+  /**
+   * This method will validate update user data.
+   *
+   * @param userRequest Request
+   */
+  public void validateVolunteerUserUpdateRequest(Request userRequest) {
+    if (userRequest.getRequest().containsKey(JsonKey.MANAGED_BY)) {
+      ProjectCommonException.throwClientErrorException(ResponseCode.managedByNotAllowed);
+    }
+    checkEmptyPhoneAndEmail(userRequest);
+    phoneValidation(userRequest);
+    updateUserBasicValidation(userRequest);
+    validateUserOrgField(userRequest);
+    if (userRequest.getRequest().containsKey(JsonKey.ROOT_ORG_ID)
+            && StringUtils.isBlank((String) userRequest.getRequest().get(JsonKey.ROOT_ORG_ID))) {
+      ProjectCommonException.throwClientErrorException(
+              ResponseCode.invalidParameter,
+              MessageFormat.format(
+                      ResponseCode.invalidParameter.getErrorMessage(),
+                      "root " + JsonKey.ORGANISATION + " " + JsonKey.ID));
+    }
+  }
+
+  /**
+   * This method will validate update user data.
+   *
+   * @param userRequest Request
+   */
+  public void validateVolunteerUserReadRequest(Request userRequest) {
+    String userId = userRequest.getRequest().get(JsonKey.USER_ID).toString();
+    if (StringUtils.isBlank(userId)) {
+      throw new ProjectCommonException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(
+                      ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.USER_ID),
+              ERROR_CODE);
+    }
+  }
 }

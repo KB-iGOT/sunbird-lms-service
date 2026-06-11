@@ -62,4 +62,9 @@ public interface Constants {
   public static final String GTE = ">=";
   public static final String GT = ">";
   public static final String ID = "id";
+  public static final String NGO = "NGO";
+  public static final String NGO_ORG_ACCESS_ERROR = "NGO does not have access to government organization data";
+  public static  final String VOLUNTEER_READ_ACCESS_ERROR = "Users from NGO cannot be added to government organizations";
+  public static final int USER_ROLE_FETCH_TIMEOUT_SEC = 3;
+
 }
