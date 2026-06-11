@@ -97,8 +97,8 @@ public class RoleAssignmentValidator {
   }
 
   private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
-    String sbOrgType = targetOrg.getSbOrgType();
-    if (StringUtils.isBlank(sbOrgType)) {
+    String ministryOrStateId = targetOrg.getMinistryOrStateId();
+    if (StringUtils.isBlank(ministryOrStateId)) {
       throw new ProjectCommonException(
               ResponseCode.targetOrgNoMinistryStateType,
               ResponseCode.targetOrgNoMinistryStateType.getErrorMessage(),
