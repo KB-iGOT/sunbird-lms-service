@@ -12,9 +12,11 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.mortbay.util.ajax.JSON;
 import org.sunbird.actor.core.BaseActor;
 import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.actor.organisation.validator.OrganisationRequestValidator;
+import org.sunbird.common.Constants;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
@@ -95,6 +97,11 @@ public class OrganisationManagementActor extends BaseActor {
 
     String passedExternalId = (String) request.get(JsonKey.EXTERNAL_ID);
     orgValidator.validateExternalId(request, actorMessage.getRequestContext());
+
+    if (Constants.NGO.equalsIgnoreCase(orgType)) {
+      request.put(JsonKey.IS_NGO,true);
+    }
+
 
     String createdBy = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
     request.put(JsonKey.CREATED_BY, createdBy);
@@ -468,9 +475,15 @@ public class OrganisationManagementActor extends BaseActor {
       result.put(JsonKey.HASHTAGID, result.get(JsonKey.ID));
       if (null != result.get(JsonKey.ORGANISATION_TYPE)) {
         int orgType = (int) result.get(JsonKey.ORGANISATION_TYPE);
-        boolean isSchool =
-                (orgType == OrgTypeValidator.getInstance().getValueByType(JsonKey.ORG_TYPE_SCHOOL)) ? true : false;
-        result.put(JsonKey.IS_SCHOOL, isSchool);
+        if(orgType == OrgTypeValidator.getInstance().getValueByType(JsonKey.NGO)){
+          orgValidator.validateOrgTypeVisibility(orgType,(String) request.get(JsonKey.ROOT_ORG_ID),actorMessage.getRequestContext());
+          result.put(JsonKey.IS_NGO, JsonKey.TRUE);
+        }else {
+          boolean isSchool =
+                  (orgType == OrgTypeValidator.getInstance().getValueByType(JsonKey.ORG_TYPE_SCHOOL)) ? true : false;
+
+          result.put(JsonKey.IS_SCHOOL, isSchool);
+        }
       }
     } else {
       throw new ProjectCommonException(

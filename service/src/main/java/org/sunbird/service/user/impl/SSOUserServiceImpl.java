@@ -91,7 +91,7 @@ public class SSOUserServiceImpl implements SSOUserService {
   }
 
   public Response createUserAndPassword(
-          Map<String, Object> requestMap, Map<String, Object> userMap, Request request) {
+      Map<String, Object> requestMap, Map<String, Object> userMap, Request request) {
     Response response = null;
     boolean isPasswordUpdated = false;
     Map<String, Object> userLookUpData = new HashMap<>(userMap);
