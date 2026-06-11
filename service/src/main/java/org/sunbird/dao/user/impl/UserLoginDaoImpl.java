@@ -36,7 +36,7 @@ public class UserLoginDaoImpl implements UserLoginDao {
             String userId = (String) userMap.get(JsonKey.USER_ID);
             logger.info(context, "UserLoginDaoImpl:insertRecords called for userId: " + userId);
             Map<String, Object> userLoginMap = new HashMap<>();
-            Timestamp currentTimestamp = Timestamp.from(Instant.now());
+            Instant currentTimestamp = Instant.now();
             userLoginMap.put(JsonKey.CONSENT_USER_ID, userId);
             userLoginMap.put(JsonKey.FIRST_LOGIN, currentTimestamp);
             userLoginMap.put(JsonKey.LAST_LOGIN, currentTimestamp);
