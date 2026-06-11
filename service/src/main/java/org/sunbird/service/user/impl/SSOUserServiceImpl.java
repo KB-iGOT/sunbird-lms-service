@@ -14,7 +14,6 @@ import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
-import org.sunbird.model.organisation.Organisation;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
@@ -26,9 +25,11 @@ import org.sunbird.service.user.SSOUserService;
 import org.sunbird.service.user.UserLookupService;
 import org.sunbird.service.user.UserService;
 import org.sunbird.util.DataCacheHandler;
-import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.StringFormatter;
 import org.sunbird.util.user.UserUtil;
+import org.sunbird.util.ProjectUtil;
+import org.sunbird.model.organisation.Organisation;
+ 
 
 public class SSOUserServiceImpl implements SSOUserService {
 
@@ -115,7 +116,8 @@ public class SSOUserServiceImpl implements SSOUserService {
     String requestedChannel = (String) userMap.get(JsonKey.CHANNEL);
     String fetchedRootOrgIdByChannel = "";
     if (StringUtils.isNotBlank(requestedChannel)) {
-      fetchedRootOrgIdByChannel = orgService.getRootOrgIdFromChannelV2(requestedChannel, context);
+      fetchedRootOrgIdByChannel = orgService.getRootOrgIdFromChannelV2(requestedChannel,
+    context);
       if (StringUtils.isBlank(fetchedRootOrgIdByChannel)) {
         throw new ProjectCommonException(
             ResponseCode.invalidParameterValue,
