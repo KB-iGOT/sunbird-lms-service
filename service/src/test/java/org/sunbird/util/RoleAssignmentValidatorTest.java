@@ -68,21 +68,36 @@ public class RoleAssignmentValidatorTest {
         when(UserRoleServiceImpl.getInstance()).thenReturn(userRoleService);
         when(OrgServiceImpl.getInstance()).thenReturn(orgService);
 
-        // Mock SystemSettingsService to return proper org type configuration
+        // Mock orgTypeConfig - contains the fields array with name-value mapping
+        SystemSetting orgTypeConfigSetting = new SystemSetting();
+        orgTypeConfigSetting.setId("orgTypeConfig");
+        orgTypeConfigSetting.setField("orgTypeConfig");
+        String orgTypeConfigJson = "{"
+                + "\"fields\": ["
+                + "  {\"name\": \"SPV\", \"value\": 512},"
+                + "  {\"name\": \"STATE\", \"value\": 2048},"
+                + "  {\"name\": \"Ministry\", \"value\": 16},"
+                + "  {\"name\": \"Department\", \"value\": 8},"
+                + "  {\"name\": \"MDO\", \"value\": 128}"
+                + "]"
+                + "}";
+        orgTypeConfigSetting.setValue(orgTypeConfigJson);
+        when(systemSettingsService.getSystemSettingByKey(Mockito.eq(JsonKey.ORG_TYPE_CONFIG), Mockito.any())).thenReturn(orgTypeConfigSetting);
+
+        // Mock orgTypeList - contains the roles allowed for each org type name
         SystemSetting orgTypeListSetting = new SystemSetting();
         orgTypeListSetting.setId("orgTypeList");
         orgTypeListSetting.setField("orgTypeList");
-        // Provide a valid JSON configuration with multiple org types and their allowed roles
-        String orgTypeConfig = "{"
+        String orgTypeListJson = "{"
                 + "\"orgTypeList\": ["
-                + "  {\"name\": \"spv\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"SPV_ADMIN\"]},"
-                + "  {\"name\": \"state\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"MDO_ADMIN\", \"ORG_ADMIN\"]},"
-                + "  {\"name\": \"ministry\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"MDO_ADMIN\", \"ORG_ADMIN\"]},"
-                + "  {\"name\": \"district\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"ORG_ADMIN\"]}"
+                + "  {\"name\": \"SPV\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"SPV_ADMIN\"]},"
+                + "  {\"name\": \"STATE\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"MDO_ADMIN\", \"ORG_ADMIN\"]},"
+                + "  {\"name\": \"Ministry\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"MDO_ADMIN\", \"ORG_ADMIN\"]},"
+                + "  {\"name\": \"Department\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"ORG_ADMIN\"]},"
+                + "  {\"name\": \"MDO\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"ORG_ADMIN\"]}"
                 + "]"
                 + "}";
-        orgTypeListSetting.setValue(orgTypeConfig);
-
+        orgTypeListSetting.setValue(orgTypeListJson);
         when(systemSettingsService.getSystemSettingByKey(Mockito.eq(JsonKey.ORG_TYPE_LIST), Mockito.any())).thenReturn(orgTypeListSetting);
 
         // Use PowerMock to intercept SystemSettingsService constructor
@@ -110,7 +125,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing for same org
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception (no new roles to validate)
@@ -209,7 +224,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing for root org
-        targetOrg.setSbOrgType("spv");
+        targetOrg.setOrganisationType(512); // SPV
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception
@@ -238,7 +253,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("someOtherParent888"); // Different parent
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048);
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -269,7 +284,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception
@@ -298,7 +313,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(requestingUserOrgId); // Parent org
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -328,7 +343,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("differentStateOrg999"); // Different parent
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -360,7 +375,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception
@@ -390,7 +405,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId);
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -421,7 +436,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Should not throw exception (no new roles to validate)
@@ -449,7 +464,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId(targetOrgId); // Self-referencing
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
         // Simulate bulk creation (multiple new users)
@@ -482,7 +497,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("differentParent888");
-        targetOrg.setSbOrgType("district");
+        targetOrg.setOrganisationType(8); // Department
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -513,7 +528,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("differentParent888");
-        targetOrg.setSbOrgType("state");
+        targetOrg.setOrganisationType(2048); // STATE
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 
@@ -544,7 +559,7 @@ public class RoleAssignmentValidatorTest {
         Organisation targetOrg = new Organisation();
         targetOrg.setId(targetOrgId);
         targetOrg.setMinistryOrStateId("someParent");
-        targetOrg.setSbOrgType("district");
+        targetOrg.setOrganisationType(8); // Department
 
         when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
 

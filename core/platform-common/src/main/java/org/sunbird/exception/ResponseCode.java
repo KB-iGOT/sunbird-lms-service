@@ -208,6 +208,12 @@ public enum ResponseCode {
   errorValidatingRolesAgainstOrgType(
           ResponseMessage.Key.ERROR_VALIDATING_ROLES_AGAINST_ORG_TYPE,
           ResponseMessage.Message.ERROR_VALIDATING_ROLES_AGAINST_ORG_TYPE),
+  orgTypeNotFound(
+          ResponseMessage.Key.ORG_TYPE_NOT_FOUND,
+          ResponseMessage.Message.ORG_TYPE_NOT_FOUND),
+  orgTypeNameNotFound(
+          ResponseMessage.Key.ORG_TYPE_NAME_NOT_FOUND,
+          ResponseMessage.Message.ORG_TYPE_NAME_NOT_FOUND),
 
   OK(200),
   SUCCESS(200),
