@@ -2,8 +2,8 @@ package org.sunbird.dao.user.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections.CollectionUtils;
@@ -97,7 +97,6 @@ public class UserDaoImpl implements UserDao {
     return cassandraOperation.getPropertiesValueById(
         KEY_SPACE_NAME, TABLE_NAME, userIds, properties, context);
   }
-
   /**
    * Retrieves last login information for a specific user
    *
@@ -166,5 +165,23 @@ public class UserDaoImpl implements UserDao {
     String type = ProjectUtil.EsType.user.getTypeName();
     Future<String> responseF = esService.save(type, identifier, data, context);
     return (String) ElasticSearchHelper.getResponseFromFuture(responseF);
+  }
+
+  @Override
+  public String getUserRootOrgId(String userId, RequestContext context) {
+    if (org.apache.commons.lang3.StringUtils.isBlank(userId)) {
+      return null;
+    }
+    List<String> properties = Arrays.asList(JsonKey.ID, JsonKey.ROOT_ORG_ID);
+    Response userPropertiesResponse = getUserPropertiesById(
+            Collections.singletonList(userId),
+            properties,
+            context
+    );
+    List<Map<String, Object>> userList = (List<Map<String, Object>>) userPropertiesResponse.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isNotEmpty(userList)) {
+      return (String) userList.get(0).get(JsonKey.ROOT_ORG_ID);
+    }
+    return null;
   }
 }
