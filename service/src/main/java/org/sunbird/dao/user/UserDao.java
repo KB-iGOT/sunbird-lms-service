@@ -73,6 +73,15 @@ public interface UserDao {
   Response getUserPropertiesById(
       List<String> userId, List<String> properties, RequestContext context);
 
+  /**
+   * Get user's root organization ID.
+   *
+   * @param userId User id.
+   * @param context Request context
+   * @return Root organization ID of the user, or null if not found
+   */
+  String getUserRootOrgId(String userId, RequestContext context);
+
   Map<String, Object> search(SearchDTO searchDTO, RequestContext context);
 
   Map<String, Object> getEsUserById(String userId, RequestContext context);

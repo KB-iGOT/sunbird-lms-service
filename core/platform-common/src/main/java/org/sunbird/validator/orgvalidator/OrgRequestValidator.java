@@ -30,6 +30,9 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
         (String) orgRequest.getRequest().get(JsonKey.ORG_NAME),
         ResponseCode.mandatoryParamsMissing,
         JsonKey.ORG_NAME);
+
+    validateOrgNameAndDescription(orgRequest);
+
     if (!(orgRequest.getRequest().containsKey(JsonKey.IS_TENANT))
         || (orgRequest.getRequest().containsKey(JsonKey.IS_TENANT)
             && null == orgRequest.getRequest().get(JsonKey.IS_TENANT))) {
@@ -59,8 +62,60 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
     }
   }
 
+  private void validateOrgNameAndDescription(Request orgRequest) {
+    if (orgRequest.getRequest().containsKey(JsonKey.ORG_NAME)) {
+      String orgName = (String) orgRequest.getRequest().get(JsonKey.ORG_NAME);
+      if (StringUtils.isNotBlank(orgName)) {
+          validateOrganizationField(orgName, JsonKey.ORG_NAME);
+          validateFieldLength(orgName, JsonKey.ORG_NAME, StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH))
+                  ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH))
+                  : JsonKey.DEFAULT_ORG_NAME_MAX_LENGTH);
+      }
+    }
+
+    if (orgRequest.getRequest().containsKey(JsonKey.DESCRIPTION)) {
+      String description = (String) orgRequest.getRequest().get(JsonKey.DESCRIPTION);
+      if (StringUtils.isNotBlank(description)) {
+          validateOrganizationField(description, JsonKey.DESCRIPTION);
+        int maxLength = StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
+            ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
+            : JsonKey.DEFAULT_ORG_DESCRIPTION_MAX_LENGTH;
+        validateFieldLength(description, JsonKey.DESCRIPTION, maxLength);
+      }
+    }
+  }
+
+  private void validateOrganizationField(String fieldValue, String fieldName) {
+    String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_FIELD_VALIDATION_PATTERN);
+    String pattern = StringUtils.isNotBlank(patternStr) ? patternStr : JsonKey.DEFAULT_ORG_FIELD_PATTERN;
+
+    if (!fieldValue.matches(pattern)) {
+      throw new ProjectCommonException(
+          ResponseCode.invalidParameterValue,
+          MessageFormat.format(
+              ResponseCode.invalidParameterValue.getErrorMessage(),
+              "",
+              fieldName) + " - " + ResponseCode.invalidOrgFieldCharacters.getErrorMessage(),
+          ERROR_CODE);
+    }
+  }
+
+  private void validateFieldLength(String fieldValue, String fieldName, int maxLength) {
+    if (StringUtils.isNotBlank(fieldValue) && fieldValue.length() > maxLength) {
+      throw new ProjectCommonException(
+          ResponseCode.invalidParameterValue,
+          MessageFormat.format(
+              ResponseCode.invalidParameterValue.getErrorMessage(),
+              "",
+              fieldName) + " - " + MessageFormat.format(ResponseCode.invalidOrgFieldLength.getErrorMessage(), maxLength),
+          ERROR_CODE);
+    }
+  }
+
   public void validateUpdateOrgRequest(Request request) {
     validateOrgReference(request);
+    validateOrgNameAndDescription(request);
+
     if (request.getRequest().containsKey(JsonKey.ROOT_ORG_ID)
         && StringUtils.isEmpty((String) request.getRequest().get(JsonKey.ROOT_ORG_ID))) {
       throw new ProjectCommonException(
