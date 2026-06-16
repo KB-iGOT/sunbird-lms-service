@@ -66,7 +66,7 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
     if (orgRequest.getRequest().containsKey(JsonKey.ORG_NAME)) {
       String orgName = (String) orgRequest.getRequest().get(JsonKey.ORG_NAME);
       if (StringUtils.isNotBlank(orgName)) {
-          validateOrganizationField(orgName);
+          validateOrganizationField(orgName, JsonKey.ORG_NAME);
           validateFieldLength(orgName, JsonKey.ORG_NAME, StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH))
                   ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_NAME_MAX_LENGTH))
                   : JsonKey.DEFAULT_ORG_NAME_MAX_LENGTH);
@@ -76,7 +76,7 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
     if (orgRequest.getRequest().containsKey(JsonKey.DESCRIPTION)) {
       String description = (String) orgRequest.getRequest().get(JsonKey.DESCRIPTION);
       if (StringUtils.isNotBlank(description)) {
-          validateOrganizationField(description);
+          validateOrganizationField(description, JsonKey.DESCRIPTION);
         int maxLength = StringUtils.isNotBlank(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
             ? Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.ORG_DESCRIPTION_MAX_LENGTH))
             : JsonKey.DEFAULT_ORG_DESCRIPTION_MAX_LENGTH;
@@ -85,23 +85,17 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
     }
   }
 
-  /**
-   * Validates the organization name to prevent HTML, JavaScript, or markup content.
-   * Allowed characters: alphanumeric, spaces, and common business name characters (&, ., ,, -, ', (, ))
-   *
-   * @param orgName the organization name to validate
-   * @throws ProjectCommonException if the organization name contains invalid characters
-   */
-  private void validateOrganizationField(String orgName) {
+  private void validateOrganizationField(String fieldValue, String fieldName) {
     String patternStr = ProjectUtil.getConfigValue(JsonKey.ORG_FIELD_VALIDATION_PATTERN);
     String pattern = StringUtils.isNotBlank(patternStr) ? patternStr : JsonKey.DEFAULT_ORG_FIELD_PATTERN;
 
-    if (!orgName.matches(pattern)) {
+    if (!fieldValue.matches(pattern)) {
       throw new ProjectCommonException(
           ResponseCode.invalidParameterValue,
           MessageFormat.format(
               ResponseCode.invalidParameterValue.getErrorMessage(),
-              orgName) + " - Only alphanumeric characters, spaces are allowed.",
+              "",
+              fieldName) + " - " + ResponseCode.invalidOrgFieldCharacters.getErrorMessage(),
           ERROR_CODE);
     }
   }
@@ -112,8 +106,8 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
           ResponseCode.invalidParameterValue,
           MessageFormat.format(
               ResponseCode.invalidParameterValue.getErrorMessage(),
-              fieldValue,
-              fieldName) + " - Maximum allowed length is " + maxLength + " characters",
+              "",
+              fieldName) + " - " + MessageFormat.format(ResponseCode.invalidOrgFieldLength.getErrorMessage(), maxLength),
           ERROR_CODE);
     }
   }
