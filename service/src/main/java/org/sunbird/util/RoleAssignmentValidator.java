@@ -250,9 +250,14 @@ public class RoleAssignmentValidator {
               .collect(Collectors.toList());
 
       if (CollectionUtils.isNotEmpty(invalidRoles)) {
+        String restrictedRoles = String.join(", ", invalidRoles);
+        String allowedRolesStr = String.join(", ", allowedRoles);
+        String errorMessage = String.format("%s. Invalid: [%s]. Allowed: [%s]",
+                ResponseCode.rolesNotAllowedForOrgType.getErrorMessage(),
+                restrictedRoles, allowedRolesStr);
         throw new ProjectCommonException(
                 ResponseCode.rolesNotAllowedForOrgType,
-                ResponseCode.rolesNotAllowedForOrgType.getErrorMessage(),
+                errorMessage,
                 ResponseCode.CLIENT_ERROR.getResponseCode()
         );
       }
@@ -268,4 +273,3 @@ public class RoleAssignmentValidator {
     }
   }
 }
-

@@ -125,7 +125,7 @@ public interface ResponseMessage {
     String ORG_TYPE_LIST_EMPTY = "Organization type list is empty in system settings";
     String NO_ROLE_CONFIG_FOR_ORG_TYPE = "No role configuration found for organization type: {0}";
     String NO_ROLES_DEFINED_FOR_ORG_TYPE = "No roles are defined for organization type: {0}";
-    String ROLES_NOT_ALLOWED_FOR_ORG_TYPE = "The roles you are trying to assign are not allowed for this organization type. Please check the allowed roles for this organization type.";
+    String ROLES_NOT_ALLOWED_FOR_ORG_TYPE = "Roles not allowed for organization type";
     String ERROR_VALIDATING_ROLES_AGAINST_ORG_TYPE = "Error validating roles against organization type: {0}";
     String ORG_TYPE_NOT_FOUND = "Organization type is not found for the target organization";
     String ORG_TYPE_NAME_NOT_FOUND = "Organization type name not found in configuration for the organization type value";
