@@ -10,6 +10,8 @@ import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.UserBaseActor;
 import org.sunbird.common.ElasticSearchHelper;
+import org.sunbird.dao.user.UserDao;
+import org.sunbird.dao.user.impl.UserDaoImpl;
 import org.sunbird.dto.SearchDTO;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
@@ -29,6 +31,7 @@ import org.sunbird.telemetry.dto.TelemetryEnvKey;
 import org.sunbird.util.DataCacheHandler;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.PropertiesCache;
+import org.sunbird.util.RoleAssignmentValidator;
 import org.sunbird.util.Util;
 
 public class UserRoleActor extends UserBaseActor {
@@ -36,6 +39,8 @@ public class UserRoleActor extends UserBaseActor {
   private final UserRoleService userRoleService = UserRoleServiceImpl.getInstance();
   private final UserProfileReadService profileReadService = new UserProfileReadService();
   private final UserService userService = UserServiceImpl.getInstance();
+  private final UserDao userDao = UserDaoImpl.getInstance();
+  private final RoleAssignmentValidator roleAssignmentValidator = new RoleAssignmentValidator();
   @Inject
   @Named("user_role_background_actor")
   private ActorRef userRoleBackgroundActor;
@@ -76,6 +81,10 @@ public class UserRoleActor extends UserBaseActor {
     requestMap.put(JsonKey.REQUESTED_BY, actorMessage.getContext().get(JsonKey.USER_ID));
 
     String userId = (String) requestMap.get(JsonKey.USER_ID);
+    String requestingUserId = (String) actorMessage.getContext().get(JsonKey.USER_ID);
+    String targetOrgId = (String) requestMap.get(JsonKey.ORGANISATION_ID);
+    String requestingUserOrgId = null;
+
     actorMessage.getContext().put(JsonKey.USER_ID, userId);
     Response userProfileDataResponse = profileReadService.getUserProfileData(actorMessage);
     Map<String, Object> userProfileDataMap = (Map<String, Object>) userProfileDataResponse.get(JsonKey.RESPONSE);
@@ -91,7 +100,43 @@ public class UserRoleActor extends UserBaseActor {
       sender().tell(response, self());
       return;
     }
-    List<String> assignRoles = (List<String>) requestMap.get(JsonKey.ROLES);
+
+    if (StringUtils.isNotBlank(requestingUserId)) {
+        requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, actorMessage.getRequestContext());
+    }
+
+    List<String> assignRoles = null;
+    if (actorMessage.getOperation().equals(ActorOperations.ASSIGN_ROLES.getValue())) {
+      assignRoles = (List<String>) requestMap.get(JsonKey.ROLES);
+    } else {
+      List<Map<String, Object>> roleList = (List<Map<String, Object>>) requestMap.get(JsonKey.ROLES);
+      if (CollectionUtils.isNotEmpty(roleList)) {
+        assignRoles = new ArrayList<>();
+        for (Map<String, Object> roleObj : roleList) {
+          String role = (String) roleObj.get(JsonKey.ROLE);
+          if (role != null) {
+            assignRoles.add(role);
+          }
+        }
+      }
+    }
+
+    if (CollectionUtils.isNotEmpty(assignRoles) && StringUtils.isNotBlank(requestingUserId)) {
+      if (StringUtils.isBlank(requestingUserOrgId)) {
+        logger.info(actorMessage.getRequestContext(), "Requesting user org id is blank");
+        throw new ProjectCommonException(ResponseCode.invalidParameter,
+                "Requesting user org id is blank", ResponseCode.CLIENT_ERROR.getResponseCode());
+      }
+
+      roleAssignmentValidator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId,
+              userId,
+              assignRoles,
+              actorMessage.getRequestContext()
+      );
+    }else {
+      throw new ProjectCommonException(ResponseCode.invalidParameter,
+              "Requesting userId is blank", ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
     if (CollectionUtils.isNotEmpty(assignRoles)) {
       boolean isTryingToAssignMdoLeader = assignRoles.contains(JsonKey.MDO_LEADER);
       List<Map<String, Object>> existingRoles = userRoleService.readUserRole(userId, actorMessage.getRequestContext());

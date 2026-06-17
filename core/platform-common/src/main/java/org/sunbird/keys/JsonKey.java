@@ -732,6 +732,15 @@ public final class JsonKey {
     public static final String PATH = "path";
     public static final String MINISTRY_DETAILS = "ministryDetails";
     public static final String USER_LOGIN = "user_logins";
+    public static final String ORG_FIELD_VALIDATION_PATTERN = "org_field_validation_pattern";
+    public static final String ORG_NAME_MAX_LENGTH = "org_name_max_length";
+    public static final String DEFAULT_ORG_FIELD_PATTERN = "^[a-zA-Z0-9\\s&.,\\-'()]+$";
+    public static final int DEFAULT_ORG_DESCRIPTION_MAX_LENGTH = 1000;
+    public static final String ADMIN_SUFFIX = "_ADMIN";
+    public static final String SPV_ADMIN = "SPV_ADMIN";
+    public static final String ORG_TYPE_LIST = "orgTypeList";
+    public static final int DEFAULT_ORG_NAME_MAX_LENGTH = 100;
+    public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
 
 
     private JsonKey() {
