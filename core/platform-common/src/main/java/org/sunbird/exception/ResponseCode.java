@@ -214,6 +214,12 @@ public enum ResponseCode {
   orgTypeNameNotFound(
           ResponseMessage.Key.ORG_TYPE_NAME_NOT_FOUND,
           ResponseMessage.Message.ORG_TYPE_NAME_NOT_FOUND),
+  invalidOrgFieldCharacters(
+          ResponseMessage.Key.INVALID_ORG_FIELD_CHARACTERS,
+          ResponseMessage.Message.INVALID_ORG_FIELD_CHARACTERS),
+  invalidOrgFieldLength(
+          ResponseMessage.Key.INVALID_ORG_FIELD_LENGTH,
+          ResponseMessage.Message.INVALID_ORG_FIELD_LENGTH),
 
   OK(200),
   SUCCESS(200),
