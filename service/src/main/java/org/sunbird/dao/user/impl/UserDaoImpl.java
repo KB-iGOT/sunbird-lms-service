@@ -2,6 +2,8 @@ package org.sunbird.dao.user.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.collections.CollectionUtils;
@@ -21,7 +23,6 @@ import org.sunbird.model.user.User;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.util.ProjectUtil;
-import org.sunbird.util.user.ProfileUtil;
 import scala.concurrent.Future;
 
 /**
@@ -78,7 +79,14 @@ public class UserDaoImpl implements UserDao {
     List<Map<String, Object>> responseList =
         (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
     if (CollectionUtils.isNotEmpty(responseList)) {
-      return responseList.get(0);
+      Map<String, Object> userDetail = responseList.get(0);
+      // Enrich user details with last_login information
+      Map<String, Object> loginInfo = getLastLoginInfoById(userId, context);
+      if (MapUtils.isNotEmpty(loginInfo)) {
+        userDetail.put("last_login", loginInfo.get("last_login"));
+        userDetail.put("first_login", loginInfo.get("last_login"));
+      }
+      return userDetail;
     }
     return null;
   }
@@ -88,6 +96,32 @@ public class UserDaoImpl implements UserDao {
       List<String> userIds, List<String> properties, RequestContext context) {
     return cassandraOperation.getPropertiesValueById(
         KEY_SPACE_NAME, TABLE_NAME, userIds, properties, context);
+  }
+  /**
+   * Retrieves last login information for a specific user
+   *
+   * @param userId Unique identifier of the user
+   * @param context Request context
+   * @return Map containing last_login, last_login_ip, login_count, etc.
+   */
+  public Map<String, Object> getLastLoginInfoById(String userId, RequestContext context) {
+    try {
+      Response response =
+              cassandraOperation.getRecordsByProperty(KEY_SPACE_NAME, JsonKey.USER_LOGIN, JsonKey.CONSENT_USER_ID, Collections.singletonList(userId), context);
+      List<Map<String, Object>> responseList =
+              (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+      if (CollectionUtils.isNotEmpty(responseList)) {
+        logger.debug(
+                context,
+                "getLastLoginInfoById: Successfully retrieved login info for user: " + userId);
+        return responseList.get(0);
+      }
+    } catch (Exception e) {
+      logger.info(
+              context,
+              "getLastLoginInfoById: Error retrieving login info for user: " + userId + ", Error: " + e.getMessage());
+    }
+    return null;
   }
 
   @Override
@@ -131,5 +165,23 @@ public class UserDaoImpl implements UserDao {
     String type = ProjectUtil.EsType.user.getTypeName();
     Future<String> responseF = esService.save(type, identifier, data, context);
     return (String) ElasticSearchHelper.getResponseFromFuture(responseF);
+  }
+
+  @Override
+  public String getUserRootOrgId(String userId, RequestContext context) {
+    if (org.apache.commons.lang3.StringUtils.isBlank(userId)) {
+      return null;
+    }
+    List<String> properties = Arrays.asList(JsonKey.ID, JsonKey.ROOT_ORG_ID);
+    Response userPropertiesResponse = getUserPropertiesById(
+            Collections.singletonList(userId),
+            properties,
+            context
+    );
+    List<Map<String, Object>> userList = (List<Map<String, Object>>) userPropertiesResponse.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isNotEmpty(userList)) {
+      return (String) userList.get(0).get(JsonKey.ROOT_ORG_ID);
+    }
+    return null;
   }
 }
