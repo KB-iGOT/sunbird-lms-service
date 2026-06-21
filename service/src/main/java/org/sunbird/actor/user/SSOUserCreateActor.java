@@ -188,6 +188,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.USER_ID, userId);
     requestMap = UserUtil.encryptUserData(userMap);
     List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
+    roles.replaceAll(String::toUpperCase);
 
     // Validate roles BEFORE user creation
     if (CollectionUtils.isNotEmpty(roles)) {
