@@ -23,9 +23,6 @@ public class VolunteerUserController extends BaseController {
     @Named("user_profile_read_actor")
     private ActorRef userProfileReadActor;
 
-    @Inject
-    AccessTokenValidator accessTokenValidator;
-
     private final ObjectMapper mapper = new ObjectMapper();
 
     public CompletionStage<Result> volunteerUserRead(Http.Request httpRequest) throws JsonProcessingException {
@@ -40,7 +37,7 @@ public class VolunteerUserController extends BaseController {
                 null,
                 req -> {
                     Request request = (Request) req;
-                    String userId = accessTokenValidator.verifyUserToken(authUserToken.get(),request.getContext());
+                    String userId = AccessTokenValidator.verifyUserToken(authUserToken.get(),request.getContext());
                     request.getContext().put(JsonKey.PRIVATE, isPrivate);
                     request.getRequest().put("sync", true);
                     request.getRequest().put(JsonKey.USER_ID, userId);
