@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
@@ -188,35 +189,59 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.USER_ID, userId);
     requestMap = UserUtil.encryptUserData(userMap);
     List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
+    roles.replaceAll(String::toUpperCase);
 
     // Validate roles BEFORE user creation
     if (CollectionUtils.isNotEmpty(roles)) {
       String requestingUserId = (String) request.getContext().get(JsonKey.REQUESTED_BY);
       String targetOrgId = (String) requestMap.get(JsonKey.ROOT_ORG_ID);
+      String operation = request.getOperation();
 
-      if (StringUtils.isNotBlank(requestingUserId)) {
-        String requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, request.getRequestContext());
-        if (StringUtils.isBlank(requestingUserOrgId)) {
-          throw new ProjectCommonException(
-                  ResponseCode.invalidRequestData,
-                  "Unable to fetch requesting user's root org ID",
-                  ResponseCode.CLIENT_ERROR.getResponseCode()
-          );
-        }
+      String configValue = ProjectUtil.getConfigValue(JsonKey.USER_CREATION_OPERATIONS);
 
-        roleAssignmentValidator.validateRoleAssignment(
-                requestingUserId,
-                requestingUserOrgId,
+      Set<String> userCreationOperations =
+              Arrays.stream(StringUtils.split(
+                              StringUtils.defaultIfBlank(configValue, ""), ","))
+                      .map(String::trim)
+                      .filter(StringUtils::isNotBlank)
+                      .map(String::toLowerCase)
+                      .collect(Collectors.toSet());
+
+      boolean isSelfRegistration =
+              StringUtils.isNotBlank(operation) &&
+                      userCreationOperations.contains(operation.toLowerCase());
+
+      if (isSelfRegistration) {
+        roleAssignmentValidator.validateRoleAssignmentForSelfRegistration(
                 targetOrgId,
-                null, // targetUserId is null for new user creation - all roles will be validated
                 roles,
                 request.getRequestContext()
         );
       } else {
-        throw new ProjectCommonException(
-                ResponseCode.unAuthorized,
-                "requesting userid is null",
-                ResponseCode.UNAUTHORIZED.getResponseCode());
+        if (StringUtils.isNotBlank(requestingUserId)) {
+          String requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, request.getRequestContext());
+          if (StringUtils.isBlank(requestingUserOrgId)) {
+            throw new ProjectCommonException(
+                    ResponseCode.invalidRequestData,
+                    "Unable to fetch requesting user's root org ID",
+                    ResponseCode.CLIENT_ERROR.getResponseCode()
+            );
+          }
+
+          roleAssignmentValidator.validateRoleAssignment(
+                  requestingUserId,
+                  requestingUserOrgId,
+                  targetOrgId,
+                  null, // targetUserId is null for new user creation - all roles will be validated
+                  roles,
+                  request.getRequestContext()
+          );
+        } else {
+          throw new ProjectCommonException(
+                  ResponseCode.unAuthorized,
+                  "Invalid or missing X-Auth token. Unable to identify the requesting user (account creator)",
+                  ResponseCode.UNAUTHORIZED.getResponseCode());
+        }
       }
     } else {
       throw new ProjectCommonException(

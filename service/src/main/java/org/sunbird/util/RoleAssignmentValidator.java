@@ -97,17 +97,16 @@ public class RoleAssignmentValidator {
   }
 
   private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
-    String ministryOrStateId = targetOrg.getMinistryOrStateId();
-    if (StringUtils.isBlank(ministryOrStateId)) {
-      throw new ProjectCommonException(
-              ResponseCode.targetOrgNoMinistryStateType,
-              ResponseCode.targetOrgNoMinistryStateType.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode()
-      );
-    }
-
     if (!isSpv) {
       if (!requestingUserOrgId.equalsIgnoreCase(targetOrgId)) {
+        String ministryOrStateId = targetOrg.getMinistryOrStateId();
+        if (StringUtils.isBlank(ministryOrStateId)) {
+          throw new ProjectCommonException(
+                  ResponseCode.targetOrgNoMinistryStateId,
+                  ResponseCode.targetOrgNoMinistryStateId.getErrorMessage(),
+                  ResponseCode.CLIENT_ERROR.getResponseCode()
+          );
+        }
         if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
           throw new ProjectCommonException(
                   ResponseCode.userNoAuthorityOverTargetOrg,
@@ -272,4 +271,21 @@ public class RoleAssignmentValidator {
       );
     }
   }
+
+  public void validateRoleAssignmentForSelfRegistration(String targetOrgId, List<String> rolesToAssign, RequestContext context) {
+    Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
+    if (null == targetOrg) {
+      throw new ProjectCommonException(
+              ResponseCode.targetOrgNotFound,
+              ResponseCode.targetOrgNotFound.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode()
+      );
+    }
+
+    if (CollectionUtils.isNotEmpty(rolesToAssign)) {
+      // For self-registration, we only validate roles against org type (no requesting user authority check)
+      validateRolesAgainstOrgType(null, targetOrgId, rolesToAssign, false, targetOrg, context);
+    }
+  }
+
 }
