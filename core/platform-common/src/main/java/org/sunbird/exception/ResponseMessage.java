@@ -120,7 +120,7 @@ public interface ResponseMessage {
     String USER_NOT_AUTHORIZED_ADMIN_ROLES_REQUIRED = "User is not authorized to create or assign roles. Only users with ADMIN roles can perform this action.";
     String TARGET_ORG_NOT_FOUND = "Target organization not found";
     String USER_NO_AUTHORITY_OVER_TARGET_ORG = "Requesting user does not have authority over the target organization";
-    String TARGET_ORG_NO_MINISTRY_STATE_TYPE = "Target organization does not have a ministryOrStateType defined";
+    String TARGET_ORG_NO_MINISTRY_STATE_ID = "Target organization does not have a ministryOrStateId defined";
     String ORG_TYPE_CONFIG_NOT_FOUND = "Organization type configuration not found in system settings";
     String ORG_TYPE_LIST_EMPTY = "Organization type list is empty in system settings";
     String NO_ROLE_CONFIG_FOR_ORG_TYPE = "No role configuration found for organization type: {0}";
@@ -218,7 +218,7 @@ public interface ResponseMessage {
     String USER_NOT_AUTHORIZED_ADMIN_ROLES_REQUIRED = "0080";
     String TARGET_ORG_NOT_FOUND = "0081";
     String USER_NO_AUTHORITY_OVER_TARGET_ORG = "0082";
-    String TARGET_ORG_NO_MINISTRY_STATE_TYPE = "0083";
+    String TARGET_ORG_NO_MINISTRY_STATE_ID = "0083";
     String ORG_TYPE_CONFIG_NOT_FOUND = "0084";
     String ORG_TYPE_LIST_EMPTY = "0085";
     String NO_ROLE_CONFIG_FOR_ORG_TYPE = "0086";
