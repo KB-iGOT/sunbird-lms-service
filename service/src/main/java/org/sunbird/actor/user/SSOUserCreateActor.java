@@ -100,7 +100,7 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createUserV5(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
-    populatePublicRoles(actorMessage, findRootOrgId(actorMessage));
+    populatePublicRoles(actorMessage);
     createBasisProfileDetails(actorMessage);
     createSSOUser(actorMessage);
   }
@@ -505,7 +505,7 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createUserV5ForOAuthUser(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
-    populatePublicRoles(actorMessage, findRootOrgId(actorMessage));
+    populatePublicRoles(actorMessage);
     createBasicProfileDetailsForParichayUser(actorMessage);;
     createSSOUser(actorMessage);
   }
@@ -546,7 +546,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
-    populatePublicRoles(actorMessage, findRootOrgId(actorMessage));
+    populatePublicRoles(actorMessage);
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
   }
@@ -567,7 +567,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetailsMap));
   }
 
-  private void populatePublicRoles(Request actorMessage, String rootOrgId) {
+  private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
     userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
   }
