@@ -107,7 +107,7 @@ public class RoleAssignmentValidator {
                   ResponseCode.CLIENT_ERROR.getResponseCode()
           );
         }
-        if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
+        if (!requestingUserOrgId.equalsIgnoreCase(ministryOrStateId)) {
           throw new ProjectCommonException(
                   ResponseCode.userNoAuthorityOverTargetOrg,
                   ResponseCode.userNoAuthorityOverTargetOrg.getErrorMessage(),
@@ -269,22 +269,6 @@ public class RoleAssignmentValidator {
               String.format(ResponseCode.errorValidatingRolesAgainstOrgType.getErrorMessage(), e.getMessage()),
               ResponseCode.SERVER_ERROR.getResponseCode()
       );
-    }
-  }
-
-  public void validateRoleAssignmentForSelfRegistration(String targetOrgId, List<String> rolesToAssign, RequestContext context) {
-    Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
-    if (null == targetOrg) {
-      throw new ProjectCommonException(
-              ResponseCode.targetOrgNotFound,
-              ResponseCode.targetOrgNotFound.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode()
-      );
-    }
-
-    if (CollectionUtils.isNotEmpty(rolesToAssign)) {
-      // For self-registration, we only validate roles against org type (no requesting user authority check)
-      validateRolesAgainstOrgType(null, targetOrgId, rolesToAssign, false, targetOrg, context);
     }
   }
 
