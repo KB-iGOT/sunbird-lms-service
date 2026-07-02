@@ -407,7 +407,7 @@ public class UserController extends BaseController {
         httpRequest);
   }
 
-    public CompletionStage<Result> getUserByIdForAdmin(Http.Request httpRequest) {
+    public CompletionStage<Result> getUserByIdForPublic(Http.Request httpRequest) {
         Optional<String> authUserToken =
                 httpRequest.getHeaders().get(JsonKey.X_AUTHENTICATED_USER_TOKEN);
         return handleGetUserProfileV4(
