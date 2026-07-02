@@ -624,6 +624,7 @@ public final class JsonKey {
     public static final String ORG_SUB_TYPE = "organisationSubType";
     public static final String ORG_TYPE_CONFIG = "orgTypeConfig";
     public static final String ORG_TYPE_SCHOOL = "school";
+    public static final String ORG_TYPE_NGO = "ngo";
     public static final String ORG_TYPE_BOARD = "board";
     public static final String FORCE_MIGRATION = "forceMigration";
     public static final String SOFT_DELETE_PREVIOUS_ORG = "softDeleteOldOrg";
@@ -741,6 +742,9 @@ public final class JsonKey {
     public static final String ORG_TYPE_LIST = "orgTypeList";
     public static final int DEFAULT_ORG_NAME_MAX_LENGTH = 100;
     public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
+    public static final String IS_NGO = "isNgo";
+    public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
+
 
 
     private JsonKey() {
