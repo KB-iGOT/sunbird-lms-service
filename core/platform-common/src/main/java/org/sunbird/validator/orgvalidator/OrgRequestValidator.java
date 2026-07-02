@@ -107,7 +107,7 @@ public class OrgRequestValidator extends BaseOrgRequestValidator {
           MessageFormat.format(
               ResponseCode.invalidParameterValue.getErrorMessage(),
               "",
-              fieldName) + " - " + MessageFormat.format(ResponseCode.invalidOrgFieldLength.getErrorMessage(), maxLength),
+              fieldName) + " - " + MessageFormat.format(ResponseCode.invalidOrgFieldLength.getErrorMessage(), String.valueOf(maxLength)),
           ERROR_CODE);
     }
   }

@@ -2,7 +2,6 @@
 package org.sunbird.sso;
 
 import org.apache.commons.lang3.StringUtils;
-import org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.sunbird.keys.JsonKey;
@@ -49,11 +48,7 @@ public class KeyCloakConnectionProvider {
             .realm(cache.getProperty(JsonKey.SSO_REALM))
             .username(cache.getProperty(JsonKey.SSO_USERNAME))
             .password(cache.getProperty(JsonKey.SSO_PASSWORD))
-            .clientId(cache.getProperty(JsonKey.SSO_CLIENT_ID))
-            .resteasyClient(
-                new ResteasyClientBuilder()
-                    .connectionPoolSize(Integer.parseInt(cache.getProperty(JsonKey.SSO_POOL_SIZE)))
-                    .build());
+            .clientId(cache.getProperty(JsonKey.SSO_CLIENT_ID));
     if (cache.getProperty(JsonKey.SSO_CLIENT_SECRET) != null
         && !(cache.getProperty(JsonKey.SSO_CLIENT_SECRET).equals(JsonKey.SSO_CLIENT_SECRET))) {
       keycloakBuilder.clientSecret(cache.getProperty(JsonKey.SSO_CLIENT_SECRET));
@@ -97,11 +92,7 @@ public class KeyCloakConnectionProvider {
             .realm(relam)
             .username(username)
             .password(password)
-            .clientId(cleintId)
-            .resteasyClient(
-                new ResteasyClientBuilder()
-                    .connectionPoolSize(Integer.parseInt(cache.getProperty(JsonKey.SSO_POOL_SIZE)))
-                    .build());
+            .clientId(cleintId);
 
     if (StringUtils.isNotBlank(clientSecret)) {
       keycloakBuilder.clientSecret(clientSecret);

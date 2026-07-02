@@ -15,7 +15,10 @@ public class ResetPasswordService {
   private final LoggerUtil logger = new LoggerUtil(ResetPasswordService.class);
 
   public String getUserRequiredActionLink(
-      Map<String, Object> templateMap, boolean isUrlShortRequired, RequestContext context) {
+      String userId,
+      Map<String, Object> templateMap,
+      boolean isUrlShortRequired,
+      RequestContext context) {
     URLShortner urlShortner = new URLShortnerImpl();
     String redirectUri =
         StringUtils.isNotBlank((String) templateMap.get(JsonKey.REDIRECT_URI))
@@ -25,6 +28,7 @@ public class ResetPasswordService {
     if (StringUtils.isBlank((String) templateMap.get(JsonKey.PASSWORD))) {
       String url =
           KeycloakRequiredActionLinkUtil.getLink(
+              userId,
               (String) templateMap.get(JsonKey.USERNAME),
               redirectUri,
               KeycloakRequiredActionLinkUtil.UPDATE_PASSWORD,
@@ -37,6 +41,7 @@ public class ResetPasswordService {
     } else {
       String url =
           KeycloakRequiredActionLinkUtil.getLink(
+              userId,
               (String) templateMap.get(JsonKey.USERNAME),
               redirectUri,
               KeycloakRequiredActionLinkUtil.VERIFY_EMAIL,

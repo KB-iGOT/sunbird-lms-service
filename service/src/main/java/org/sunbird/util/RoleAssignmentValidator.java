@@ -97,18 +97,17 @@ public class RoleAssignmentValidator {
   }
 
   private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
-    String ministryOrStateId = targetOrg.getMinistryOrStateId();
-    if (StringUtils.isBlank(ministryOrStateId)) {
-      throw new ProjectCommonException(
-              ResponseCode.targetOrgNoMinistryStateType,
-              ResponseCode.targetOrgNoMinistryStateType.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode()
-      );
-    }
-
     if (!isSpv) {
       if (!requestingUserOrgId.equalsIgnoreCase(targetOrgId)) {
-        if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
+        String ministryOrStateId = targetOrg.getMinistryOrStateId();
+        if (StringUtils.isBlank(ministryOrStateId)) {
+          throw new ProjectCommonException(
+                  ResponseCode.targetOrgNoMinistryStateId,
+                  ResponseCode.targetOrgNoMinistryStateId.getErrorMessage(),
+                  ResponseCode.CLIENT_ERROR.getResponseCode()
+          );
+        }
+        if (!requestingUserOrgId.equalsIgnoreCase(ministryOrStateId)) {
           throw new ProjectCommonException(
                   ResponseCode.userNoAuthorityOverTargetOrg,
                   ResponseCode.userNoAuthorityOverTargetOrg.getErrorMessage(),
@@ -272,4 +271,5 @@ public class RoleAssignmentValidator {
       );
     }
   }
+
 }
