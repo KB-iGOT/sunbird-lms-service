@@ -157,6 +157,7 @@ POST    /v5/user/public/search					@controllers.usermanagement.UserController.us
 POST    /v5/cb/support/user/create              @controllers.usermanagement.UserController.createSupportUserV5(request: play.mvc.Http.Request)
 
 GET    /v1/cb/user/volunteer/read               @controllers.usermanagement.VolunteerUserController.volunteerUserRead(request: play.mvc.Http.Request)
-GET  	/v5/user/read		                    @controllers.usermanagement.UserController.getUserByIdForAdmin(request: play.mvc.Http.Request)
+GET  	/v5/user/read		                    @controllers.usermanagement.UserController.getUserByIdForPublic(request: play.mvc.Http.Request)
+
 
 
