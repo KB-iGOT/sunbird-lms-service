@@ -92,6 +92,7 @@ public class RequestInterceptor {
     apiHeaderIgnoreMap.put("/v1/org/hierarchy/search", var);
     apiHeaderIgnoreMap.put("/v1/org/hierarchy/ministry/search", var);
     apiHeaderIgnoreMap.put("/v1/org/hierarchy/state/search", var);
+    apiHeaderIgnoreMap.put("/v1/user/public/role/assign", var);
   }
 
   private static String getUserRequestedFor(Http.Request request) {

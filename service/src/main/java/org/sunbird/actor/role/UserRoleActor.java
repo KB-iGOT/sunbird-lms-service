@@ -60,6 +60,10 @@ public class UserRoleActor extends UserBaseActor {
         assignRoles(request);
         break;
 
+      case "assignPublicRole":
+        assignPublicRole(request);
+        break;
+
       default:
         onReceiveUnsupportedOperation();
     }
@@ -287,5 +291,87 @@ public class UserRoleActor extends UserBaseActor {
     if (null != roles) {
       filterMap.put(JsonKey.ROLES + "." + JsonKey.ROLE, roles);
     }
+  }
+
+  private void assignPublicRole(Request actorMessage) {
+    Map<String, Object> requestMap = actorMessage.getRequest();
+    requestMap.put(JsonKey.REQUESTED_BY, actorMessage.getContext().get(JsonKey.USER_ID));
+
+    String userId = (String) requestMap.get(JsonKey.USER_ID);
+    String targetOrgId = (String) requestMap.get(JsonKey.ORGANISATION_ID);
+
+    actorMessage.getContext().put(JsonKey.USER_ID, userId);
+    Response userProfileDataResponse = profileReadService.getUserProfileData(actorMessage);
+    Map<String, Object> userProfileDataMap = (Map<String, Object>) userProfileDataResponse.get(JsonKey.RESPONSE);
+    String orgId = ((List<Map<String, Object>>) userProfileDataMap.get(JsonKey.ORGANISATIONS))
+            .stream()
+            .findFirst()
+            .map(org -> (String) org.get(JsonKey.ORGANISATION_ID))
+            .orElse(null);
+    if (StringUtils.isNotEmpty(orgId) && !orgId.equalsIgnoreCase(targetOrgId)) {
+      logger.info(actorMessage.getRequestContext(), "User and org is not same");
+      Response response = new Response();
+      response.put(JsonKey.RESPONSE, "User Organisation Id and requested Organisation Id mismatch");
+      sender().tell(response, self());
+      return;
+    }
+
+    List<String> assignRoles = Collections.singletonList(JsonKey.PUBLIC_UPPER_CASE);
+    requestMap.put(JsonKey.ROLES, assignRoles);
+    requestMap.put(JsonKey.ROLE_OPERATION, "assignRole");
+    RoleService.validateRoles(assignRoles);
+    String configValue = PropertiesCache.getInstance().getProperty(JsonKey.DISABLE_MULTIPLE_ORG_ROLE);
+    if (Boolean.parseBoolean(configValue)) {
+      validateRequest(
+              userRoleService.getUserRoles(userId, actorMessage.getRequestContext()),
+              targetOrgId,
+              actorMessage.getRequestContext());
+    }
+    userRoleService.updateUserRole(requestMap, actorMessage.getRequestContext());
+
+    Response response = new Response();
+    response.put(JsonKey.RESPONSE, JsonKey.SUCCESS);
+    sender().tell(response, self());
+
+    List<Map<String, Object>> userRolesList = userRoleService.readUserRole((String) requestMap.get(JsonKey.USER_ID), actorMessage.getRequestContext());
+    ObjectMapper mapper = new ObjectMapper();
+    userRolesList
+            .stream()
+            .forEach(
+                    userRole -> {
+                      try {
+                        String dbScope = (String) userRole.get(JsonKey.SCOPE);
+                        if (StringUtils.isNotBlank(dbScope)) {
+                          List<Map<String, String>> scope = mapper.readValue(dbScope, ArrayList.class);
+                          userRole.put(JsonKey.SCOPE, scope);
+                        }
+                      } catch (Exception e) {
+                        logger.error(
+                                actorMessage.getRequestContext(),
+                                "Exception because of mapper read value" + userRole.get(JsonKey.SCOPE),
+                                e);
+                      }
+                    });
+    syncUserRoles(
+            JsonKey.USER,
+            (String) requestMap.get(JsonKey.USER_ID),
+            userRolesList,
+            actorMessage.getRequestContext());
+    if (response.get(JsonKey.RESPONSE).equals(JsonKey.SUCCESS)) {
+      String topic = ProjectUtil.getConfigValue("kafka_mentorship_user_update_topic");
+      try {
+        HashMap<String, String> userDetails = new HashMap<>();
+        userDetails.put(JsonKey.USER_ID, (String) requestMap.get(JsonKey.USER_ID));
+        InstructionEventGenerator.userUpdateEvent("", topic, userDetails);
+        logger.info("kafka_mentorship_user_update_topic event pushed after role change");
+      } catch (Exception e) {
+        logger.error("error while generating mentorship event :", e);
+      }
+    }
+    generateTelemetryEvent(
+            requestMap,
+            (String) requestMap.get(JsonKey.USER_ID),
+            "userLevel",
+            actorMessage.getContext());
   }
 }
