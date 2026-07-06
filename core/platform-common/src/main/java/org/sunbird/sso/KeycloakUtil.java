@@ -23,10 +23,8 @@ public class KeycloakUtil {
     fields.put("client_id", ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_ID));
     fields.put("client_secret", ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_SECRET));
     fields.put("grant_type", "client_credentials");
-    System.out.println("\nKeycloakUtil:getAdminAccessToken: url = " + url + "\n");
-    System.out.println("\nKeycloakUtil:getAdminAccessToken: fields = " + fields + "\n");
+    logger.info(context, "KeycloakUtil:getAdminAccessToken: url = " + url);
     String response = HttpClientUtil.postFormData(url, fields, headers, context);
-    System.out.println("\nKeycloakUtil:getAdminAccessToken: Response = " + response + "\n");
 
     // Check if response is empty or null (indicates an error response)
     if (response == null || response.trim().isEmpty()) {
@@ -75,7 +73,7 @@ public class KeycloakUtil {
   public static String getAdminAccessTokenWithoutDomain(RequestContext context) throws Exception {
     String url =
         ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_LB_IP)
-            + "/realms/"
+            + "/auth/realms/"
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
             + "/protocol/openid-connect/token";
     return getAdminAccessToken(context, url);
