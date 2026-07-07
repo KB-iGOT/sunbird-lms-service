@@ -35,6 +35,7 @@ public enum ActorOperations {
   PROCESS_BULK_UPLOAD("processBulkUpload", "BLKUPLD"),
   ASSIGN_ROLES("assignRoles", "ROLUPD"),
   ASSIGN_ROLES_V2("assignRolesV2", "ROLUPD"),
+  ASSIGN_PUBLIC_ROLE("assignPublicRole", "ROLUPD"),
   UNBLOCK_USER("unblockUser", "USRUNBLOK"),
 
   UPDATE_USER_ORG_ES("updateUserOrgES", "UOBKGUPD"),
