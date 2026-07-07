@@ -159,4 +159,6 @@ POST    /v5/cb/support/user/create              @controllers.usermanagement.User
 GET    /v1/cb/user/volunteer/read               @controllers.usermanagement.VolunteerUserController.volunteerUserRead(request: play.mvc.Http.Request)
 GET  	/v5/user/read		                    @controllers.usermanagement.UserController.getUserByIdForAdmin(request: play.mvc.Http.Request)
 
+POST    /v1/user/public/role/assign		        @controllers.usermanagement.UserRoleController.assignPublicRole(request: play.mvc.Http.Request)
+
 

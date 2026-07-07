@@ -126,4 +126,15 @@ public class UserRoleRequestValidator extends BaseRequestValidator {
           });
     }
   }
+
+    public void validateAssignPublicRoleRequest(Request request) {
+        validateParam(
+                (String) request.getRequest().get(JsonKey.USER_ID),
+                ResponseCode.mandatoryParamsMissing,
+                JsonKey.USER_ID);
+        validateParam(
+                (String) request.getRequest().get(JsonKey.ORGANISATION_ID),
+                ResponseCode.mandatoryParamsMissing,
+                JsonKey.ORGANISATION_ID);
+    }
 }
