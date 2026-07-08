@@ -576,6 +576,7 @@ public final class JsonKey {
     public static final String IS_TENANT = "isTenant";
     public static final String ORG_LOCATION = "orgLocation";
     public static final String IS_SCHOOL = "isSchool";
+    public static final String IS_AUTONOMOUS_NGO = "isAutonomousNgo";
     public static final String ORGANISATION_TYPE = "organisationType";
     public static final String SYNC = "sync";
     public static final String ES_SYNC_RESPONSE = "esSyncResponse";
@@ -744,6 +745,7 @@ public final class JsonKey {
     public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
     public static final String IS_NGO = "isNgo";
     public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
+    public static final String GLOBAL_NGO_ORG_TYPE = "16384";
 
 
 
