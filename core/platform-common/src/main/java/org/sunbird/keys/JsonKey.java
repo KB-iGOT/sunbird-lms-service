@@ -576,6 +576,7 @@ public final class JsonKey {
     public static final String IS_TENANT = "isTenant";
     public static final String ORG_LOCATION = "orgLocation";
     public static final String IS_SCHOOL = "isSchool";
+    public static final String IS_AUTONOMOUS_NGO = "isAutonomousNgo";
     public static final String ORGANISATION_TYPE = "organisationType";
     public static final String SYNC = "sync";
     public static final String ES_SYNC_RESPONSE = "esSyncResponse";
