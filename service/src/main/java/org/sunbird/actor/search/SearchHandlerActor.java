@@ -384,7 +384,7 @@ public class SearchHandlerActor extends BaseActor {
     }
     if (filterMap.containsKey(JsonKey.IS_AUTONOMOUS_NGO)
             && BooleanUtils.isTrue((Boolean) filterMap.remove(JsonKey.IS_AUTONOMOUS_NGO))) {
-      filterMap.put(JsonKey.ORGANISATION_TYPE, JsonKey.GLOBAL_NGO_ORG_TYPE);
+      filterMap.put(JsonKey.ORGANISATION_TYPE,16384);
     }
 
     if (ActorOperations.ORG_SEARCH.getValue().equalsIgnoreCase(request.getOperation())
