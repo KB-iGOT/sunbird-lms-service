@@ -83,7 +83,8 @@ public class RoleAssignmentValidator {
 
     List<String> adminRoles = requestingUserRoles.stream()
             .map(roleMap -> (String) roleMap.get(JsonKey.ROLE))
-            .filter(role -> role != null && role.endsWith(JsonKey.ADMIN_SUFFIX))
+            .filter(role -> role != null &&
+                    (role.endsWith(JsonKey.ADMIN_SUFFIX) || role.endsWith(JsonKey.LEADER_SUFFIX)))
             .collect(Collectors.toList());
 
     if (CollectionUtils.isEmpty(adminRoles)) {
