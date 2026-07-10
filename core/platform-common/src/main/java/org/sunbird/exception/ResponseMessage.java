@@ -36,6 +36,7 @@ public interface ResponseMessage {
     String RESOURCE_NOT_FOUND = "Requested {0} resource not found";
     String MAX_ALLOWED_SIZE_LIMIT_EXCEED = "Max allowed size is {0}";
     String INACTIVE_USER = "User is Inactive. Please make it active to proceed.";
+    String DISABLED_USER = "User account is disabled.";
     String INVALID_VALUE = "Invalid {0}: {1}. Valid values are: {2}.";
     String INVALID_PARAMETER = "Please provide valid {0}.";
     String INVALID_LOCATION_DELETE_REQUEST =
@@ -206,6 +207,7 @@ public interface ResponseMessage {
     String FORBIDDEN = "0071";
     String INVALID_OBJECT_TYPE = "0072";
     String INACTIVE_USER = "0073";
+    String DISABLED_USER = "0094";
     String INVALID_CSV_FILE = "0074";
     String EXTENDED_USER_PROFILE_NOT_LOADED = "EXTENDED_USER_PROFILE_NOT_LOADED";
     String ROLE_PROCESSING_INVALID_ORG = "ROLE_PROCESSING_INVALID_ORG_ID";

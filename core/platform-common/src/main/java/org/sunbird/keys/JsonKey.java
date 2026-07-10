@@ -224,6 +224,7 @@ public final class JsonKey {
     public static final String ROLLUP = "rollup";
     public static final String ROOT_ORG = "rootOrg";
     public static final String ROOT_ORG_ID = "rootOrgId";
+    public static final String ROOTORG_ID = "rootorgid";
     public static final String SEARCH_TOP_N = "searchTopN";
     public static final String SIZE = "size";
     public static final String SLUG = "slug";
@@ -745,6 +746,8 @@ public final class JsonKey {
     public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
     public static final String IS_NGO = "isNgo";
     public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
+    public static final String VOLUNTEER = "VOLUNTEER";
+
 
 
 
