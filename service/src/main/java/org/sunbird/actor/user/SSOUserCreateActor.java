@@ -569,7 +569,16 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
-    userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+    List<String> roles = (List<String>) userMap.get(JsonKey.ROLES);
+    // Only set PUBLIC role if roles are not already provided in the request
+    if (roles == null || roles.isEmpty()) {
+      logger.info(actorMessage.getRequestContext(),
+          "SSOUserCreateActor:populatePublicRoles: No roles provided in request, setting default PUBLIC role");
+      userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+    } else {
+      logger.info(actorMessage.getRequestContext(),
+          "SSOUserCreateActor:populatePublicRoles: Roles provided in request: {}, preserving them", roles);
+    }
   }
 
   private void validateRoleAssignment(Request actorMessage, String targetOrgId) {
