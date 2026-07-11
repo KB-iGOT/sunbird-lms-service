@@ -81,10 +81,14 @@ public class RoleAssignmentValidator {
               ResponseCode.UNAUTHORIZED.getResponseCode());
     }
 
+    String configuredAdminRoleSuffixes = ProjectUtil.getConfigValue(JsonKey.ADMIN_ROLE_SUFFIXES);
+    List<String> adminRoleSuffixes = StringUtils.isNotBlank(configuredAdminRoleSuffixes)
+            ? List.of(configuredAdminRoleSuffixes.split(","))
+            : List.of(JsonKey.ADMIN_SUFFIX, JsonKey.LEADER_SUFFIX);
     List<String> adminRoles = requestingUserRoles.stream()
             .map(roleMap -> (String) roleMap.get(JsonKey.ROLE))
             .filter(role -> role != null &&
-                    (role.endsWith(JsonKey.ADMIN_SUFFIX) || role.endsWith(JsonKey.LEADER_SUFFIX)))
+                    adminRoleSuffixes.stream().anyMatch(role::endsWith))
             .collect(Collectors.toList());
 
     if (CollectionUtils.isEmpty(adminRoles)) {
