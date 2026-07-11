@@ -5,10 +5,16 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import controllers.BaseController;
 import controllers.usermanagement.validator.UserGetRequestValidator;
 import java.util.HashMap;
+import java.util.Optional;
 import java.util.concurrent.CompletionStage;
 import javax.inject.Inject;
 import javax.inject.Named;
+
+import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.user.validator.UserRequestValidator;
+import org.sunbird.auth.verifier.AccessTokenValidator;
+import org.sunbird.exception.ProjectCommonException;
+import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.operations.ActorOperations;
 import org.sunbird.request.Request;
@@ -401,6 +407,14 @@ public class UserController extends BaseController {
         httpRequest);
   }
 
+    public CompletionStage<Result> getUserByIdForPublic(Http.Request httpRequest) {
+        Optional<String> authUserToken =
+                httpRequest.getHeaders().get(JsonKey.X_AUTHENTICATED_USER_TOKEN);
+        return handleGetUserProfileV4(
+                ActorOperations.GET_USER_PROFILE_V5.getValue(), authUserToken.get(),
+                httpRequest);
+    }
+
   public CompletionStage<Result> getUserByLoginId(Http.Request httpRequest) {
     final String requestedFields = httpRequest.getQueryString(JsonKey.FIELDS);
 
@@ -685,6 +699,42 @@ public class UserController extends BaseController {
                 null,
                 null,
                 true,
+                httpRequest);
+    }
+
+    private CompletionStage<Result> handleGetUserProfileV4(
+            String operation, String authToken, Http.Request httpRequest) {
+        final boolean isPrivate = httpRequest.path().contains(JsonKey.PRIVATE) ? true : false;
+        final String requestedFields = httpRequest.getQueryString(JsonKey.FIELDS);
+        final String provider = httpRequest.getQueryString(JsonKey.PROVIDER);
+        final String idType = httpRequest.getQueryString(JsonKey.ID_TYPE);
+        final String withTokens = httpRequest.getQueryString(JsonKey.WITH_TOKENS);
+        return handleRequest(
+                userProfileReadActor,
+                operation,
+                null,
+                req -> {
+                    Request request = (Request) req;
+                    if(StringUtils.isBlank(authToken)){
+                        throw new ProjectCommonException(
+                                ResponseCode.unAuthorized,
+                                ResponseCode.unAuthorized.getErrorMessage(),
+                                ResponseCode.UNAUTHORIZED.getResponseCode());
+
+                    }
+                    String userId = AccessTokenValidator.verifyUserToken(authToken,request.getContext());
+                    request.getContext().put(JsonKey.FIELDS, requestedFields);
+                    request.getContext().put(JsonKey.PRIVATE, isPrivate);
+                    request.getContext().put(JsonKey.WITH_TOKENS, withTokens);
+                    request.getContext().put(JsonKey.PROVIDER, provider);
+                    request.getContext().put(JsonKey.ID_TYPE, idType);
+                    request.getRequest().put(JsonKey.IS_NGO, false);
+                    request.getRequest().put(JsonKey.USER_ID, userId);
+                    return null;
+                },
+                null,
+               null,
+                false,
                 httpRequest);
     }
 }

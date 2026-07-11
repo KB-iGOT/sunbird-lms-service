@@ -36,6 +36,7 @@ public class UserProfileReadActor extends BaseActor {
       case "getUserProfileV3":
       case "getUserProfileV4":
       case "getUserProfileV5":
+      case "getVolunteerUserProfileV1":
         getUserProfileV3(request);
         break;
       case "getUserDetailsByLoginId":

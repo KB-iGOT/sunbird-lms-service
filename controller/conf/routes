@@ -109,6 +109,7 @@ POST    /v1/org/upload                          @controllers.bulkapimanagement.B
 POST    /v1/bulk/location/upload                @controllers.bulkapimanagement.BulkUploadController.locationBulkUpload(request: play.mvc.Http.Request)
 GET     /v1/upload/status/:pid                  @controllers.bulkapimanagement.BulkUploadController.getUploadStatus(pid:String, request: play.mvc.Http.Request)
 POST    /v1/file/upload 				        @controllers.storage.FileStorageController.uploadFileService(request: play.mvc.Http.Request)
+GET     /v1/ngo/org/read                        @controllers.organisationmanagement.NgoOrgController.getNgoOrgDetails(request: play.mvc.Http.Request)
 
 #Email
 POST    /v1/notification/email					@controllers.notificationservice.EmailServiceController.sendMail(request: play.mvc.Http.Request)
@@ -157,3 +158,9 @@ POST    /v1/system/settings/set                 @controllers.systemsettings.Syst
 GET     /v2/system/settings/get/:field          @controllers.systemsettings.SystemSettingsController.getSystemSettingV2(field:String, request: play.mvc.Http.Request)
 POST    /v5/user/public/search					@controllers.usermanagement.UserController.userPublicSearch(request: play.mvc.Http.Request)
 POST    /v5/cb/support/user/create              @controllers.usermanagement.UserController.createSupportUserV5(request: play.mvc.Http.Request)
+
+GET    /v1/cb/user/volunteer/read               @controllers.usermanagement.VolunteerUserController.volunteerUserRead(request: play.mvc.Http.Request)
+GET  	/v5/user/read		                    @controllers.usermanagement.UserController.getUserByIdForPublic(request: play.mvc.Http.Request)
+
+
+
