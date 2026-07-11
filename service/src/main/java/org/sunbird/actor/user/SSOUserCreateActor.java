@@ -10,6 +10,7 @@ import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
 import org.sunbird.dao.user.UserDao;
@@ -372,6 +373,16 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> userMap = (Map<String, Object>) actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+      if (userMap.containsKey(JsonKey.X_AUTH_USER_ORG_ID)) {
+        String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+        Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
+        String organisationType = (String) organisation.get(JsonKey.ORG_TYPE);
+        if (StringUtils.isNotBlank(organisationType)
+            && JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
+                OrgTypeValidator.getInstance().getTypeByValue(Integer.parseInt(organisationType)))) {
+          userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+        }
+      }
     } else {
       checkIfMDOLeaderExist(userMap, actorMessage, rootOrgId);
     }
