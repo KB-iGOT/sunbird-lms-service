@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.MapUtils;
@@ -232,21 +233,22 @@ public class UserServiceImpl implements UserService {
       response = userDao.getUserPropertiesById(ids, fields, context);
     }
 
-    if (fields.contains(JsonKey.ROLES)) {
-      List<String> ids = ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE)).stream()
-              .map(user -> (String) user.get(JsonKey.ID))
-              .collect(Collectors.toList());
-      Response cassandraResponse = cassandraOperation.getRecordsByProperties(
-              JsonKey.SUNBIRD, JsonKey.USER_ROLES,
-              Collections.singletonMap(JsonKey.USERID, ids),
-              Arrays.asList(JsonKey.ROLE, JsonKey.USERID), context);
+    List<Map<String, Object>> users = ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE));
+    Response cassandraResponse = cassandraOperation.getRecordsByProperties(
+            JsonKey.SUNBIRD, JsonKey.USER_ROLES,
+            Collections.singletonMap(JsonKey.USERID, users.stream()
+                    .map(user -> (String) user.get(JsonKey.ID))
+                    .collect(Collectors.toList())),
+            Arrays.asList(JsonKey.ROLE, JsonKey.USERID), context);
 
-      ((List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE)).stream()
-              .filter(userRole -> userRole.get(JsonKey.ROLE) != null && !((String) userRole.get(JsonKey.ROLE)).isEmpty())
-              .forEach(userRole ->
-                      userRoleMap.computeIfAbsent((String) userRole.get(JsonKey.USER_ID), k -> new ArrayList<>())
-                              .add((String) userRole.get(JsonKey.ROLE))
-              );
+    ((List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE)).stream()
+            .filter(userRole -> userRole.get(JsonKey.ROLE) != null && !((String) userRole.get(JsonKey.ROLE)).isEmpty())
+            .forEach(userRole ->
+                    userRoleMap.computeIfAbsent((String) userRole.get(JsonKey.USER_ID), k -> new ArrayList<>())
+                            .add((String) userRole.get(JsonKey.ROLE))
+            );
+
+    if (fields.contains(JsonKey.ROLES)) {
 
       ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE)).stream()
               .forEach(user -> {
@@ -258,6 +260,36 @@ public class UserServiceImpl implements UserService {
     } else {
       ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE)).stream()
               .forEach(UserUtility::decryptUserDataFrmES);
+    }
+
+    if (fields.contains(JsonKey.ROOTORG_ID)) {
+      // Validate volunteer users against org status
+      Map<String, Map<String, Object>> orgMap = users.stream()
+              .map(user -> (String) user.get(JsonKey.ROOT_ORG_ID))
+              .filter(Objects::nonNull)
+              .distinct()
+              .collect(Collectors.toMap(
+                      Function.identity(),
+                      orgId -> orgService.getOrgById(orgId, context)
+              ));
+
+      users.forEach(user -> {
+        String userId = (String) user.get(JsonKey.ID);
+        String orgId = (String) user.get(JsonKey.ROOT_ORG_ID);
+
+        List<String> roles = userRoleMap.get(userId);
+
+        if (roles != null && roles.contains(JsonKey.VOLUNTEER)) {
+          Map<String, Object> orgDao = orgMap.get(orgId);
+
+          if (MapUtils.isEmpty(orgDao) || Integer.valueOf(0).equals(orgDao.get(JsonKey.STATUS))) {
+            throw new ProjectCommonException(
+                    ResponseCode.invalidParameter,
+                    ResponseCode.disbledUser.getErrorMessage(),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
+          }
+        }
+      });
     }
     return response;
   }
