@@ -581,6 +581,16 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
     userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+    if (userMap.containsKey(JsonKey.X_AUTH_USER_ORG_ID)) {
+      String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+      Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
+      String organisationType = (String) organisation.get(JsonKey.ORG_TYPE);
+      if (StringUtils.isNotBlank(organisationType)
+          && JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
+              OrgTypeValidator.getInstance().getTypeByValue(Integer.parseInt(organisationType)))) {
+        userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+      }
+    }
   }
 
   private void validateRoleAssignment(Request actorMessage, String targetOrgId) {
