@@ -272,6 +272,33 @@ public class UserController extends BaseController {
                 httpRequest);
     }
 
+    public CompletionStage<Result> bulkCreateVolunteerUserV5(Http.Request httpRequest) throws JsonProcessingException {
+        Map<String, Object> requestMap = new ObjectMapper().readValue(
+                httpRequest.body().asJson().toString(), Map.class);
+        Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
+        Optional<String> authUserOrgId =
+                httpRequest.getHeaders().get(JsonKey.X_AUTH_USER_ORG_ID);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.BULK_USER_CREATE);
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
+        return handleRequest(
+                ssoUserCreateActor,
+                ActorOperations.BULK_CREATE_USER_V5.getValue(),
+                requestMapJsonNode,
+                req -> {
+                    Request request = (Request) req;
+                    request.getRequest().put("sync", true);
+                    request.getRequest().put(JsonKey.X_AUTH_USER_ORG_ID, authUserOrgId);
+                    new UserRequestValidator().validateUserCreateV5(request);
+                    request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
+                    return null;
+                },
+                null,
+                null,
+                true,
+                httpRequest);
+    }
+
     public CompletionStage<Result> parichayCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
         return oAuthUserCreateV5(httpRequest, JsonKey.PARICHAY_USER_CREATE);
     }
