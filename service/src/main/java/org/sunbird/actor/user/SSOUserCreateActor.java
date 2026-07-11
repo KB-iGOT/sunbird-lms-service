@@ -569,7 +569,14 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
-    userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+    String channel = (String) userMap.get(JsonKey.CHANNEL);
+    boolean isNgo = false;
+    if (StringUtils.isNotBlank(channel)) {
+      Map<String, String> orgInfo =
+          orgService.getMinistryInfoFromChannel(channel, actorMessage.getRequestContext());
+      isNgo = Boolean.parseBoolean(orgInfo.get(JsonKey.IS_NGO));
+    }
+    userMap.put(JsonKey.ROLES, Arrays.asList(isNgo ? JsonKey.VOLUNTEER : JsonKey.PUBLIC));
   }
 
   private void validateRoleAssignment(Request actorMessage, String targetOrgId) {

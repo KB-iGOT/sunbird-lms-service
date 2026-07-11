@@ -395,6 +395,7 @@ public class OrgServiceImpl implements OrgService {
     String ministryOrStateId = "";
     String ministryOrStateName = "";
     String ministryOrStateType = "";
+    boolean isNgo = false;
     if (MapUtils.isNotEmpty(esResult) && CollectionUtils.isNotEmpty((List<?>) esResult.get(JsonKey.CONTENT))) {
       Object esContentObj = esResult.get(JsonKey.CONTENT);
       if (esContentObj instanceof List) {
@@ -413,12 +414,14 @@ public class OrgServiceImpl implements OrgService {
               ministryOrStateName = (String) esContent.get(JsonKey.MINISTRY_STATE_NAME);
             }
             ministryOrStateType= (String) esContent.get(JsonKey.MINISTRY_STATE_TYPE);
+            isNgo = Boolean.TRUE.equals(esContent.get(JsonKey.IS_NGO));
           }
         }
         Map<String, String> ministryInfo = new HashMap<>();
         ministryInfo.put(JsonKey.MINISTRY_STATE_ID, ministryOrStateId);
         ministryInfo.put(JsonKey.MINISTRY_STATE_NAME, ministryOrStateName);
         ministryInfo.put(JsonKey.MINISTRY_STATE_TYPE, ministryOrStateType);
+        ministryInfo.put(JsonKey.IS_NGO, String.valueOf(isNgo));
         return ministryInfo;
       }
     } else {

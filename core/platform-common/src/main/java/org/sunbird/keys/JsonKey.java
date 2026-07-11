@@ -744,6 +744,7 @@ public final class JsonKey {
     public static final int DEFAULT_ORG_NAME_MAX_LENGTH = 100;
     public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
     public static final String IS_NGO = "isNgo";
+    public static final String VOLUNTEER = "VOLUNTEER";
     public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
 
 
