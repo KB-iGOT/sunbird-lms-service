@@ -382,7 +382,6 @@ public class SearchHandlerActor extends BaseActor {
         && BooleanUtils.isTrue((Boolean) filterMap.remove(JsonKey.IS_SCHOOL))) {
       filterMap.put(JsonKey.ORGANISATION_TYPE, 2);
     }
-
     if (ActorOperations.ORG_SEARCH.getValue().equalsIgnoreCase(request.getOperation())
         && filterMap.containsKey(JsonKey.IS_ROOT_ORG)
         && BooleanUtils.isTrue((Boolean) filterMap.remove(JsonKey.IS_ROOT_ORG))) {
