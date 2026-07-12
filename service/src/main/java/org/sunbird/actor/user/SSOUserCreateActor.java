@@ -347,6 +347,9 @@ public class SSOUserCreateActor extends UserBaseActor {
         Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
         if (organisation.get(JsonKey.ORG_TYPE) != null) {
           int organisationType = (int) organisation.get(JsonKey.ORG_TYPE);
+          logger.info(actorMessage.getRequestContext(),
+              "SSOUserCreateActor:populateRoles: orgTypeConfig Ngo : "
+                  + OrgTypeValidator.getInstance().getTypeByValue(organisationType));
           if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
               OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
             userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
@@ -588,6 +591,9 @@ public class SSOUserCreateActor extends UserBaseActor {
       Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
       if (organisation.get(JsonKey.ORG_TYPE) != null) {
         int organisationType = (int) organisation.get(JsonKey.ORG_TYPE);
+        logger.info(actorMessage.getRequestContext(),
+            "SSOUserCreateActor:populatePublicRoles: orgTypeConfig Ngo : "
+                + OrgTypeValidator.getInstance().getTypeByValue(organisationType));
         if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
             OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
           userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
