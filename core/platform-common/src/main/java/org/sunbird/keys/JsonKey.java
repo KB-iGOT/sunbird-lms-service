@@ -417,6 +417,7 @@ public final class JsonKey {
     public static final String RECIPIENT_PHONES = "recipientPhones";
     public static final String REST = "rest";
     public static final String ES_OR_OPERATION = "$or";
+    public static final String OR_FILTERS = "orFilters";
     public static final String PREV_USED_EMAIL = "prevUsedEmail";
     public static final String PREV_USED_PHONE = "prevUsedPhone";
     public static final String MERGE_USER = "mergeUser";

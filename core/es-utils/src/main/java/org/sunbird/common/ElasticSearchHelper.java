@@ -171,6 +171,9 @@ public class ElasticSearchHelper {
       for (Map.Entry<String, Object> en : filters.entrySet()) {
         query = createFilterESOpperation(en, query, constraintsMap);
       }
+    } else if (JsonKey.OR_FILTERS.equalsIgnoreCase(key)) {
+      Map<String, Object> orFilters = (Map<String, Object>) entry.getValue();
+      query.must(createEsORFilterQuery(orFilters));
     } else if (JsonKey.EXISTS.equalsIgnoreCase(key) || JsonKey.NOT_EXISTS.equalsIgnoreCase(key)) {
       query = createESOpperation(entry, query, constraintsMap);
     } else if (JsonKey.NESTED_EXISTS.equalsIgnoreCase(key)
@@ -456,10 +459,13 @@ public class ElasticSearchHelper {
   private static BoolQueryBuilder createEsORFilterQuery(Map<String, Object> orFilters) {
     BoolQueryBuilder query = new BoolQueryBuilder();
     for (Map.Entry<String, Object> mp : orFilters.entrySet()) {
+      Object valObj = mp.getValue();
+      String valStr = (valObj == null) ? "" : String.valueOf(valObj).toLowerCase();
       query.should(
           QueryBuilders.termQuery(
-              mp.getKey() + RAW_APPEND, ((String) mp.getValue()).toLowerCase()));
+              mp.getKey() + RAW_APPEND, valStr));
     }
+    query.minimumShouldMatch(1);
     return query;
   }
 
@@ -852,6 +858,9 @@ public class ElasticSearchHelper {
     }
     if (searchQueryMap.containsKey(JsonKey.FILTERS)) {
       search.getAdditionalProperties().put(JsonKey.FILTERS, searchQueryMap.get(JsonKey.FILTERS));
+    }
+    if (searchQueryMap.containsKey(JsonKey.OR_FILTERS)) {
+      search.getAdditionalProperties().put(JsonKey.OR_FILTERS, searchQueryMap.get(JsonKey.OR_FILTERS));
     }
     if (searchQueryMap.containsKey(JsonKey.EXISTS)) {
       search.getAdditionalProperties().put(JsonKey.EXISTS, searchQueryMap.get(JsonKey.EXISTS));

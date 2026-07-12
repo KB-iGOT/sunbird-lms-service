@@ -212,7 +212,16 @@ public class BaseRequestValidator {
               ResponseCode.dataTypeError.getErrorMessage(), JsonKey.FILTERS, "Map"),
           ResponseCode.CLIENT_ERROR.getResponseCode());
     }
+    if (request.getRequest().containsKey(JsonKey.OR_FILTERS)
+        && (!(request.getRequest().get(JsonKey.OR_FILTERS) instanceof Map))) {
+      throw new ProjectCommonException(
+          ResponseCode.dataTypeError,
+          MessageFormat.format(
+              ResponseCode.dataTypeError.getErrorMessage(), JsonKey.OR_FILTERS, "Map"),
+          ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
     validateSearchRequestFiltersValues(request);
+    validateSearchRequestOrFiltersValues(request);
     validateSearchRequestFieldsValues(request);
   }
 
@@ -265,6 +274,37 @@ public class BaseRequestValidator {
                         ResponseCode.invalidParameterValue.getErrorMessage(), val, key),
                     ResponseCode.CLIENT_ERROR.getResponseCode());
               }
+          });
+    }
+  }
+
+  private void validateSearchRequestOrFiltersValues(Request request) {
+    if (request.getRequest().containsKey(JsonKey.OR_FILTERS)
+        && ((request.getRequest().get(JsonKey.OR_FILTERS) instanceof Map))) {
+      Map<String, Object> map = (Map<String, Object>) request.getRequest().get(JsonKey.OR_FILTERS);
+
+      map.forEach(
+          (key, val) -> {
+            if (key == null) {
+              throw new ProjectCommonException(
+                  ResponseCode.invalidParameterValue,
+                  MessageFormat.format(
+                      ResponseCode.invalidParameterValue.getErrorMessage(), key, JsonKey.OR_FILTERS),
+                  ResponseCode.CLIENT_ERROR.getResponseCode());
+            }
+            if (val instanceof List) {
+              validateListValues((List) val, key);
+            } else if (val instanceof Map) {
+              validateMapValues((Map) val);
+            } else if (val == null) {
+              if (StringUtils.isEmpty((String) val)) {
+                throw new ProjectCommonException(
+                    ResponseCode.invalidParameterValue,
+                    MessageFormat.format(
+                        ResponseCode.invalidParameterValue.getErrorMessage(), val, key),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
+              }
+            }
           });
     }
   }
