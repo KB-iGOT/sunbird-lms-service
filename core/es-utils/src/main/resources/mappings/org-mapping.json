@@ -263,6 +263,22 @@
           "type": "boolean"
         }
       }
+    },
+    "isMdo": {
+      "type": "boolean",
+      "fields": {
+        "raw": {
+          "type": "boolean"
+        }
+      }
+    },
+    "isAutonomousNgo": {
+      "type": "boolean",
+      "fields": {
+        "raw": {
+          "type": "boolean"
+        }
+      }
     }
   }
 }
