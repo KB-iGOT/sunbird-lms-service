@@ -288,7 +288,7 @@ public class UserController extends BaseController {
                 req -> {
                     Request request = (Request) req;
                     request.getRequest().put("sync", true);
-                    request.getRequest().put(JsonKey.X_AUTH_USER_ORG_ID, authUserOrgId);
+                    request.getRequest().put(JsonKey.X_AUTH_USER_ORG_ID, authUserOrgId.isPresent() ? authUserOrgId.get() : null);
                     new UserRequestValidator().validateUserCreateV5(request);
                     request.getContext().put(JsonKey.VERSION, JsonKey.VERSION_4);
                     return null;

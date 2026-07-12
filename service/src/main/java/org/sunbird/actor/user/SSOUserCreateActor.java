@@ -342,8 +342,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> userMap = (Map<String, Object>) actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
-      if (userMap.containsKey(JsonKey.X_AUTH_USER_ORG_ID)) {
-        String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+      String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+      if (StringUtils.isNotBlank(organisationId)) {
         Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
         String organisationType = (String) organisation.get(JsonKey.ORG_TYPE);
         if (StringUtils.isNotBlank(organisationType)
@@ -582,8 +582,8 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
     userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
-    if (userMap.containsKey(JsonKey.X_AUTH_USER_ORG_ID)) {
-      String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+    String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+    if (StringUtils.isNotBlank(organisationId)) {
       Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
       String organisationType = (String) organisation.get(JsonKey.ORG_TYPE);
       if (StringUtils.isNotBlank(organisationType)
