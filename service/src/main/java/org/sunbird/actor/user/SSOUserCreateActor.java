@@ -557,6 +557,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
+    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createBulkUsers: starts : " + actorMessage.getRequest());
     populatePublicRoles(actorMessage);
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
