@@ -145,8 +145,9 @@ public class SSOUserCreateActor extends UserBaseActor {
         storeKeyInRedis(phoneRedisKey, phone, ttl);
       }
     }
-    if (StringUtils.isNotBlank(callerId)) {
-      userMap.put(JsonKey.ROOT_ORG_ID, actorMessage.getContext().get(JsonKey.ROOT_ORG_ID));
+    Object contextRootOrgId = actorMessage.getContext().get(JsonKey.ROOT_ORG_ID);
+    if (contextRootOrgId != null) {
+      userMap.put(JsonKey.ROOT_ORG_ID, contextRootOrgId);
     }
     if (actorMessage.getOperation().equalsIgnoreCase(ActorOperations.CREATE_SSO_USER.getValue())) {
       populateUserTypeAndSubType(userMap);
@@ -656,7 +657,7 @@ public class SSOUserCreateActor extends UserBaseActor {
       }
     }
     if (StringUtils.isNotBlank(organisationId)) {
-      userMap.put(JsonKey.ROOT_ORG_ID, organisationId);
+      actorMessage.getContext().put(JsonKey.ROOT_ORG_ID, organisationId);
     }
   }
 
