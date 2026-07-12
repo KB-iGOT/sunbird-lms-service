@@ -609,12 +609,12 @@ public class SSOUserCreateActor extends UserBaseActor {
             authOrganisation = orgService.getOrgById(authOrganisationId, actorMessage.getRequestContext());
           }
 
-          if (!isSameMinistryOrState(authOrganisation, organisation)) {
+          /*if (!isSameMinistryOrState(authOrganisation, organisation)) {
             throw new ProjectCommonException(
                     ResponseCode.errorConflictingRootOrgId,
                     ResponseCode.errorConflictingRootOrgId.getErrorMessage(),
                     ResponseCode.CLIENT_ERROR.getResponseCode());
-          }
+          }*/
 
           applyOrganisationRoleAndRootOrg(actorMessage, userMap, organisation, organisationId);
           return true;
@@ -649,10 +649,6 @@ public class SSOUserCreateActor extends UserBaseActor {
       Object orgType = organisation.get(JsonKey.ORG_TYPE);
       if (orgType instanceof Number) {
         int organisationType = ((Number) orgType).intValue();
-        logger.info(
-                actorMessage.getRequestContext(),
-                "SSOUserCreateActor:applyOrganisationRoleAndRootOrg: orgTypeConfig Ngo : "
-                        + OrgTypeValidator.getInstance().getTypeByValue(organisationType));
         if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
                 OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
           userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
