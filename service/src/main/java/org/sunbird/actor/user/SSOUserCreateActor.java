@@ -345,11 +345,12 @@ public class SSOUserCreateActor extends UserBaseActor {
       String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
       if (StringUtils.isNotBlank(organisationId)) {
         Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
-        String organisationType = (String) organisation.get(JsonKey.ORG_TYPE);
-        if (StringUtils.isNotBlank(organisationType)
-            && JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
-                OrgTypeValidator.getInstance().getTypeByValue(Integer.parseInt(organisationType)))) {
-          userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+        if (organisation.get(JsonKey.ORG_TYPE) != null) {
+          int organisationType = (int) organisation.get(JsonKey.ORG_TYPE);
+          if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
+              OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
+            userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+          }
         }
       }
     } else {
@@ -585,11 +586,12 @@ public class SSOUserCreateActor extends UserBaseActor {
     String organisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
     if (StringUtils.isNotBlank(organisationId)) {
       Map<String, Object> organisation = orgService.getOrgById(organisationId, actorMessage.getRequestContext());
-      String organisationType = (String) organisation.get(JsonKey.ORG_TYPE);
-      if (StringUtils.isNotBlank(organisationType)
-          && JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
-              OrgTypeValidator.getInstance().getTypeByValue(Integer.parseInt(organisationType)))) {
-        userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+      if (organisation.get(JsonKey.ORG_TYPE) != null) {
+        int organisationType = (int) organisation.get(JsonKey.ORG_TYPE);
+        if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
+            OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
+          userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+        }
       }
     }
   }
