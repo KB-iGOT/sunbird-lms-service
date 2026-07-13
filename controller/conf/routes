@@ -62,6 +62,9 @@ POST    /v1/user/assign/role			        @controllers.usermanagement.UserRoleContr
 POST    /v2/user/assign/role			        @controllers.usermanagement.UserRoleController.assignRolesV2(request: play.mvc.Http.Request)
 #POST    /private/user/v2/assign/role			@controllers.usermanagement.UserRoleController.assignRolesV2(request: play.mvc.Http.Request)
 
+# Public-role-only assignment API - no assigner token required (see RequestInterceptor exclude list)
+POST    /v1/user/public/role/assign		        @controllers.usermanagement.UserRoleController.assignPublicRole(request: play.mvc.Http.Request)
+
 POST    /v1/user/tnc/accept                     @controllers.tac.UserTnCController.acceptTnC(request: play.mvc.Http.Request)
 PATCH   /private/user/v1/account/merge          @controllers.usermanagement.UserMergeController.mergeUser(request: play.mvc.Http.Request)
 PATCH   /v1/user/declarations                   @controllers.usermanagement.UserController.updateUserDeclarations(request: play.mvc.Http.Request)

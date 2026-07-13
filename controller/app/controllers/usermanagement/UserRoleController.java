@@ -37,6 +37,22 @@ public class UserRoleController extends BaseController {
     return handleAssignRoleRequest(ActorOperations.ASSIGN_ROLES_V2.getValue(), httpRequest);
   }
 
+  public CompletionStage<Result> assignPublicRole(Http.Request httpRequest) {
+    final boolean isPrivate = httpRequest.path().contains(JsonKey.PRIVATE) ? true : false;
+    return handleRequest(
+        userRoleActor,
+        ActorOperations.ASSIGN_PUBLIC_ROLE.getValue(),
+        httpRequest.body().asJson(),
+        (request) -> {
+          Request req = (Request) request;
+          req.getContext().put(JsonKey.USER_ID, Common.getFromRequest(httpRequest, Attrs.USER_ID));
+          req.getContext().put(JsonKey.PRIVATE, isPrivate);
+          new UserRoleRequestValidator().validateAssignPublicRoleRequest(req);
+          return null;
+        },
+        httpRequest);
+  }
+
   public CompletionStage<Result> getUserRolesById(String userId, Http.Request httpRequest) {
     String usrId = ProjectUtil.getLmsUserId(userId);
     return handleRequest(

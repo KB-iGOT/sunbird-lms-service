@@ -81,9 +81,14 @@ public class RoleAssignmentValidator {
               ResponseCode.UNAUTHORIZED.getResponseCode());
     }
 
+    String configuredAdminRoleSuffixes = ProjectUtil.getConfigValue(JsonKey.ADMIN_ROLE_SUFFIXES);
+    List<String> adminRoleSuffixes = StringUtils.isNotBlank(configuredAdminRoleSuffixes)
+            ? List.of(configuredAdminRoleSuffixes.split(","))
+            : List.of(JsonKey.ADMIN_SUFFIX, JsonKey.LEADER_SUFFIX);
     List<String> adminRoles = requestingUserRoles.stream()
             .map(roleMap -> (String) roleMap.get(JsonKey.ROLE))
-            .filter(role -> role != null && role.endsWith(JsonKey.ADMIN_SUFFIX))
+            .filter(role -> role != null &&
+                    adminRoleSuffixes.stream().anyMatch(role::endsWith))
             .collect(Collectors.toList());
 
     if (CollectionUtils.isEmpty(adminRoles)) {
@@ -97,18 +102,17 @@ public class RoleAssignmentValidator {
   }
 
   private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
-    String ministryOrStateId = targetOrg.getMinistryOrStateId();
-    if (StringUtils.isBlank(ministryOrStateId)) {
-      throw new ProjectCommonException(
-              ResponseCode.targetOrgNoMinistryStateType,
-              ResponseCode.targetOrgNoMinistryStateType.getErrorMessage(),
-              ResponseCode.CLIENT_ERROR.getResponseCode()
-      );
-    }
-
     if (!isSpv) {
       if (!requestingUserOrgId.equalsIgnoreCase(targetOrgId)) {
-        if (!requestingUserOrgId.equalsIgnoreCase(targetOrg.getMinistryOrStateId())) {
+        String ministryOrStateId = targetOrg.getMinistryOrStateId();
+        if (StringUtils.isBlank(ministryOrStateId)) {
+          throw new ProjectCommonException(
+                  ResponseCode.targetOrgNoMinistryStateId,
+                  ResponseCode.targetOrgNoMinistryStateId.getErrorMessage(),
+                  ResponseCode.CLIENT_ERROR.getResponseCode()
+          );
+        }
+        if (!requestingUserOrgId.equalsIgnoreCase(ministryOrStateId)) {
           throw new ProjectCommonException(
                   ResponseCode.userNoAuthorityOverTargetOrg,
                   ResponseCode.userNoAuthorityOverTargetOrg.getErrorMessage(),
@@ -272,4 +276,5 @@ public class RoleAssignmentValidator {
       );
     }
   }
+
 }

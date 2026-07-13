@@ -743,6 +743,9 @@ public final class JsonKey {
     public static final String ORG_TYPE_LIST = "orgTypeList";
     public static final int DEFAULT_ORG_NAME_MAX_LENGTH = 100;
     public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
+    public static final String PUBLIC_UPPER_CASE = "PUBLIC";
+    public static final String LEADER_SUFFIX = "_LEADER";
+    public static final String ADMIN_ROLE_SUFFIXES = "admin_role_suffixes";
     public static final String IS_NGO = "isNgo";
     public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
 
