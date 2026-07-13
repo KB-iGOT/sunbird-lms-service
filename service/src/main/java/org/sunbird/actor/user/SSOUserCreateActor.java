@@ -655,9 +655,6 @@ public class SSOUserCreateActor extends UserBaseActor {
         }
       }
     }
-    if (StringUtils.isNotBlank(organisationId)) {
-      userMap.put(JsonKey.ROOT_ORG_ID, organisationId);
-    }
   }
 
   private String getStringValue(Map<String, Object> data, String key) {
