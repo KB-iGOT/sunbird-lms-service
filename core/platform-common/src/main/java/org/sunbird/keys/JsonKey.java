@@ -224,6 +224,7 @@ public final class JsonKey {
     public static final String ROLLUP = "rollup";
     public static final String ROOT_ORG = "rootOrg";
     public static final String ROOT_ORG_ID = "rootOrgId";
+    public static final String ROOTORG_ID = "rootorgid";
     public static final String SEARCH_TOP_N = "searchTopN";
     public static final String SIZE = "size";
     public static final String SLUG = "slug";
@@ -576,6 +577,7 @@ public final class JsonKey {
     public static final String IS_TENANT = "isTenant";
     public static final String ORG_LOCATION = "orgLocation";
     public static final String IS_SCHOOL = "isSchool";
+    public static final String IS_AUTONOMOUS_NGO = "isAutonomousNgo";
     public static final String ORGANISATION_TYPE = "organisationType";
     public static final String SYNC = "sync";
     public static final String ES_SYNC_RESPONSE = "esSyncResponse";
@@ -624,6 +626,7 @@ public final class JsonKey {
     public static final String ORG_SUB_TYPE = "organisationSubType";
     public static final String ORG_TYPE_CONFIG = "orgTypeConfig";
     public static final String ORG_TYPE_SCHOOL = "school";
+    public static final String ORG_TYPE_NGO = "ngo";
     public static final String ORG_TYPE_BOARD = "board";
     public static final String FORCE_MIGRATION = "forceMigration";
     public static final String SOFT_DELETE_PREVIOUS_ORG = "softDeleteOldOrg";
@@ -741,6 +744,14 @@ public final class JsonKey {
     public static final String ORG_TYPE_LIST = "orgTypeList";
     public static final int DEFAULT_ORG_NAME_MAX_LENGTH = 100;
     public static final String ORG_DESCRIPTION_MAX_LENGTH = "org_description_max_length";
+    public static final String PUBLIC_UPPER_CASE = "PUBLIC";
+    public static final String LEADER_SUFFIX = "_LEADER";
+    public static final String ADMIN_ROLE_SUFFIXES = "admin_role_suffixes";
+    public static final String IS_NGO = "isNgo";
+    public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
+    public static final String VOLUNTEER = "VOLUNTEER";
+
+
 
 
     private JsonKey() {

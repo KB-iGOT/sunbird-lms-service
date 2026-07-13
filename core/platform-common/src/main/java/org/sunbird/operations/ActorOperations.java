@@ -23,6 +23,7 @@ public enum ActorOperations {
   GET_USER_PROFILE_V4("getUserProfileV4", "USRRED"),
   GET_USER_LOGIN_V1("getUserLoggedInDetails", "USRRED"),
   GET_USER_PROFILE_V5("getUserProfileV5", "USRRED"),
+  GET_VOLUNTEER_USER_PROFILE_V1("getVolunteerUserProfileV1", "USRRED"),
 
   UPDATE_USER_INFO_ELASTIC("updateUserInfoToElastic", "UBKGUPD"),
 
@@ -35,6 +36,7 @@ public enum ActorOperations {
   PROCESS_BULK_UPLOAD("processBulkUpload", "BLKUPLD"),
   ASSIGN_ROLES("assignRoles", "ROLUPD"),
   ASSIGN_ROLES_V2("assignRolesV2", "ROLUPD"),
+  ASSIGN_PUBLIC_ROLE("assignPublicRole", "ROLUPD"),
   UNBLOCK_USER("unblockUser", "USRUNBLOK"),
 
   UPDATE_USER_ORG_ES("updateUserOrgES", "UOBKGUPD"),
