@@ -64,6 +64,9 @@ public class KeyCloakServiceImpl implements SSOManager {
     }
   }
 
+  private static final int UPDATE_PASSWORD_MAX_ATTEMPTS = 3;
+  private static final long UPDATE_PASSWORD_RETRY_DELAY_MS = 500;
+
   @Override
   public boolean updatePassword(String userId, String password, RequestContext context) {
     try {
@@ -71,12 +74,44 @@ public class KeyCloakServiceImpl implements SSOManager {
       System.out.println("KeycloakServiceImpl: fedUserId:: " + fedUserId);
       UserResource ur = keycloak.realm(KeyCloakConnectionProvider.SSO_REALM).users().get(fedUserId);
 
-      // Check if user exists by trying to get user representation
+      // Newly created federated users can briefly 404 on lookup right after creation,
+      // so retry a few times before giving up.
       UserRepresentation userRep = null;
-      try {
-        userRep = ur.toRepresentation();
-      } catch (Exception e) {
-        logger.error(context, "updatePassword: User not found with fedUserId: " + fedUserId, e);
+      Exception lastException = null;
+      for (int attempt = 1; attempt <= UPDATE_PASSWORD_MAX_ATTEMPTS; attempt++) {
+        try {
+          userRep = ur.toRepresentation();
+          lastException = null;
+          break;
+        } catch (Exception e) {
+          lastException = e;
+          if (attempt < UPDATE_PASSWORD_MAX_ATTEMPTS) {
+            logger.info(
+                context,
+                "updatePassword: attempt "
+                    + attempt
+                    + " failed to fetch user with fedUserId: "
+                    + fedUserId
+                    + ", retrying");
+            try {
+              Thread.sleep(UPDATE_PASSWORD_RETRY_DELAY_MS);
+            } catch (InterruptedException ie) {
+              Thread.currentThread().interrupt();
+              break;
+            }
+          }
+        }
+      }
+
+      if (lastException != null) {
+        logger.error(
+            context,
+            "updatePassword: User not found with fedUserId: "
+                + fedUserId
+                + " after "
+                + UPDATE_PASSWORD_MAX_ATTEMPTS
+                + " attempts",
+            lastException);
         return false;
       }
 
