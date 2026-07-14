@@ -214,7 +214,6 @@ public class UserServiceImpl implements UserService {
   @Override
   public Response userLookUpByKey(
       String key, String value, List<String> fields, RequestContext context) {
-    logger.info(context, "UserServiceImpl:userLookUpByKey: key = " + key + ", value = " + value + ", fields = " + fields);
     Response response;
     Map<String, List<String>> userRoleMap = new HashMap<>();
     if (JsonKey.ID.equalsIgnoreCase(key)) {
@@ -235,7 +234,6 @@ public class UserServiceImpl implements UserService {
     }
 
     List<Map<String, Object>> users = ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE));
-    logger.info(context, "UserServiceImpl:userLookUpByKey: resolved user count = " + users.size());
     Response cassandraResponse = cassandraOperation.getRecordsByProperties(
             JsonKey.SUNBIRD, JsonKey.USER_ROLES,
             Collections.singletonMap(JsonKey.USERID, users.stream()
@@ -249,11 +247,8 @@ public class UserServiceImpl implements UserService {
                     userRoleMap.computeIfAbsent((String) userRole.get(JsonKey.USER_ID), k -> new ArrayList<>())
                             .add((String) userRole.get(JsonKey.ROLE))
             );
-    logger.info(context, "UserServiceImpl:userLookUpByKey: userRoleMap built for "
-            + userRoleMap.size() + " user(s) = " + userRoleMap);
 
     if (fields.contains(JsonKey.ROLES)) {
-      logger.info(context, "UserServiceImpl:userLookUpByKey: fields contains ROLES, attaching roles + decrypting");
 
       ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE)).stream()
               .forEach(user -> {
@@ -263,13 +258,10 @@ public class UserServiceImpl implements UserService {
                 UserUtility.decryptUserDataFrmES(user);
               });
     } else {
-      logger.info(context, "UserServiceImpl:userLookUpByKey: fields does not contain ROLES, decrypting only");
       ((List<Map<String, Object>>) response.getResult().get(JsonKey.RESPONSE)).stream()
               .forEach(UserUtility::decryptUserDataFrmES);
     }
 
-    logger.info(context, "UserServiceImpl:userLookUpByKey: fields.contains(ROOTORG_ID) = "
-            + fields.contains(JsonKey.ROOTORG_ID) + ", ROOTORG_ID key = " + JsonKey.ROOTORG_ID);
     if (fields.contains(JsonKey.ROOTORG_ID)) {
       // Validate volunteer users against org status
       Map<String, Map<String, Object>> orgMap = users.stream()
@@ -287,15 +279,10 @@ public class UserServiceImpl implements UserService {
 
         List<String> roles = userRoleMap.get(userId);
 
-        logger.info(context, "UserServiceImpl:userLookUpByKey: checking org status for userId = " + userId
-                + ", orgId = " + orgId + ", roles = " + roles);
-
         if (roles != null && roles.contains(JsonKey.VOLUNTEER)) {
           Map<String, Object> orgDao = orgMap.get(orgId);
 
           if (MapUtils.isEmpty(orgDao) || Integer.valueOf(0).equals(orgDao.get(JsonKey.STATUS))) {
-            logger.info(context, "UserServiceImpl:userLookUpByKey: blocking VOLUNTEER userId = " + userId
-                    + " because orgId = " + orgId + " is deactivated or missing");
             throw new ProjectCommonException(
                     ResponseCode.invalidParameter,
                     ResponseCode.disbledUser.getErrorMessage(),
@@ -304,8 +291,6 @@ public class UserServiceImpl implements UserService {
         }
       });
     }
-    logger.info(context, "UserServiceImpl:userLookUpByKey: returning response for key = " + key + ", value = " + value
-            + ", response = " + response.getResult() + ", responseObject = " + response);
     return response;
   }
 
