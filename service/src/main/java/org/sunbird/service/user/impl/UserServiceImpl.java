@@ -297,7 +297,7 @@ public class UserServiceImpl implements UserService {
             logger.info(context, "UserServiceImpl:userLookUpByKey: blocking VOLUNTEER userId = " + userId
                     + " because orgId = " + orgId + " is deactivated or missing");
             throw new ProjectCommonException(
-                    ResponseCode.invalidParameter,
+                    ResponseCode.disbledUser,
                     ResponseCode.disbledUser.getErrorMessage(),
                     ResponseCode.CLIENT_ERROR.getResponseCode());
           }
