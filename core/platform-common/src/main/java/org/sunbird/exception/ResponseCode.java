@@ -45,6 +45,7 @@ public enum ResponseCode {
       ResponseMessage.Key.MAX_ALLOWED_SIZE_LIMIT_EXCEED,
       ResponseMessage.Message.MAX_ALLOWED_SIZE_LIMIT_EXCEED),
   inactiveUser(ResponseMessage.Key.INACTIVE_USER, ResponseMessage.Message.INACTIVE_USER),
+  disbledUser(ResponseMessage.Key.DISABLED_USER, ResponseMessage.Message.DISABLED_USER),
   invalidValue(ResponseMessage.Key.INVALID_VALUE, ResponseMessage.Message.INVALID_VALUE),
   invalidParameter(
       ResponseMessage.Key.INVALID_PARAMETER, ResponseMessage.Message.INVALID_PARAMETER),
