@@ -751,8 +751,8 @@ public final class JsonKey {
     public static final String IS_NGO = "isNgo";
     public static final String X_AUTH_USER_ORG_ID = "x-authenticated-user-orgid";
     public static final String VOLUNTEER = "VOLUNTEER";
-
-
+    public static final String PIN_CODE_CAMEL = "pinCode";
+    public static final String PINCODE = "pincode";
 
 
     private JsonKey() {

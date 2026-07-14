@@ -451,7 +451,8 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void createBasisProfileDetailsByAdmin(Request actorMessage) throws JsonProcessingException {
     Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetails = new HashMap<>();
-    Map<String, Object> employmentDetails = Map.of(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
+    Map<String, Object> employmentDetails = new HashMap<>();
+    employmentDetails.put(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
     Map<String, Object> additionalProperties = new HashMap<>();
     List<Map<String, Object>> professionalDetailsList = new ArrayList<>();
     Map<String, Object> professionalDetails = new HashMap<>();
@@ -465,6 +466,8 @@ public class SSOUserCreateActor extends UserBaseActor {
           Map.of());
       if (!personalDetailsRequest.isEmpty()) {
         personalDetailsRequest.forEach((key, value) -> addIfNotEmpty(personalDetails, key, value));
+
+        addIfNotEmpty(employmentDetails, JsonKey.PIN_CODE_CAMEL, personalDetailsRequest.get(JsonKey.PINCODE));
 
         Object tags = personalDetails.remove(JsonKey.TAGS);
         if (tags instanceof List && !((List<?>) tags).isEmpty()) {
