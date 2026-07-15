@@ -660,18 +660,11 @@ public class SSOUserCreateActor extends UserBaseActor {
       Object orgType = organisation.get(JsonKey.ORG_TYPE);
       if (orgType instanceof Number) {
         int organisationType = ((Number) orgType).intValue();
-        logger.info(
-                actorMessage.getRequestContext(),
-                "SSOUserCreateActor:applyOrganisationRoleAndRootOrg: orgTypeConfig Ngo : "
-                        + OrgTypeValidator.getInstance().getTypeByValue(organisationType));
         if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
                 OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
           userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
         }
       }
-    }
-    if (StringUtils.isNotBlank(organisationId)) {
-      userMap.put(JsonKey.ROOT_ORG_ID, organisationId);
     }
   }
 
