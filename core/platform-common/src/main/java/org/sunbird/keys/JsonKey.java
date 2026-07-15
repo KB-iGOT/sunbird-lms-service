@@ -753,6 +753,7 @@ public final class JsonKey {
     public static final String VOLUNTEER = "VOLUNTEER";
     public static final String PIN_CODE_CAMEL = "pinCode";
     public static final String PINCODE = "pincode";
+    public static final String NGO_BULK_USER_CREATE = "ngoBulkUserCreate";
 
 
     private JsonKey() {

@@ -106,6 +106,7 @@ public enum ActorOperations {
   SELF_REGISTER_USERS_V5("selfRegisterUserV5", "USRCRT"),
   CUSTOM_REGISTER_USER_V5("customRegisterUserV5", "USRCRT"),
   BULK_CREATE_USER_V5("bulkCreateUserV5", "USRCRT"),
+  NGO_BULK_CREATE_USER_V5("ngoBulkCreateUserV5", "USRCRT"),
   PARICHAY_CREATE_USER_V5("parichayCreateUserV5", "USRCRT"),
   OAUTH_CREATE_USER_V5("oAuthCreateUserV5", "USRCRT"),
   CREATE_SUPPORT_USER_V5("supportCreateUserV5", "USRCRT"),

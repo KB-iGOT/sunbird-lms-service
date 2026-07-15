@@ -278,12 +278,12 @@ public class UserController extends BaseController {
         Map<String, Object> userMap = (Map<String, Object>) requestMap.get(JsonKey.REQUEST);
         Optional<String> authUserOrgId =
                 httpRequest.getHeaders().get(JsonKey.X_AUTH_USER_ORG_ID);
-        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.BULK_USER_CREATE);
+        userMap.put(JsonKey.SOURCE_CREATION_TYPE, JsonKey.NGO_BULK_USER_CREATE);
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode requestMapJsonNode = objectMapper.valueToTree(requestMap);
         return handleRequest(
                 ssoUserCreateActor,
-                ActorOperations.BULK_CREATE_USER_V5.getValue(),
+                ActorOperations.NGO_BULK_CREATE_USER_V5.getValue(),
                 requestMapJsonNode,
                 req -> {
                     Request request = (Request) req;
