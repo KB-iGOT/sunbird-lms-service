@@ -66,9 +66,6 @@ public class KeyCloakServiceImpl implements SSOManager {
 
   @Override
   public boolean updatePassword(String userId, String password, RequestContext context) {
-    System.out.println("KeycloakServiceImpl: updatePassword called for userId:: " + userId);
-    System.out.println("KeycloakServiceImpl: keycloak client instance:: " + keycloak);
-    System.out.println("KeycloakServiceImpl: SSO_REALM:: " + KeyCloakConnectionProvider.SSO_REALM);
     try {
       String fedUserId = getFederatedUserId(userId);
       System.out.println("KeycloakServiceImpl: fedUserId:: " + fedUserId);
@@ -78,19 +75,12 @@ public class KeyCloakServiceImpl implements SSOManager {
       UserRepresentation userRep = null;
       try {
         userRep = ur.toRepresentation();
-        System.out.println(
-            "KeycloakServiceImpl: UserRepresentation:: id=" + userRep.getId()
-                + ", username=" + userRep.getUsername()
-                + ", enabled=" + userRep.isEnabled());
       } catch (Exception e) {
-        System.out.println("KeycloakServiceImpl: toRepresentation() failed with:: " + e);
-        e.printStackTrace();
         logger.error(context, "updatePassword: User not found with fedUserId: " + fedUserId, e);
         return false;
       }
 
       if (userRep == null) {
-        System.out.println("KeycloakServiceImpl: userRep is null for fedUserId:: " + fedUserId);
         logger.error(
             context,
             "updatePassword: User representation is null for fedUserId: " + fedUserId,
@@ -102,24 +92,13 @@ public class KeyCloakServiceImpl implements SSOManager {
       cr.setType(CredentialRepresentation.PASSWORD);
       cr.setValue(password);
       cr.setTemporary(false); // Set password as permanent, not temporary
-      System.out.println(
-          "KeycloakServiceImpl: CredentialRepresentation before resetPassword:: type="
-              + cr.getType() + ", temporary=" + cr.isTemporary()
-              + ", valueBlank=" + StringUtils.isBlank(cr.getValue()));
 
       // For Keycloak 24.0.4, ensure the credential representation is properly configured
       ur.resetPassword(cr);
-      System.out.println(
-          "KeycloakServiceImpl: resetPassword() call completed without exception for userId:: "
-              + userId);
 
       logger.info(context, "updatePassword: Password updated successfully for userId: " + userId);
       return true;
     } catch (Exception e) {
-      System.out.println(
-          "KeycloakServiceImpl: updatePassword outer exception for userId:: " + userId
-              + ", exception:: " + e);
-      e.printStackTrace();
       logger.error(
           context, "updatePassword: Exception occurred for userId: " + userId + ", error: ", e);
     }
