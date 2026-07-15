@@ -56,7 +56,8 @@ public class ResetPasswordActor extends BaseActor {
     userMap.put(JsonKey.USERNAME, userMap.get(JsonKey.USERNAME));
     userMap.put(JsonKey.REDIRECT_URI, resetPasswordService.getSunbirdLoginUrl());
     String url =
-        resetPasswordService.getUserRequiredActionLink(userMap, false, request.getRequestContext());
+        resetPasswordService.getUserRequiredActionLink(
+            user.getUserId(), userMap, false, request.getRequestContext());
     userMap.put(JsonKey.SET_PASSWORD_LINK, url);
     if (StringUtils.isNotBlank(url)) {
       logger.debug(
