@@ -11,6 +11,7 @@ import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
 import org.sunbird.dao.user.UserDao;
@@ -341,6 +342,9 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> userMap = (Map<String, Object>) actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+      if (StringUtils.isNotBlank((String) userMap.get(JsonKey.ORG_NAME))) {
+        populatePublicRolesBasedOnOrgName(actorMessage, userMap);
+      }
     } else {
       checkIfMDOLeaderExist(userMap, actorMessage, rootOrgId);
     }
@@ -546,6 +550,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
+    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createBulkUsers: starts : " + actorMessage.getRequest());
     populatePublicRoles(actorMessage);
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
@@ -570,6 +575,94 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
     userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+
+    if (StringUtils.isNotBlank((String) userMap.get(JsonKey.ORG_NAME))) {
+      populatePublicRolesBasedOnOrgName(actorMessage, userMap);
+    }
+  }
+
+  private boolean populatePublicRolesBasedOnOrgName(Request actorMessage, Map<String, Object> userMap) {
+    String orgName = (String) userMap.get(JsonKey.ORG_NAME);
+    if (StringUtils.isBlank(orgName)) {
+      return false;
+    }
+    orgName = orgName.trim();
+
+    Map<String, Object> searchQueryMap = new HashMap<>();
+    Map<String, Object> filters = new HashMap<>();
+    filters.put(JsonKey.ORG_NAME, orgName);
+    searchQueryMap.put(JsonKey.FILTERS, filters);
+    SearchDTO searchDTO = ElasticSearchHelper.createSearchDTO(searchQueryMap);
+    try {
+      Map<String, Object> esResponse =
+              (Map<String, Object>)
+                      ElasticSearchHelper.getResponseFromFuture(
+                              orgService.searchOrg(searchDTO, actorMessage.getRequestContext()));
+      if (MapUtils.isNotEmpty(esResponse)) {
+        List<Map<String, Object>> content = (List<Map<String, Object>>) esResponse.get(JsonKey.CONTENT);
+        if (CollectionUtils.isNotEmpty(content)) {
+          Map<String, Object> organisation = content.get(0);
+          String organisationId = (String) organisation.get(JsonKey.ID);
+          String authOrganisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+          Map<String, Object> authOrganisation = null;
+          if (StringUtils.isNotBlank(authOrganisationId)) {
+            authOrganisation = orgService.getOrgById(authOrganisationId, actorMessage.getRequestContext());
+          }
+
+          /*if (!isSameMinistryOrState(authOrganisation, organisation)) {
+            throw new ProjectCommonException(
+                    ResponseCode.errorConflictingRootOrgId,
+                    ResponseCode.errorConflictingRootOrgId.getErrorMessage(),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
+          }*/
+
+          applyOrganisationRoleAndRootOrg(actorMessage, userMap, organisation, organisationId);
+          return true;
+        }
+      }
+    } catch (Exception ex) {
+      logger.error(
+              actorMessage.getRequestContext(),
+              "SSOUserCreateActor:populatePublicRolesBasedOnOrgName: Exception while fetching organisation by orgName",
+              ex);
+    }
+    return false;
+  }
+
+  private boolean isSameMinistryOrState(Map<String, Object> authOrganisation, Map<String, Object> organisation) {
+    if (MapUtils.isEmpty(authOrganisation) || MapUtils.isEmpty(organisation)) {
+      return true;
+    }
+
+    String authMinistryStateId = getStringValue(authOrganisation, JsonKey.MINISTRY_STATE_ID);
+    String authMinistryStateName = getStringValue(authOrganisation, JsonKey.MINISTRY_STATE_NAME);
+    String organisationMinistryStateId = getStringValue(organisation, JsonKey.MINISTRY_STATE_ID);
+    String organisationMinistryStateName = getStringValue(organisation, JsonKey.MINISTRY_STATE_NAME);
+
+    return StringUtils.equalsIgnoreCase(authMinistryStateId, organisationMinistryStateId)
+            || StringUtils.equalsIgnoreCase(authMinistryStateName, organisationMinistryStateName);
+  }
+
+  private void applyOrganisationRoleAndRootOrg(
+          Request actorMessage, Map<String, Object> userMap, Map<String, Object> organisation, String organisationId) {
+    if (organisation != null && organisation.get(JsonKey.ORG_TYPE) != null) {
+      Object orgType = organisation.get(JsonKey.ORG_TYPE);
+      if (orgType instanceof Number) {
+        int organisationType = ((Number) orgType).intValue();
+        if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
+                OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
+          userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+        }
+      }
+    }
+  }
+
+  private String getStringValue(Map<String, Object> data, String key) {
+    if (MapUtils.isEmpty(data)) {
+      return StringUtils.EMPTY;
+    }
+    Object value = data.get(key);
+    return value == null ? StringUtils.EMPTY : String.valueOf(value).trim();
   }
 
   private void validateRoleAssignment(Request actorMessage, String targetOrgId) {
