@@ -35,11 +35,6 @@ public class KeyCloakServiceImpl implements SSOManager {
 
   private static PublicKey SSO_PUBLIC_KEY = null;
 
-  // Newly created users may not be immediately resolvable via the Keycloak
-  // federation provider right after the Cassandra insert, so retry briefly.
-  private static final int USER_LOOKUP_MAX_ATTEMPTS = 3;
-  private static final long USER_LOOKUP_RETRY_DELAY_MS = 500;
-
   public PublicKey getPublicKey() {
     if (null == SSO_PUBLIC_KEY) {
       SSO_PUBLIC_KEY = toPublicKey(System.getenv(JsonKey.SSO_PUBLIC_KEY));
@@ -79,39 +74,19 @@ public class KeyCloakServiceImpl implements SSOManager {
       System.out.println("KeycloakServiceImpl: fedUserId:: " + fedUserId);
       UserResource ur = keycloak.realm(KeyCloakConnectionProvider.SSO_REALM).users().get(fedUserId);
 
-      // Check if user exists by trying to get user representation, retrying briefly since
-      // a just-created user may not be resolvable via the federation provider immediately.
+      // Check if user exists by trying to get user representation
       UserRepresentation userRep = null;
-      for (int attempt = 1; attempt <= USER_LOOKUP_MAX_ATTEMPTS; attempt++) {
-        try {
-          userRep = ur.toRepresentation();
-          System.out.println(
-              "KeycloakServiceImpl: UserRepresentation:: id=" + userRep.getId()
-                  + ", username=" + userRep.getUsername()
-                  + ", enabled=" + userRep.isEnabled()
-                  + ", attempt=" + attempt);
-          break;
-        } catch (Exception e) {
-          System.out.println(
-              "KeycloakServiceImpl: toRepresentation() failed on attempt " + attempt
-                  + "/" + USER_LOOKUP_MAX_ATTEMPTS + " with:: " + e);
-          e.printStackTrace();
-          if (attempt == USER_LOOKUP_MAX_ATTEMPTS) {
-            logger.error(
-                context, "updatePassword: User not found with fedUserId: " + fedUserId, e);
-            return false;
-          }
-          try {
-            Thread.sleep(USER_LOOKUP_RETRY_DELAY_MS * attempt);
-          } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-            logger.error(
-                context,
-                "updatePassword: Interrupted while retrying lookup for fedUserId: " + fedUserId,
-                ie);
-            return false;
-          }
-        }
+      try {
+        userRep = ur.toRepresentation();
+        System.out.println(
+            "KeycloakServiceImpl: UserRepresentation:: id=" + userRep.getId()
+                + ", username=" + userRep.getUsername()
+                + ", enabled=" + userRep.isEnabled());
+      } catch (Exception e) {
+        System.out.println("KeycloakServiceImpl: toRepresentation() failed with:: " + e);
+        e.printStackTrace();
+        logger.error(context, "updatePassword: User not found with fedUserId: " + fedUserId, e);
+        return false;
       }
 
       if (userRep == null) {
