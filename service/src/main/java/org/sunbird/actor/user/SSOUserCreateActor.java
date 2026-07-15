@@ -88,6 +88,9 @@ public class SSOUserCreateActor extends UserBaseActor {
       case "bulkCreateUserV5":
         createBulkUsers(request);
         break;
+      case "ngoBulkCreateUserV5":
+        createNgoBulkUsers(request);
+        break;
       default:
         onReceiveUnsupportedOperation();
     }
@@ -342,9 +345,6 @@ public class SSOUserCreateActor extends UserBaseActor {
     Map<String, Object> userMap = (Map<String, Object>) actorMessage.getRequest();
     if (userMap.get(JsonKey.ROLES) == null || ((List<String>) userMap.get(JsonKey.ROLES)).isEmpty()) {
       userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
-      if (StringUtils.isNotBlank((String) userMap.get(JsonKey.ORG_NAME))) {
-        populatePublicRolesBasedOnOrgName(actorMessage, userMap);
-      }
     } else {
       checkIfMDOLeaderExist(userMap, actorMessage, rootOrgId);
     }
@@ -564,6 +564,13 @@ public class SSOUserCreateActor extends UserBaseActor {
     createSSOUser(actorMessage);
   }
 
+  private void createNgoBulkUsers(Request actorMessage) throws JsonProcessingException {
+    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createBulkUsers: starts : " + actorMessage.getRequest());
+    populateVolunteerRoles(actorMessage, actorMessage.getRequest());
+    updateMinistryDetailsForUsers(actorMessage);
+    createSSOUser(actorMessage);
+  }
+
   private void updateMinistryDetailsForUsers(Request actorMessage) throws JsonProcessingException {
     Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetailsMap = (Map<String, Object>) userMap.get(JsonKey.PROFILE_DETAILS);
@@ -583,13 +590,9 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
     userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
-
-    if (StringUtils.isNotBlank((String) userMap.get(JsonKey.ORG_NAME))) {
-      populatePublicRolesBasedOnOrgName(actorMessage, userMap);
-    }
   }
 
-  private boolean populatePublicRolesBasedOnOrgName(Request actorMessage, Map<String, Object> userMap) {
+  private boolean populateVolunteerRoles(Request actorMessage, Map<String, Object> userMap) {
     String orgName = (String) userMap.get(JsonKey.ORG_NAME);
     if (StringUtils.isBlank(orgName)) {
       return false;
@@ -617,12 +620,12 @@ public class SSOUserCreateActor extends UserBaseActor {
             authOrganisation = orgService.getOrgById(authOrganisationId, actorMessage.getRequestContext());
           }
 
-          /*if (!isSameMinistryOrState(authOrganisation, organisation)) {
+          if (!isSameMinistryOrState(authOrganisation, organisation)) {
             throw new ProjectCommonException(
                     ResponseCode.errorConflictingRootOrgId,
                     ResponseCode.errorConflictingRootOrgId.getErrorMessage(),
                     ResponseCode.CLIENT_ERROR.getResponseCode());
-          }*/
+          }
 
           applyOrganisationRoleAndRootOrg(actorMessage, userMap, organisation, organisationId);
           return true;
@@ -657,11 +660,18 @@ public class SSOUserCreateActor extends UserBaseActor {
       Object orgType = organisation.get(JsonKey.ORG_TYPE);
       if (orgType instanceof Number) {
         int organisationType = ((Number) orgType).intValue();
+        logger.info(
+                actorMessage.getRequestContext(),
+                "SSOUserCreateActor:applyOrganisationRoleAndRootOrg: orgTypeConfig Ngo : "
+                        + OrgTypeValidator.getInstance().getTypeByValue(organisationType));
         if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
                 OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
           userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
         }
       }
+    }
+    if (StringUtils.isNotBlank(organisationId)) {
+      userMap.put(JsonKey.ROOT_ORG_ID, organisationId);
     }
   }
 
