@@ -469,6 +469,11 @@ public class SSOUserCreateActor extends UserBaseActor {
 
         addIfNotEmpty(employmentDetails, JsonKey.PIN_CODE_CAMEL, personalDetailsRequest.get(JsonKey.PINCODE));
 
+        Object existingAdditionalProperties = personalDetailsRequest.get(JsonKey.ADDITIONAL_PROPERTIES);
+        if (existingAdditionalProperties instanceof Map && !((Map<?, ?>) existingAdditionalProperties).isEmpty()) {
+          additionalProperties.putAll((Map<String, Object>) existingAdditionalProperties);
+        }
+
         Object tags = personalDetails.remove(JsonKey.TAGS);
         if (tags instanceof List && !((List<?>) tags).isEmpty()) {
           additionalProperties.put(JsonKey.TAGS, tags);
