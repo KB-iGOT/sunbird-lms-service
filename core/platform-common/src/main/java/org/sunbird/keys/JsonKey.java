@@ -756,7 +756,6 @@ public final class JsonKey {
     public static final String NGO_BULK_USER_CREATE = "ngoBulkUserCreate";
     public static final String TAG = "tag";
 
-
     private JsonKey() {
     }
 }
