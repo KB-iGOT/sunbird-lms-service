@@ -88,12 +88,12 @@ public class KeycloakRequiredActionLinkUtil {
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
             + SUNBIRD_KEYCLOAK_REQD_ACTION_LINK;
 
-    logger.info(
-        context, "KeycloakRequiredActionLinkUtil:generateLink: complete URL " + url);
-    logger.info(
-        context,
-        "KeycloakRequiredActionLinkUtil:generateLink: request body "
-            + mapper.writeValueAsString(request));
+    // logger.info(
+    //     context, "KeycloakRequiredActionLinkUtil:generateLink: complete URL " + url);
+    // logger.info(
+    //     context,
+    //     "KeycloakRequiredActionLinkUtil:generateLink: request body "
+    //         + mapper.writeValueAsString(request));
 
     String response =
         HttpClientUtil.post(url, mapper.writeValueAsString(request), headers, context);
