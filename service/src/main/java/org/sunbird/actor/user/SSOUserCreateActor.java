@@ -476,7 +476,7 @@ public class SSOUserCreateActor extends UserBaseActor {
 
         Object tags = personalDetails.remove(JsonKey.TAGS);
         if (tags instanceof List && !((List<?>) tags).isEmpty()) {
-          additionalProperties.put(JsonKey.TAGS, tags);
+          additionalProperties.put(JsonKey.TAG, tags);
         }
       }
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_GROUP_STATUS,
