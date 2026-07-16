@@ -53,7 +53,7 @@ public class KeyManager {
   }
 
   public static KeyData getPublicKey(String keyId) {
-    System.out.println("KeyManager:getPublicKey::" + keyId + " : " + keyMap.get(keyId));
+    // System.out.println("KeyManager:getPublicKey::" + keyId + " : " + keyMap.get(keyId));
     return keyMap.get(keyId);
   }
 
