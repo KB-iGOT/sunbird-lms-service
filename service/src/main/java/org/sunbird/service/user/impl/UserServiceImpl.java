@@ -284,7 +284,7 @@ public class UserServiceImpl implements UserService {
 
           if (MapUtils.isEmpty(orgDao) || Integer.valueOf(0).equals(orgDao.get(JsonKey.STATUS))) {
             throw new ProjectCommonException(
-                    ResponseCode.invalidParameter,
+                    ResponseCode.disbledUser,
                     ResponseCode.disbledUser.getErrorMessage(),
                     ResponseCode.CLIENT_ERROR.getResponseCode());
           }

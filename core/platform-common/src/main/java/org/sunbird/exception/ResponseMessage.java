@@ -36,7 +36,7 @@ public interface ResponseMessage {
     String RESOURCE_NOT_FOUND = "Requested {0} resource not found";
     String MAX_ALLOWED_SIZE_LIMIT_EXCEED = "Max allowed size is {0}";
     String INACTIVE_USER = "User is Inactive. Please make it active to proceed.";
-    String DISABLED_USER = "User account is disabled.";
+    String DISABLED_USER = "Organisation is deactivated, hence the user is restricted to login.";
     String INVALID_VALUE = "Invalid {0}: {1}. Valid values are: {2}.";
     String INVALID_PARAMETER = "Please provide valid {0}.";
     String INVALID_LOCATION_DELETE_REQUEST =
