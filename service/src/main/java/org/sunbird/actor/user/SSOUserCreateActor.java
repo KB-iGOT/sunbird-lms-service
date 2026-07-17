@@ -11,6 +11,7 @@ import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.actor.user.validator.UserRequestValidator;
 import org.sunbird.common.ElasticSearchHelper;
 import org.sunbird.dao.user.UserDao;
@@ -86,6 +87,9 @@ public class SSOUserCreateActor extends UserBaseActor {
         break;
       case "bulkCreateUserV5":
         createBulkUsers(request);
+        break;
+      case "ngoBulkCreateUserV5":
+        createNgoBulkUsers(request);
         break;
       default:
         onReceiveUnsupportedOperation();
@@ -447,7 +451,8 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void createBasisProfileDetailsByAdmin(Request actorMessage) throws JsonProcessingException {
     Map<String, Object> userMap = actorMessage.getRequest();
     Map<String, Object> profileDetails = new HashMap<>();
-    Map<String, Object> employmentDetails = Map.of(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
+    Map<String, Object> employmentDetails = new HashMap<>();
+    employmentDetails.put(JsonKey.DEPARTMENT_NAME, userMap.getOrDefault(JsonKey.CHANNEL, ""));
     Map<String, Object> additionalProperties = new HashMap<>();
     List<Map<String, Object>> professionalDetailsList = new ArrayList<>();
     Map<String, Object> professionalDetails = new HashMap<>();
@@ -462,9 +467,16 @@ public class SSOUserCreateActor extends UserBaseActor {
       if (!personalDetailsRequest.isEmpty()) {
         personalDetailsRequest.forEach((key, value) -> addIfNotEmpty(personalDetails, key, value));
 
+        addIfNotEmpty(employmentDetails, JsonKey.PIN_CODE_CAMEL, personalDetailsRequest.get(JsonKey.PINCODE));
+
+        Object existingAdditionalProperties = personalDetailsRequest.get(JsonKey.ADDITIONAL_PROPERTIES);
+        if (existingAdditionalProperties instanceof Map && !((Map<?, ?>) existingAdditionalProperties).isEmpty()) {
+          additionalProperties.putAll((Map<String, Object>) existingAdditionalProperties);
+        }
+
         Object tags = personalDetails.remove(JsonKey.TAGS);
         if (tags instanceof List && !((List<?>) tags).isEmpty()) {
-          additionalProperties.put(JsonKey.TAGS, tags);
+          additionalProperties.put(JsonKey.TAG, tags);
         }
       }
       addIfNotEmpty(profileDetails, JsonKey.PROFILE_GROUP_STATUS,
@@ -546,7 +558,15 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
+    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createBulkUsers: starts : " + actorMessage.getRequest());
     populatePublicRoles(actorMessage);
+    updateMinistryDetailsForUsers(actorMessage);
+    createSSOUser(actorMessage);
+  }
+
+  private void createNgoBulkUsers(Request actorMessage) throws JsonProcessingException {
+    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createBulkUsers: starts : " + actorMessage.getRequest());
+    populateVolunteerRoles(actorMessage, actorMessage.getRequest());
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
   }
@@ -570,6 +590,90 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void populatePublicRoles(Request actorMessage) {
     Map<String, Object> userMap = actorMessage.getRequest();
     userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+  }
+
+  private boolean populateVolunteerRoles(Request actorMessage, Map<String, Object> userMap) {
+    String orgName = (String) userMap.get(JsonKey.ORG_NAME);
+    if (StringUtils.isBlank(orgName)) {
+      return false;
+    }
+    orgName = orgName.trim();
+
+    Map<String, Object> searchQueryMap = new HashMap<>();
+    Map<String, Object> filters = new HashMap<>();
+    filters.put(JsonKey.ORG_NAME, orgName);
+    searchQueryMap.put(JsonKey.FILTERS, filters);
+    SearchDTO searchDTO = ElasticSearchHelper.createSearchDTO(searchQueryMap);
+    try {
+      Map<String, Object> esResponse =
+              (Map<String, Object>)
+                      ElasticSearchHelper.getResponseFromFuture(
+                              orgService.searchOrg(searchDTO, actorMessage.getRequestContext()));
+      if (MapUtils.isNotEmpty(esResponse)) {
+        List<Map<String, Object>> content = (List<Map<String, Object>>) esResponse.get(JsonKey.CONTENT);
+        if (CollectionUtils.isNotEmpty(content)) {
+          Map<String, Object> organisation = content.get(0);
+          String organisationId = (String) organisation.get(JsonKey.ID);
+          String authOrganisationId = (String) userMap.get(JsonKey.X_AUTH_USER_ORG_ID);
+          Map<String, Object> authOrganisation = null;
+          if (StringUtils.isNotBlank(authOrganisationId)) {
+            authOrganisation = orgService.getOrgById(authOrganisationId, actorMessage.getRequestContext());
+          }
+
+          if (!isSameMinistryOrState(authOrganisation, organisation)) {
+            throw new ProjectCommonException(
+                    ResponseCode.errorConflictingRootOrgId,
+                    ResponseCode.errorConflictingRootOrgId.getErrorMessage(),
+                    ResponseCode.CLIENT_ERROR.getResponseCode());
+          }
+
+          applyOrganisationRoleAndRootOrg(actorMessage, userMap, organisation, organisationId);
+          return true;
+        }
+      }
+    } catch (Exception ex) {
+      logger.error(
+              actorMessage.getRequestContext(),
+              "SSOUserCreateActor:populatePublicRolesBasedOnOrgName: Exception while fetching organisation by orgName",
+              ex);
+    }
+    return false;
+  }
+
+  private boolean isSameMinistryOrState(Map<String, Object> authOrganisation, Map<String, Object> organisation) {
+    if (MapUtils.isEmpty(authOrganisation) || MapUtils.isEmpty(organisation)) {
+      return true;
+    }
+
+    String authMinistryStateId = getStringValue(authOrganisation, JsonKey.MINISTRY_STATE_ID);
+    String authMinistryStateName = getStringValue(authOrganisation, JsonKey.MINISTRY_STATE_NAME);
+    String organisationMinistryStateId = getStringValue(organisation, JsonKey.MINISTRY_STATE_ID);
+    String organisationMinistryStateName = getStringValue(organisation, JsonKey.MINISTRY_STATE_NAME);
+
+    return StringUtils.equalsIgnoreCase(authMinistryStateId, organisationMinistryStateId)
+            || StringUtils.equalsIgnoreCase(authMinistryStateName, organisationMinistryStateName);
+  }
+
+  private void applyOrganisationRoleAndRootOrg(
+          Request actorMessage, Map<String, Object> userMap, Map<String, Object> organisation, String organisationId) {
+    if (organisation != null && organisation.get(JsonKey.ORG_TYPE) != null) {
+      Object orgType = organisation.get(JsonKey.ORG_TYPE);
+      if (orgType instanceof Number) {
+        int organisationType = ((Number) orgType).intValue();
+        if (JsonKey.ORG_TYPE_NGO.equalsIgnoreCase(
+                OrgTypeValidator.getInstance().getTypeByValue(organisationType))) {
+          userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.VOLUNTEER));
+        }
+      }
+    }
+  }
+
+  private String getStringValue(Map<String, Object> data, String key) {
+    if (MapUtils.isEmpty(data)) {
+      return StringUtils.EMPTY;
+    }
+    Object value = data.get(key);
+    return value == null ? StringUtils.EMPTY : String.valueOf(value).trim();
   }
 
   private void validateRoleAssignment(Request actorMessage, String targetOrgId) {

@@ -23,6 +23,7 @@ public enum ActorOperations {
   GET_USER_PROFILE_V4("getUserProfileV4", "USRRED"),
   GET_USER_LOGIN_V1("getUserLoggedInDetails", "USRRED"),
   GET_USER_PROFILE_V5("getUserProfileV5", "USRRED"),
+  GET_VOLUNTEER_USER_PROFILE_V1("getVolunteerUserProfileV1", "USRRED"),
 
   UPDATE_USER_INFO_ELASTIC("updateUserInfoToElastic", "UBKGUPD"),
 
@@ -105,6 +106,7 @@ public enum ActorOperations {
   SELF_REGISTER_USERS_V5("selfRegisterUserV5", "USRCRT"),
   CUSTOM_REGISTER_USER_V5("customRegisterUserV5", "USRCRT"),
   BULK_CREATE_USER_V5("bulkCreateUserV5", "USRCRT"),
+  NGO_BULK_CREATE_USER_V5("ngoBulkCreateUserV5", "USRCRT"),
   PARICHAY_CREATE_USER_V5("parichayCreateUserV5", "USRCRT"),
   OAUTH_CREATE_USER_V5("oAuthCreateUserV5", "USRCRT"),
   CREATE_SUPPORT_USER_V5("supportCreateUserV5", "USRCRT"),

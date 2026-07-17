@@ -1009,6 +1009,8 @@ public class UserRequestValidator extends BaseRequestValidator {
         break;
       case JsonKey.BULK_USER_CREATE:
         break;
+      case JsonKey.NGO_BULK_USER_CREATE:
+        break;
       case JsonKey.PARICHAY_USER_CREATE:
       case JsonKey.OILINDIA_USER_CREATE:
       case JsonKey.NTPC_USER_CREATE:
@@ -1019,6 +1021,26 @@ public class UserRequestValidator extends BaseRequestValidator {
             MessageFormat.format(
                 ResponseCode.invalidParameter.getErrorMessage(),
                 StringFormatter.joinByDot(JsonKey.SOURCE_CREATION_TYPE)));
+    }
+  }
+
+  /**
+   * This method will validate update user data.
+   *
+   * @param userRequest Request
+   */
+  public void validateVolunteerUserReadRequest(Request userRequest, String userToken) {
+    if (StringUtils.isBlank(userToken)) {
+      createClientError(
+              ResponseCode.mandatoryHeaderParamsMissing, JsonKey.X_AUTHENTICATED_USER_TOKEN);
+    }
+    String userId = userRequest.getRequest().get(JsonKey.USER_ID).toString();
+    if (StringUtils.isBlank(userId)) {
+      throw new ProjectCommonException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(
+                      ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.USER_ID),
+              ERROR_CODE);
     }
   }
 

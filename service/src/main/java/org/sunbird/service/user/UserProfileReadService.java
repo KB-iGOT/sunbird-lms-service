@@ -59,8 +59,11 @@ public class UserProfileReadService {
     boolean isPrivate = (boolean) actorMessage.getContext().get(JsonKey.PRIVATE);
     String readVersion = actorMessage.getOperation();
     String userId;
-    // Check whether its normal read by id call or read by externalId call
-    validateProviderAndIdType(provider, idType);
+    boolean isNgo = (boolean) actorMessage.getRequest().getOrDefault(JsonKey.IS_NGO, false);
+    if (!isNgo) {
+      // Check whether its normal read by id call or read by externalId call
+      validateProviderAndIdType(provider, idType);
+    }
     if (StringUtils.isNotBlank(provider)) {
       userId = getUserIdByExternalId(actorMessage, id, idType, provider);
     } else {
