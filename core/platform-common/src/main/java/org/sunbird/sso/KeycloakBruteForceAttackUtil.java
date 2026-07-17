@@ -38,11 +38,6 @@ public class KeycloakBruteForceAttackUtil {
 
     // Check if response is empty or null (indicates an error response)
     if (response == null || response.trim().isEmpty()) {
-      // logger.info(
-      //     context,
-      //     "KeycloakBruteForceAttackUtil:isUserAccountDisabled: Empty or null response from Keycloak API for userId: "
-      //         + userId
-      //         + ". Assuming user is not disabled due to brute force.");
       return false;
     }
 
@@ -51,7 +46,7 @@ public class KeycloakBruteForceAttackUtil {
       Map<String, Object> attackStatus = new ObjectMapper().readValue(response, Map.class);
       boolean isDisabled = ((boolean) attackStatus.get("disabled"));
       if (isDisabled) {
-        // logger.info(context, "check attack detection for userId : " + userId + ", " + attackStatus);
+        logger.info(context, "check attack detection for userId : " + userId + ", " + attackStatus);
       }
       return isDisabled;
     } catch (Exception ex) {
@@ -84,8 +79,8 @@ public class KeycloakBruteForceAttackUtil {
             + userId;
     try {
       String response = HttpClientUtil.delete(url, getHeaders(context), context);
-      // logger.info(
-      //     context, "clear Brute Force For User for userId : " + userId + ", response: " + response);
+      logger.info(
+          context, "clear Brute Force For User for userId : " + userId + ", response: " + response);
       return true;
     } catch (Exception ex) {
       logger.error(

@@ -68,7 +68,6 @@ public class KeyCloakServiceImpl implements SSOManager {
   public boolean updatePassword(String userId, String password, RequestContext context) {
     try {
       String fedUserId = getFederatedUserId(userId);
-      // System.out.println("KeycloakServiceImpl: fedUserId:: " + fedUserId);
       UserResource ur = keycloak.realm(KeyCloakConnectionProvider.SSO_REALM).users().get(fedUserId);
 
       // Check if user exists by trying to get user representation
