@@ -787,11 +787,11 @@ public class UserProfileReadService {
       profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0);
       return;
     }
-    Map<String, Object> organisation = (Map<String, Object>) profileData.get(JsonKey.ORGANISATIONS);
-    List<String> roles = organisation == null
-            ? Collections.emptyList()
-            : (List<String>) organisation.getOrDefault(JsonKey.ROLES, Collections.emptyList());
-
+    List<Map<String, Object>> userOrgList = (List<Map<String, Object>>) profileData.get(JsonKey.ORGANISATIONS);
+    Map<String, Object> organisation = CollectionUtils.isNotEmpty(userOrgList)
+            ? userOrgList.get(0)
+            : Collections.emptyMap();
+    List<String> roles = (List<String>) organisation.getOrDefault(JsonKey.ROLES, Collections.emptyList());
     boolean isVolunteer = CollectionUtils.isNotEmpty(roles) && roles.contains(JsonKey.VOLUNTEER);
 
     List<String> requiredFields = List.of(
