@@ -25,7 +25,6 @@ public class KeyManager {
 
   public static void init() {
     String basePath = propertiesCache.getProperty(JsonKey.ACCESS_TOKEN_PUBLICKEY_BASEPATH);
-
     try (Stream<Path> walk = Files.walk(Paths.get(basePath))) {
       List<String> result =
           walk.filter(Files::isRegularFile).map(x -> x.toString()).collect(Collectors.toList());
@@ -53,7 +52,6 @@ public class KeyManager {
   }
 
   public static KeyData getPublicKey(String keyId) {
-    // System.out.println("KeyManager:getPublicKey::" + keyId + " : " + keyMap.get(keyId));
     return keyMap.get(keyId);
   }
 
