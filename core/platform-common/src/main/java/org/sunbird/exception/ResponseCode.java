@@ -221,6 +221,9 @@ public enum ResponseCode {
   invalidOrgFieldLength(
           ResponseMessage.Key.INVALID_ORG_FIELD_LENGTH,
           ResponseMessage.Message.INVALID_ORG_FIELD_LENGTH),
+  roleAssignmentNotAllowed(
+          ResponseMessage.Key.ROLE_ASSIGNMENT_NOT_ALLOWED,
+          ResponseMessage.Message.ROLE_ASSIGNMENT_NOT_ALLOWED),
 
   OK(200),
   SUCCESS(200),
