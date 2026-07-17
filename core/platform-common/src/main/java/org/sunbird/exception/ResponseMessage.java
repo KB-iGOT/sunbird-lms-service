@@ -132,6 +132,7 @@ public interface ResponseMessage {
     String ORG_TYPE_NAME_NOT_FOUND = "Organization type name not found in configuration for the organization type value";
     String INVALID_ORG_FIELD_CHARACTERS = "Only alphanumeric characters, spaces, and common punctuation (&.,'()-) are allowed";
     String INVALID_ORG_FIELD_LENGTH = "Maximum allowed length is {0} characters";
+    String ROLE_ASSIGNMENT_NOT_ALLOWED = "Requesting user is not allowed to create or assign the following role(s): {0}";
   }
 
   interface Key {
@@ -231,5 +232,6 @@ public interface ResponseMessage {
     String ORG_TYPE_NAME_NOT_FOUND = "0091";
     String INVALID_ORG_FIELD_CHARACTERS = "0092";
     String INVALID_ORG_FIELD_LENGTH = "0093";
+    String ROLE_ASSIGNMENT_NOT_ALLOWED = "0094";
   }
 }

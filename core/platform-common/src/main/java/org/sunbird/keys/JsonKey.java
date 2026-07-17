@@ -755,6 +755,8 @@ public final class JsonKey {
     public static final String PINCODE = "pincode";
     public static final String NGO_BULK_USER_CREATE = "ngoBulkUserCreate";
     public static final String TAG = "tag";
+    public static final String MDO_ADMIN = "MDO_ADMIN";
+    public static final String ROLE_ASSIGNMENT_RESTRICTIONS = "role_assignment_restrictions";
 
     private JsonKey() {
     }
