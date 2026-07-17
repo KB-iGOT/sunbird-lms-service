@@ -23,7 +23,6 @@ public class KeycloakUtil {
     fields.put("client_id", ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_ID));
     fields.put("client_secret", ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_SECRET));
     fields.put("grant_type", "client_credentials");
-    // logger.info(context, "KeycloakUtil:getAdminAccessToken: url = " + url);
     String response = HttpClientUtil.postFormData(url, fields, headers, context);
 
     // Check if response is empty or null (indicates an error response)
