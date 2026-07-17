@@ -36,6 +36,10 @@ public class RoleAssignmentValidator {
     }
 
     List<String> newRoles = getNewRoles(targetUserId, rolesToAssign, context);
+    if (!isSpv && CollectionUtils.isNotEmpty(newRoles)) {
+      validateRoleRestrictions(requestingUserRoles, newRoles);
+    }
+
     Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
     if (null == targetOrg) {
       throw new ProjectCommonException(
@@ -273,6 +277,37 @@ public class RoleAssignmentValidator {
               ResponseCode.errorValidatingRolesAgainstOrgType,
               String.format(ResponseCode.errorValidatingRolesAgainstOrgType.getErrorMessage(), e.getMessage()),
               ResponseCode.SERVER_ERROR.getResponseCode()
+      );
+    }
+  }
+
+  private void validateRoleRestrictions(List<String> requestingUserRoles, List<String> newRoles) {
+    Map<String, Object> restrictionsConfig = ProjectUtil.loadFilters(JsonKey.ROLE_ASSIGNMENT_RESTRICTIONS);
+
+    List<String> restrictedRoles;
+    if (requestingUserRoles.contains(JsonKey.MDO_LEADER)) {
+      restrictedRoles = (List<String>) restrictionsConfig.get(JsonKey.MDO_LEADER);
+    } else if (requestingUserRoles.contains(JsonKey.MDO_ADMIN)) {
+      restrictedRoles = (List<String>) restrictionsConfig.get(JsonKey.MDO_ADMIN);
+    } else {
+      return;
+    }
+
+    if (CollectionUtils.isEmpty(restrictedRoles)) {
+      return;
+    }
+
+    List<String> disallowedRoles = newRoles.stream()
+            .filter(restrictedRoles::contains)
+            .collect(Collectors.toList());
+
+    if (CollectionUtils.isNotEmpty(disallowedRoles)) {
+      String rolesStr = String.join(", ", disallowedRoles);
+      throw new ProjectCommonException(
+              ResponseCode.roleAssignmentNotAllowed,
+              ResponseCode.roleAssignmentNotAllowed.getErrorMessage(),
+              ResponseCode.CLIENT_ERROR.getResponseCode(),
+              rolesStr
       );
     }
   }
