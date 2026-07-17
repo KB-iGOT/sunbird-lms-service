@@ -757,6 +757,9 @@ public final class JsonKey {
     public static final String TAG = "tag";
     public static final String MDO_ADMIN = "MDO_ADMIN";
     public static final String ROLE_ASSIGNMENT_RESTRICTIONS = "role_assignment_restrictions";
+    public static final String NGO_PROFILE_COMPLETION_REQUIRED_FIELDS = "ngoProfileCompletionRequiredFields";
+    public static final String NGO_USER_EXTENDED_PROFILE_READ_FIELDS = "ngo_user_extended_profile_read_fields";
+    public static final String NGO_PROFILE_COMPLETION_FIELD_WEIGHT = "ngo.profile.completion.field.weight";
 
     private JsonKey() {
     }

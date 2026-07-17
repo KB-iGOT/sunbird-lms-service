@@ -781,11 +781,44 @@ public class UserProfileReadService {
 
   protected void calculateProfileCompletionPercentage(Map<String, Object> profileData,
                                                         String userId, RequestContext requestContext) {
-    List<String> requiredFields =  List.of(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS).split(","));
-    List<String> requiredExtendedUserFields =  List.of(ProjectUtil.getConfigValue(JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS).split(","));
-    if (MapUtils.isEmpty(profileData) || requiredFields.isEmpty()) {
+
+    if (MapUtils.isEmpty(profileData)) {
       profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE, 0.0);
       profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0);
+      return;
+    }
+    Map<String, Object> organisation = (Map<String, Object>) profileData.get(JsonKey.ORGANISATIONS);
+    List<String> roles = organisation == null
+            ? Collections.emptyList()
+            : (List<String>) organisation.getOrDefault(JsonKey.ROLES, Collections.emptyList());
+
+    boolean isVolunteer = CollectionUtils.isNotEmpty(roles) && roles.contains(JsonKey.VOLUNTEER);
+
+    List<String> requiredFields = List.of(
+            ProjectUtil.getConfigValue(
+                            isVolunteer
+                                    ? JsonKey.NGO_PROFILE_COMPLETION_REQUIRED_FIELDS
+                                    : JsonKey.PROFILE_COMPLETION_REQUIRED_FIELDS)
+                    .split(","));
+
+    List<String> requiredExtendedUserFields = List.of(
+            ProjectUtil.getConfigValue(
+                            isVolunteer
+                                    ? JsonKey.NGO_USER_EXTENDED_PROFILE_READ_FIELDS
+                                    : JsonKey.USER_EXTENDED_PROFILE_READ_FIELDS)
+                    .split(","));
+
+    double fieldWeightage = Double.parseDouble(
+            ProjectUtil.getConfigValue(
+                    isVolunteer
+                            ? JsonKey.NGO_PROFILE_COMPLETION_FIELD_WEIGHT
+                            : JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
+
+
+    if (requiredFields.isEmpty()) {
+      profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE, 0.0);
+      profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, 0);
+      return;
     }
     double totalCompletion = 0.0;
     Map<String, Object> nestedData = Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
@@ -822,7 +855,7 @@ public class UserProfileReadService {
         logger.error("Error checking field completion for user: " + userId + ", field: " + field, e);
       }
       if (isFilled)
-        totalCompletion += Double.parseDouble(ProjectUtil.getConfigValue(JsonKey.PROFILE_COMPLETION_FIELD_WEIGHT));
+        totalCompletion += fieldWeightage;
     }
     profileData.put(JsonKey.PROFILE_UPDATE_COMPLETION, (int) Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
     profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
