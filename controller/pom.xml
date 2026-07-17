@@ -47,7 +47,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.15.2</version>
+			<version>2.15.3</version>
 		</dependency>
 		<!-- Add actor here itself to avoid netty jar conflict. -->
 		<dependency>
@@ -98,12 +98,6 @@
 			<artifactId>play-netty-server_2.12</artifactId>
 			<version>2.7.9</version>
 			<scope>runtime</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.scala-lang</groupId>
-					<artifactId>scala-library</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.typesafe</groupId>
@@ -278,6 +272,15 @@
 				<artifactId>play2-maven-plugin</artifactId>
 				<version>${play2.plugin.version}</version>
 				<extensions>true</extensions>
+				<configuration>
+					<jvmArgs>
+						<jvmArg>--add-opens=java.base/java.lang=ALL-UNNAMED</jvmArg>
+						<jvmArg>--add-opens=java.base/java.lang.reflect=ALL-UNNAMED</jvmArg>
+						<jvmArg>--add-opens=java.base/java.net=ALL-UNNAMED</jvmArg>
+						<jvmArg>--add-opens=java.base/java.util=ALL-UNNAMED</jvmArg>
+						<jvmArg>--add-opens=java.base/sun.nio.ch=ALL-UNNAMED</jvmArg>
+					</jvmArgs>
+				</configuration>
 			</plugin>
 			<plugin>
 				<groupId>com.google.code.sbt-compiler-maven-plugin</groupId>

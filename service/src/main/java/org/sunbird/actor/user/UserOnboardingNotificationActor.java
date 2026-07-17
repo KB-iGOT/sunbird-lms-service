@@ -53,7 +53,8 @@ public class UserOnboardingNotificationActor extends BaseActor {
     requestMap.put(JsonKey.USERNAME, requestMap.get(JsonKey.USERNAME));
     requestMap.put(
         JsonKey.REDIRECT_URI, getSunbirdWebUrlPerTenant(requestMap, request.getRequestContext()));
-    resetPasswordService.getUserRequiredActionLink(requestMap, true, request.getRequestContext());
+    resetPasswordService.getUserRequiredActionLink(
+        (String) requestMap.get(JsonKey.USER_ID), requestMap, true, request.getRequestContext());
     if (request.getOperation().equals(ActorOperations.PROCESS_ONBOARDING_MAIL_AND_SMS.getValue())) {
       // user created successfully send the onboarding mail
       Request welcomeMailReqObj = sendOnboardingMail(requestMap);
