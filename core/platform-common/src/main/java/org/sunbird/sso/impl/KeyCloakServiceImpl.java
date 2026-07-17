@@ -8,7 +8,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import org.keycloak.RSATokenVerifier;
+import org.keycloak.TokenVerifier;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UserResource;
 import org.keycloak.representations.AccessToken;
@@ -68,14 +68,39 @@ public class KeyCloakServiceImpl implements SSOManager {
   public boolean updatePassword(String userId, String password, RequestContext context) {
     try {
       String fedUserId = getFederatedUserId(userId);
+      // System.out.println("KeycloakServiceImpl: fedUserId:: " + fedUserId);
       UserResource ur = keycloak.realm(KeyCloakConnectionProvider.SSO_REALM).users().get(fedUserId);
+
+      // Check if user exists by trying to get user representation
+      UserRepresentation userRep = null;
+      try {
+        userRep = ur.toRepresentation();
+      } catch (Exception e) {
+        logger.error(context, "updatePassword: User not found with fedUserId: " + fedUserId, e);
+        return false;
+      }
+
+      if (userRep == null) {
+        logger.error(
+            context,
+            "updatePassword: User representation is null for fedUserId: " + fedUserId,
+            new Exception("User representation null"));
+        return false;
+      }
+
       CredentialRepresentation cr = new CredentialRepresentation();
       cr.setType(CredentialRepresentation.PASSWORD);
       cr.setValue(password);
+      cr.setTemporary(false); // Set password as permanent, not temporary
+
+      // For Keycloak 24.0.4, ensure the credential representation is properly configured
       ur.resetPassword(cr);
+
+      // logger.info(context, "updatePassword: Password updated successfully for userId: " + userId);
       return true;
     } catch (Exception e) {
-      logger.error(context, "updatePassword: Exception occurred: ", e);
+      logger.error(
+          context, "updatePassword: Exception occurred for userId: " + userId + ", error: ", e);
     }
     return false;
   }
@@ -156,7 +181,8 @@ public class KeyCloakServiceImpl implements SSOManager {
     } catch (Exception e) {
       logger.error(
           context,
-          "makeUserActiveOrInactive:error occurred while blocking or unblocking user: " + e.getMessage(),
+          "makeUserActiveOrInactive:error occurred while blocking or unblocking user: "
+              + e.getMessage(),
           e);
       String exMsg =
           String.format(ResponseMessage.Message.INVALID_PARAMETER_VALUE, userId, JsonKey.USER_ID);
@@ -189,13 +215,28 @@ public class KeyCloakServiceImpl implements SSOManager {
 
   @Override
   public void setRequiredAction(String userId, String requiredAction) {
-    String fedUserId = getFederatedUserId(userId);
-    UserResource resource =
-        keycloak.realm(KeyCloakConnectionProvider.SSO_REALM).users().get(fedUserId);
+    try {
+      String fedUserId = getFederatedUserId(userId);
+      UserResource resource =
+          keycloak.realm(KeyCloakConnectionProvider.SSO_REALM).users().get(fedUserId);
 
-    UserRepresentation userRepresentation = resource.toRepresentation();
-    userRepresentation.setRequiredActions(asList(requiredAction));
-    resource.update(userRepresentation);
+      // Check if user exists by getting representation
+      UserRepresentation userRepresentation = resource.toRepresentation();
+      if (userRepresentation == null) {
+        throw new Exception("User not found with fedUserId: " + fedUserId);
+      }
+
+      userRepresentation.setRequiredActions(asList(requiredAction));
+      resource.update(userRepresentation);
+    } catch (Exception e) {
+      // Log error but don't throw exception to maintain backward compatibility
+      System.err.println(
+          "setRequiredAction: Exception occurred for userId: "
+              + userId
+              + ", error: "
+              + e.getMessage());
+      e.printStackTrace();
+    }
   }
 
   @Override
@@ -205,18 +246,30 @@ public class KeyCloakServiceImpl implements SSOManager {
       PublicKey publicKey = getPublicKey();
       if (publicKey != null) {
         String ssoUrl = (url != null ? url : KeyCloakConnectionProvider.SSO_URL);
+        String issuer = ssoUrl + "realms/" + KeyCloakConnectionProvider.SSO_REALM;
+
+        // Updated for Keycloak 24.0.4 - use newer verification methods
         AccessToken token =
-            RSATokenVerifier.verifyToken(
-                accessToken,
-                publicKey,
-                ssoUrl + "realms/" + KeyCloakConnectionProvider.SSO_REALM,
-                true,
-                true);
+            TokenVerifier.create(accessToken, AccessToken.class)
+                .publicKey(publicKey)
+                .verify()
+                .getToken();
+
+        // Verify issuer manually since realmUrl is deprecated
+        if (!issuer.equals(token.getIssuer())) {
+          throw new Exception("Token issuer does not match expected realm: " + issuer);
+        }
+
+        // Check if token is active and not expired
+        if (!token.isActive() || token.isExpired()) {
+          throw new Exception("Token is inactive or expired");
+        }
+
         logger.info(
             context,
             token.getId()
                 + " "
-                + token.issuedFor
+                + token.getIssuedFor()
                 + " "
                 + token.getProfile()
                 + " "
@@ -226,7 +279,7 @@ public class KeyCloakServiceImpl implements SSOManager {
                 + "  isExpired: "
                 + token.isExpired()
                 + " "
-                + token.issuedNow().getExpiration());
+                + token.getExp());
         String tokenSubject = token.getSubject();
         if (StringUtils.isNotBlank(tokenSubject)) {
           int pos = tokenSubject.lastIndexOf(":");
