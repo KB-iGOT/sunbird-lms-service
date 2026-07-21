@@ -188,9 +188,9 @@ public enum ResponseCode {
   userNoAuthorityOverTargetOrg(
           ResponseMessage.Key.USER_NO_AUTHORITY_OVER_TARGET_ORG,
           ResponseMessage.Message.USER_NO_AUTHORITY_OVER_TARGET_ORG),
-  targetOrgNoMinistryStateType(
-          ResponseMessage.Key.TARGET_ORG_NO_MINISTRY_STATE_TYPE,
-          ResponseMessage.Message.TARGET_ORG_NO_MINISTRY_STATE_TYPE),
+  targetOrgNoMinistryStateId(
+          ResponseMessage.Key.TARGET_ORG_NO_MINISTRY_STATE_ID,
+          ResponseMessage.Message.TARGET_ORG_NO_MINISTRY_STATE_ID),
   orgTypeConfigNotFound(
           ResponseMessage.Key.ORG_TYPE_CONFIG_NOT_FOUND,
           ResponseMessage.Message.ORG_TYPE_CONFIG_NOT_FOUND),

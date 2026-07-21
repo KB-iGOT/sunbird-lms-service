@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.apache.commons.collections.CollectionUtils;
@@ -100,7 +101,7 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createUserV5(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
-    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    populatePublicRoles(actorMessage);
     createBasisProfileDetails(actorMessage);
     createSSOUser(actorMessage);
   }
@@ -190,40 +191,8 @@ public class SSOUserCreateActor extends UserBaseActor {
     requestMap = UserUtil.encryptUserData(userMap);
     List<String> roles = (List<String>) requestMap.get(JsonKey.ROLES);
 
-    // Validate roles BEFORE user creation
     if (CollectionUtils.isNotEmpty(roles)) {
-      String requestingUserId = (String) request.getContext().get(JsonKey.REQUESTED_BY);
-      String targetOrgId = (String) requestMap.get(JsonKey.ROOT_ORG_ID);
-
-      if (StringUtils.isNotBlank(requestingUserId)) {
-        String requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, request.getRequestContext());
-        if (StringUtils.isBlank(requestingUserOrgId)) {
-          throw new ProjectCommonException(
-                  ResponseCode.invalidRequestData,
-                  "Unable to fetch requesting user's root org ID",
-                  ResponseCode.CLIENT_ERROR.getResponseCode()
-          );
-        }
-
-        roleAssignmentValidator.validateRoleAssignment(
-                requestingUserId,
-                requestingUserOrgId,
-                targetOrgId,
-                null, // targetUserId is null for new user creation - all roles will be validated
-                roles,
-                request.getRequestContext()
-        );
-      } else {
-        throw new ProjectCommonException(
-                ResponseCode.unAuthorized,
-                "requesting userid is null",
-                ResponseCode.UNAUTHORIZED.getResponseCode());
-      }
-    } else {
-      throw new ProjectCommonException(
-              ResponseCode.mandatoryParamsMissing,
-              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.ROLES),
-              ERROR_CODE);
+      roles.replaceAll(String::toUpperCase);
     }
 
     removeUnwanted(requestMap);
@@ -479,8 +448,10 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createUserV5ByAdmin(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
-    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    String rootOrgId = findRootOrgId(actorMessage);
+    populateRoles(actorMessage, rootOrgId);
     createBasisProfileDetailsByAdmin(actorMessage);
+    validateRoleAssignment(actorMessage, rootOrgId);
     createSSOUser(actorMessage);
   }
 
@@ -545,8 +516,8 @@ public class SSOUserCreateActor extends UserBaseActor {
 
   private void createUserV5ForOAuthUser(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
-    populateRoles(actorMessage, findRootOrgId(actorMessage));
-    createBasicProfileDetailsForParichayUser(actorMessage);
+    populatePublicRoles(actorMessage);
+    createBasicProfileDetailsForParichayUser(actorMessage);;
     createSSOUser(actorMessage);
   }
 
@@ -586,7 +557,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void createBulkUsers(Request actorMessage) throws JsonProcessingException {
-    populateRoles(actorMessage, findRootOrgId(actorMessage));
+    populatePublicRoles(actorMessage);
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);
   }
@@ -605,5 +576,50 @@ public class SSOUserCreateActor extends UserBaseActor {
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetailsMap.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetailsMap));
+  }
+
+  private void populatePublicRoles(Request actorMessage) {
+    Map<String, Object> userMap = actorMessage.getRequest();
+    userMap.put(JsonKey.ROLES, Arrays.asList(JsonKey.PUBLIC));
+  }
+
+  private void validateRoleAssignment(Request actorMessage, String targetOrgId) {
+    Map<String, Object> userMap = actorMessage.getRequest();
+    List<String> roles = (List<String>) userMap.get(JsonKey.ROLES);
+
+    if (CollectionUtils.isEmpty(roles)) {
+      throw new ProjectCommonException(
+              ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.ROLES),
+              ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
+
+    roles.replaceAll(String::toUpperCase);
+    userMap.put(JsonKey.ROLES, roles);
+
+    String requestingUserId = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
+
+    if (StringUtils.isNotBlank(requestingUserId)) {
+      String requestingUserOrgId = userDao.getUserRootOrgId(requestingUserId, actorMessage.getRequestContext());
+      if (StringUtils.isBlank(requestingUserOrgId)) {
+        throw new ProjectCommonException(
+                ResponseCode.invalidRequestData,
+                "Unable to fetch requesting user's root org ID",
+                ResponseCode.CLIENT_ERROR.getResponseCode());
+      }
+
+      roleAssignmentValidator.validateRoleAssignment(
+              requestingUserId,
+              requestingUserOrgId,
+              targetOrgId,
+              null, // targetUserId is null for new user creation - all roles will be validated
+              roles,
+              actorMessage.getRequestContext());
+    } else {
+      throw new ProjectCommonException(
+              ResponseCode.unAuthorized,
+              "Invalid or missing X-Auth token. Unable to identify the requesting user (account creator)",
+              ResponseCode.UNAUTHORIZED.getResponseCode());
+    }
   }
 }
