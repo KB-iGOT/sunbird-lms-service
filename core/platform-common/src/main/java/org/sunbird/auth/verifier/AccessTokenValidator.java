@@ -34,9 +34,10 @@ public class AccessTokenValidator {
             JsonKey.SHA_256_WITH_RSA,
             requestContext);
     if (isValid) {
-      Map<String, Object> tokenBody =
+     Map<String, Object> tokenBody =
           mapper.readValue(new String(decodeFromBase64(body)), Map.class);
-      boolean isExp = isExpired((Integer) tokenBody.get("exp"));
+      Integer expiration = (Integer) tokenBody.get("exp");
+      boolean isExp = isExpired(expiration);
       if (isExp) {
         logger.info("Token is expired " + token + ", request context data :" + requestContext);
         return Collections.EMPTY_MAP;
@@ -60,6 +61,7 @@ public class AccessTokenValidator {
       String requestedByUserId,
       String requestedForUserId,
       Map<String, Object> requestContext) {
+
     String managedFor = JsonKey.UNAUTHORIZED;
     try {
       Map<String, Object> payload = validateToken(managedEncToken, requestContext);
@@ -96,19 +98,29 @@ public class AccessTokenValidator {
   }
 
   public static String verifyUserToken(String token, Map<String, Object> requestContext) {
+
     String userId = JsonKey.UNAUTHORIZED;
     try {
       Map<String, Object> payload = validateToken(token, requestContext);
-      logger.debug(
+      logger.info(
           "learner access token validateToken() :"
               + payload.toString()
               + ", request context data : "
               + requestContext);
-      if (MapUtils.isNotEmpty(payload) && checkIss((String) payload.get("iss"))) {
-        userId = (String) payload.get(JsonKey.SUB);
-        if (StringUtils.isNotBlank(userId)) {
-          int pos = userId.lastIndexOf(":");
-          userId = userId.substring(pos + 1);
+
+      if (MapUtils.isNotEmpty(payload)) {
+        String issuer = (String) payload.get("iss");
+        boolean issuerValid = checkIss(issuer);
+        if (issuerValid) {
+          userId = (String) payload.get(JsonKey.SUB);
+          
+          if (StringUtils.isNotBlank(userId)) {
+            int pos = userId.lastIndexOf(":");
+            if (pos >= 0) {
+              String extractedUserId = userId.substring(pos + 1);
+              userId = extractedUserId;
+            }
+          }
         }
       }
     } catch (Exception ex) {
@@ -130,20 +142,22 @@ public class AccessTokenValidator {
   }
 
   public static String verifySourceUserToken(
-      String token, String url, Map<String, Object> requestContext) {
+    String token, String url, Map<String, Object> requestContext) {
     String userId = JsonKey.UNAUTHORIZED;
     try {
       Map<String, Object> payload = validateToken(token, requestContext);
-      logger.debug(
-          "learner source access token validateToken() :"
-              + payload.toString()
-              + ", request context data : "
-              + requestContext);
-      if (MapUtils.isNotEmpty(payload) && checkSourceIss((String) payload.get("iss"), url)) {
-        userId = (String) payload.get(JsonKey.SUB);
-        if (StringUtils.isNotBlank(userId)) {
-          int pos = userId.lastIndexOf(":");
-          userId = userId.substring(pos + 1);
+      if (MapUtils.isNotEmpty(payload)) {
+        String issuer = (String) payload.get("iss");
+        boolean issuerValid = checkSourceIss(issuer, url);
+        if (issuerValid) {
+          userId = (String) payload.get(JsonKey.SUB);
+          if (StringUtils.isNotBlank(userId)) {
+            int pos = userId.lastIndexOf(":");
+            if (pos >= 0) {
+              String extractedUserId = userId.substring(pos + 1);
+              userId = extractedUserId;
+            }
+          }
         }
       }
     } catch (Exception ex) {
@@ -172,14 +186,23 @@ public class AccessTokenValidator {
   private static boolean checkSourceIss(String iss, String url) {
     String ssoUrl = (url != null ? url : sso_url);
     String realmUrl = ssoUrl + "realms/" + realm;
-    return (realmUrl.equalsIgnoreCase(iss));
-  }
+    boolean result = (realmUrl.equalsIgnoreCase(iss));
+    return result;
+  } 
 
   private static boolean isExpired(Integer expiration) {
-    return (Time.currentTime() > expiration);
+    int currentTime = Time.currentTime();
+    boolean expired = (currentTime > expiration);
+    return expired;
   }
 
   private static byte[] decodeFromBase64(String data) {
-    return Base64Util.decode(data, 11);
+    try {
+      byte[] decoded = Base64Util.decode(data, 11);
+      return decoded;
+    } catch (Exception e) {
+      logger.error("decodeFromBase64: Failed to decode base64 data", e);
+      throw e;
+    }
   }
 }

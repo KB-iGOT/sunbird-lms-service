@@ -42,7 +42,11 @@ public class KeycloakRequiredActionLinkUtil {
    * @return Generated link from Keycloak service
    */
   public static String getLink(
-      String userName, String redirectUri, String requiredAction, RequestContext context) {
+      String userId,
+      String userName,
+      String redirectUri,
+      String requiredAction,
+      RequestContext context) {
     Map<String, String> request = new HashMap<>();
 
     request.put(CLIENT_ID, ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_CLIENT_ID));
@@ -75,25 +79,15 @@ public class KeycloakRequiredActionLinkUtil {
 
     headers.put(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON);
     headers.put(
-        JsonKey.AUTHORIZATION,
+        HttpHeaders.AUTHORIZATION,
         JsonKey.BEARER + KeycloakUtil.getAdminAccessTokenWithDomain(context));
 
-    logger.info(
-        context,
-        "KeycloakRequiredActionLinkUtil:generateLink: complete URL "
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_URL)
-            + "realms/"
-            + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
-            + SUNBIRD_KEYCLOAK_REQD_ACTION_LINK);
-    logger.info(
-        context,
-        "KeycloakRequiredActionLinkUtil:generateLink: request body "
-            + mapper.writeValueAsString(request));
     String url =
         ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_URL)
             + "realms/"
             + ProjectUtil.getConfigValue(JsonKey.SUNBIRD_SSO_RELAM)
             + SUNBIRD_KEYCLOAK_REQD_ACTION_LINK;
+
     String response =
         HttpClientUtil.post(url, mapper.writeValueAsString(request), headers, context);
 
@@ -103,3 +97,4 @@ public class KeycloakRequiredActionLinkUtil {
     return (String) responseMap.get(LINK);
   }
 }
+ 
