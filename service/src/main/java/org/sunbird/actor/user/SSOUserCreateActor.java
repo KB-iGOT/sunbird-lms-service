@@ -210,6 +210,7 @@ public class SSOUserCreateActor extends UserBaseActor {
 
     // Assign roles to user_roles AFTER user creation
     if (CollectionUtils.isNotEmpty(roles)) {
+      requestMap.put(JsonKey.REQUESTED_BY, request.getContext().get(JsonKey.REQUESTED_BY));
       requestMap.put(JsonKey.ROLES, roles);
       requestMap.put(JsonKey.ROLE_OPERATION, JsonKey.CREATE);
       List<Map<String, Object>> formattedRoles = userRoleService.updateUserRole(requestMap,

@@ -760,6 +760,8 @@ public final class JsonKey {
     public static final String NGO_PROFILE_COMPLETION_REQUIRED_FIELDS = "ngoProfileCompletionRequiredFields";
     public static final String NGO_USER_EXTENDED_PROFILE_READ_FIELDS = "ngo_user_extended_profile_read_fields";
     public static final String NGO_PROFILE_COMPLETION_FIELD_WEIGHT = "ngo.profile.completion.field.weight";
+    public static final String IGOT_SUPPORT_ADMIN = "IGOT_SUPPORT_ADMIN";
+    public static final String SPV_ROLES = "spv_roles";
 
     private JsonKey() {
     }
