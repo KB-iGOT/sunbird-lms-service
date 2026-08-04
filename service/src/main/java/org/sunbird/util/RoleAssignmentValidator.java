@@ -31,7 +31,11 @@ public class RoleAssignmentValidator {
   public void validateRoleAssignment(String requestingUserId, String requestingUserOrgId, String targetOrgId, String targetUserId, List<String> rolesToAssign, RequestContext context) {
     List<String> requestingUserRoles = validateRequestingUserRoles(requestingUserId, context);
     boolean isSpv = false;
-    if (requestingUserRoles.contains(JsonKey.SPV_ADMIN)) {
+    String configuredSpvRoles = ProjectUtil.getConfigValue(JsonKey.SPV_ROLES);
+    List<String> spvRoles = StringUtils.isNotBlank(configuredSpvRoles)
+            ? List.of(configuredSpvRoles.split(","))
+            : List.of(JsonKey.SPV_ADMIN, JsonKey.IGOT_SUPPORT_ADMIN);
+    if (requestingUserRoles.stream().anyMatch(spvRoles::contains)) {
       isSpv = true;
     }
 
@@ -282,6 +286,14 @@ public class RoleAssignmentValidator {
   }
 
   private void validateRoleRestrictions(List<String> requestingUserRoles, List<String> newRoles) {
+    String configuredStateAdminRoles = ProjectUtil.getConfigValue(JsonKey.STATE_ADMIN_ROLES);
+    List<String> stateAdminRoles = StringUtils.isNotBlank(configuredStateAdminRoles)
+            ? List.of(configuredStateAdminRoles.split(","))
+            : List.of(JsonKey.STATE_ADMIN);
+    if (requestingUserRoles.stream().anyMatch(stateAdminRoles::contains)) {
+      return;
+    }
+
     Map<String, Object> restrictionsConfig = ProjectUtil.loadFilters(JsonKey.ROLE_ASSIGNMENT_RESTRICTIONS);
 
     List<String> restrictedRoles;
