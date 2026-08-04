@@ -286,6 +286,14 @@ public class RoleAssignmentValidator {
   }
 
   private void validateRoleRestrictions(List<String> requestingUserRoles, List<String> newRoles) {
+    String configuredStateAdminRoles = ProjectUtil.getConfigValue(JsonKey.STATE_ADMIN_ROLES);
+    List<String> stateAdminRoles = StringUtils.isNotBlank(configuredStateAdminRoles)
+            ? List.of(configuredStateAdminRoles.split(","))
+            : List.of(JsonKey.STATE_ADMIN);
+    if (requestingUserRoles.stream().anyMatch(stateAdminRoles::contains)) {
+      return;
+    }
+
     Map<String, Object> restrictionsConfig = ProjectUtil.loadFilters(JsonKey.ROLE_ASSIGNMENT_RESTRICTIONS);
 
     List<String> restrictedRoles;

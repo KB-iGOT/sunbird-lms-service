@@ -762,6 +762,8 @@ public final class JsonKey {
     public static final String NGO_PROFILE_COMPLETION_FIELD_WEIGHT = "ngo.profile.completion.field.weight";
     public static final String IGOT_SUPPORT_ADMIN = "IGOT_SUPPORT_ADMIN";
     public static final String SPV_ROLES = "spv_roles";
+    public static final String STATE_ADMIN = "STATE_ADMIN";
+    public static final String STATE_ADMIN_ROLES = "state_admin_roles";
 
     private JsonKey() {
     }
