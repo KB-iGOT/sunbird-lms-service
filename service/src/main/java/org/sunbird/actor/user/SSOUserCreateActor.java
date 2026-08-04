@@ -566,7 +566,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   }
 
   private void createNgoBulkUsers(Request actorMessage) throws JsonProcessingException {
-    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createBulkUsers: starts : " + actorMessage.getRequest());
+    logger.info(actorMessage.getRequestContext(), "SSOUserCreateActor:createNGOBulkUsers: starts : " + actorMessage.getRequest());
     populateVolunteerRoles(actorMessage, actorMessage.getRequest());
     updateMinistryDetailsForUsers(actorMessage);
     createSSOUser(actorMessage);

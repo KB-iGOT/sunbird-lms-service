@@ -1,5 +1,9 @@
 package org.sunbird.service.user;
 
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.Map;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,16 +17,8 @@ import org.sunbird.keys.JsonKey;
 import org.sunbird.request.RequestContext;
 import org.sunbird.sso.KeycloakUtil;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.mockito.Mockito.when;
-
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({
-  KeycloakUtil.class,
-  HttpClientUtil.class
-})
+@PrepareForTest({KeycloakUtil.class, HttpClientUtil.class})
 @PowerMockIgnore({
   "javax.management.*",
   "javax.net.ssl.*",
@@ -35,36 +31,45 @@ public class ResetPasswordServiceTest {
   @Test
   public void getUserRequiredActionLinkTestForVerifyEmailLink() throws Exception {
     PowerMockito.mockStatic(HttpClientUtil.class);
-    when(HttpClientUtil.post(Mockito.anyString(),Mockito.anyString(),Mockito.anyMap(),Mockito.any(RequestContext.class))).thenReturn("{\"link\":\"success\"}");
+    when(HttpClientUtil.post(
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyMap(),
+            Mockito.any(RequestContext.class)))
+        .thenReturn("{\"link\":\"success\"}");
 
     PowerMockito.mockStatic(KeycloakUtil.class);
     when(KeycloakUtil.getAdminAccessToken(Mockito.any(RequestContext.class), Mockito.anyString()))
-      .thenReturn("accessToken");
+        .thenReturn("accessToken");
 
-    Map<String,Object> map = new HashMap<>();
+    Map<String, Object> map = new HashMap<>();
     map.put(JsonKey.REDIRECT_URI, "/resources");
-    map.put(JsonKey.PASSWORD,"password");
+    map.put(JsonKey.PASSWORD, "password");
 
     ResetPasswordService service = new ResetPasswordService();
-    String link = service.getUserRequiredActionLink(map, false, new RequestContext());
+    String link = service.getUserRequiredActionLink("userID", map, false, new RequestContext());
     Assert.assertNotNull(link);
   }
 
   @Test
   public void getUserRequiredActionLinkTestForResetPasswordLink() throws Exception {
     PowerMockito.mockStatic(HttpClientUtil.class);
-    when(HttpClientUtil.post(Mockito.anyString(),Mockito.anyString(),Mockito.anyMap(),Mockito.any(RequestContext.class))).thenReturn("{\"link\":\"success\"}");
+    when(HttpClientUtil.post(
+            Mockito.anyString(),
+            Mockito.anyString(),
+            Mockito.anyMap(),
+            Mockito.any(RequestContext.class)))
+        .thenReturn("{\"link\":\"success\"}");
 
     PowerMockito.mockStatic(KeycloakUtil.class);
     when(KeycloakUtil.getAdminAccessToken(Mockito.any(RequestContext.class), Mockito.anyString()))
-      .thenReturn("accessToken");
+        .thenReturn("accessToken");
 
-    Map<String,Object> map = new HashMap<>();
+    Map<String, Object> map = new HashMap<>();
     map.put(JsonKey.REDIRECT_URI, "/resources");
 
     ResetPasswordService service = new ResetPasswordService();
-    String link = service.getUserRequiredActionLink(map, false, new RequestContext());
+    String link = service.getUserRequiredActionLink("userID", map, false, new RequestContext());
     Assert.assertNotNull(link);
   }
-
 }
