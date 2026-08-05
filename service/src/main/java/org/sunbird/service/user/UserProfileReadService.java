@@ -749,8 +749,8 @@ public class UserProfileReadService {
       Map<String, Object> map = new HashMap<>();
       if (userDetailsMap.get("first_login") == null) {
         map.put(JsonKey.CONSENT_USER_ID, userId);
+        map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
-        map.put(JsonKey.LAST_LOGIN, null);
         cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
         Map<String, Object> dataMap = new HashMap<>();
         Map<String, Object> requestMap = new HashMap<>();
