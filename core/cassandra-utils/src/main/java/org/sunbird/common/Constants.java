@@ -62,4 +62,7 @@ public interface Constants {
   public static final String GTE = ">=";
   public static final String GT = ">";
   public static final String ID = "id";
+  public static final String NGO = "ngo";
+  public static final boolean TRUE = true;
+  public static final boolean FALSE = false;
 }

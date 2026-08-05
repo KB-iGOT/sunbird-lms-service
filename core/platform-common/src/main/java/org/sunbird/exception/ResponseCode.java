@@ -45,6 +45,7 @@ public enum ResponseCode {
       ResponseMessage.Key.MAX_ALLOWED_SIZE_LIMIT_EXCEED,
       ResponseMessage.Message.MAX_ALLOWED_SIZE_LIMIT_EXCEED),
   inactiveUser(ResponseMessage.Key.INACTIVE_USER, ResponseMessage.Message.INACTIVE_USER),
+  disbledUser(ResponseMessage.Key.DISABLED_USER, ResponseMessage.Message.DISABLED_USER),
   invalidValue(ResponseMessage.Key.INVALID_VALUE, ResponseMessage.Message.INVALID_VALUE),
   invalidParameter(
       ResponseMessage.Key.INVALID_PARAMETER, ResponseMessage.Message.INVALID_PARAMETER),
@@ -220,6 +221,9 @@ public enum ResponseCode {
   invalidOrgFieldLength(
           ResponseMessage.Key.INVALID_ORG_FIELD_LENGTH,
           ResponseMessage.Message.INVALID_ORG_FIELD_LENGTH),
+  roleAssignmentNotAllowed(
+          ResponseMessage.Key.ROLE_ASSIGNMENT_NOT_ALLOWED,
+          ResponseMessage.Message.ROLE_ASSIGNMENT_NOT_ALLOWED),
 
   OK(200),
   SUCCESS(200),

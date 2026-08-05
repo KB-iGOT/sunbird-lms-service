@@ -84,7 +84,7 @@ public class UserDaoImpl implements UserDao {
       Map<String, Object> loginInfo = getLastLoginInfoById(userId, context);
       if (MapUtils.isNotEmpty(loginInfo)) {
         userDetail.put("last_login", loginInfo.get("last_login"));
-        userDetail.put("first_login", loginInfo.get("last_login"));
+        userDetail.put("first_login", loginInfo.get("first_login"));
       }
       return userDetail;
     }

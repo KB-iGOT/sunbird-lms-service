@@ -36,6 +36,7 @@ public interface ResponseMessage {
     String RESOURCE_NOT_FOUND = "Requested {0} resource not found";
     String MAX_ALLOWED_SIZE_LIMIT_EXCEED = "Max allowed size is {0}";
     String INACTIVE_USER = "User is Inactive. Please make it active to proceed.";
+    String DISABLED_USER = "User account is disabled.";
     String INVALID_VALUE = "Invalid {0}: {1}. Valid values are: {2}.";
     String INVALID_PARAMETER = "Please provide valid {0}.";
     String INVALID_LOCATION_DELETE_REQUEST =
@@ -131,6 +132,7 @@ public interface ResponseMessage {
     String ORG_TYPE_NAME_NOT_FOUND = "Organization type name not found in configuration for the organization type value";
     String INVALID_ORG_FIELD_CHARACTERS = "Only alphanumeric characters, spaces, and common punctuation (&.,'()-) are allowed";
     String INVALID_ORG_FIELD_LENGTH = "Maximum allowed length is {0} characters";
+    String ROLE_ASSIGNMENT_NOT_ALLOWED = "Requesting user is not allowed to create or assign the following role(s): {0}";
   }
 
   interface Key {
@@ -206,6 +208,7 @@ public interface ResponseMessage {
     String FORBIDDEN = "0071";
     String INVALID_OBJECT_TYPE = "0072";
     String INACTIVE_USER = "0073";
+    String DISABLED_USER = "0094";
     String INVALID_CSV_FILE = "0074";
     String EXTENDED_USER_PROFILE_NOT_LOADED = "EXTENDED_USER_PROFILE_NOT_LOADED";
     String ROLE_PROCESSING_INVALID_ORG = "ROLE_PROCESSING_INVALID_ORG_ID";
@@ -229,5 +232,6 @@ public interface ResponseMessage {
     String ORG_TYPE_NAME_NOT_FOUND = "0091";
     String INVALID_ORG_FIELD_CHARACTERS = "0092";
     String INVALID_ORG_FIELD_LENGTH = "0093";
+    String ROLE_ASSIGNMENT_NOT_ALLOWED = "0094";
   }
 }
