@@ -734,31 +734,22 @@ public class UserProfileReadService {
   }
 
     public Response getUserLoggedInDetails(Request actorMessage) throws Exception {
-        String userId = (String) actorMessage.getContext().get("requestedBy");
-        Map<String, Object> map1 = new HashMap<>();
-        map1.putIfAbsent(JsonKey.ID, userId);
-        Response response = cassandraOperation.getRecordsByProperties(JsonKey.SUNBIRD, JsonKey.USER, map1, actorMessage.getRequestContext());
-        Map<String, Object> userDetailsMap = new HashMap<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-        list.forEach(a -> a.forEach(userDetailsMap::putIfAbsent));
-        list.forEach(map ->
-                map.forEach((key, value) ->
-                        userDetailsMap.putIfAbsent(key.toLowerCase(), value)
-                )
-        );
+      String userId = (String) actorMessage.getContext().get("requestedBy");
+      Map<String, Object> userLoginDetailsMap = fetchUserLoginDetailsMap(userId, actorMessage.getRequestContext());
+      boolean selfRegistered = isSelfRegisteredUser(userId, actorMessage.getRequestContext());
+      Response response = new Response();
       Map<String, Object> map = new HashMap<>();
-      if (userDetailsMap.get("first_login") == null) {
+      if (userLoginDetailsMap.get("first_login") == null) {
         map.put(JsonKey.CONSENT_USER_ID, userId);
         map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
-        cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER, map, actorMessage.getRequestContext());
         Map<String, Object> dataMap = new HashMap<>();
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put(JsonKey.ID, map.get(JsonKey.CONSENT_USER_ID));
         requestMap.put(JsonKey.LAST_LOGIN, map.get(JsonKey.LAST_LOGIN));
         requestMap.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
-        requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
+        requestMap.put(JsonKey.SELF_REGISTRATION, selfRegistered);
         dataMap.put(JsonKey.EDATA, requestMap);
         String firstLoginTopic = StringUtils.trimToEmpty(ProjectUtil.getConfigValue("kafka_user_first_login_event_topic"));
         String onboardUserOnFirstLogin = StringUtils.trimToEmpty(ProjectUtil.getConfigValue(JsonKey.USER_PROFILE_UPDATE_TOPIC));
@@ -784,16 +775,17 @@ public class UserProfileReadService {
               e);
         }
       } else {
-            map.put(JsonKey.CONSENT_USER_ID, userId);
-            map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
-            cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
-            map.put(JsonKey.FIRST_LOGIN,userDetailsMap.get(JsonKey.FIRST_LOGIN));
-        }
-        response.put(JsonKey.FIRST_LOGIN,map.get(JsonKey.FIRST_LOGIN));
-        response.put(JsonKey.LAST_LOGIN,map.get(JsonKey.LAST_LOGIN));
-        response.put(JsonKey.CONSENT_USER_ID,userId);
-        response.put(JsonKey.SELF_REGISTRATION,userDetailsMap.get(JsonKey.CREATEDBY) == null);
-        return response;
+        map.put(JsonKey.CONSENT_USER_ID, userId);
+        map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
+        cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
+        map.put(JsonKey.FIRST_LOGIN, userLoginDetailsMap.get(JsonKey.FIRST_LOGIN));
+      }
+      response.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
+      response.put(JsonKey.LAST_LOGIN, map.get(JsonKey.LAST_LOGIN));
+      response.put(JsonKey.CONSENT_USER_ID, userId);
+      response.put(JsonKey.SELF_REGISTRATION, selfRegistered);
+      response.put(JsonKey.IS_FIRST_TIME_LOGIN, userLoginDetailsMap.get("first_login") == null);
+      return response;
     }
 
 
@@ -898,5 +890,35 @@ public class UserProfileReadService {
     return Optional.ofNullable(map.get(key))
             .map(Object::toString)
             .filter(s -> !s.trim().isEmpty());
+  }
+
+  private Map<String, Object> fetchUserLoginDetailsMap(String userId, RequestContext context) {
+    Map<String, Object> userLoginKeyMap = new HashMap<>();
+    userLoginKeyMap.putIfAbsent(JsonKey.CONSENT_USER_ID, userId);
+    Response userLoginResponse = cassandraOperation.getRecordsByProperties(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, userLoginKeyMap, context);
+    Map<String, Object> userLoginDetailsMap = new HashMap<>();
+    List<Map<String, Object>> userLoginList = (List<Map<String, Object>>) userLoginResponse.get(JsonKey.RESPONSE);
+    userLoginList.forEach(a -> a.forEach(userLoginDetailsMap::putIfAbsent));
+    userLoginList.forEach(loginRecord ->
+            loginRecord.forEach((key, value) ->
+                    userLoginDetailsMap.putIfAbsent(key.toLowerCase(), value)
+            )
+    );
+    return userLoginDetailsMap;
+  }
+
+  private boolean isSelfRegisteredUser(String userId, RequestContext context) {
+    Map<String, Object> userKeyMap = new HashMap<>();
+    userKeyMap.putIfAbsent(JsonKey.ID, userId);
+    Response userFetchResponse = cassandraOperation.getRecordsByProperties(JsonKey.SUNBIRD, JsonKey.USER, userKeyMap, context);
+    Map<String, Object> userDetailsMap = new HashMap<>();
+    List<Map<String, Object>> userList = (List<Map<String, Object>>) userFetchResponse.get(JsonKey.RESPONSE);
+    userList.forEach(a -> a.forEach(userDetailsMap::putIfAbsent));
+    userList.forEach(userRecord ->
+            userRecord.forEach((key, value) ->
+                    userDetailsMap.putIfAbsent(key.toLowerCase(), value)
+            )
+    );
+    return userDetailsMap.get(JsonKey.CREATEDBY) == null;
   }
 }
