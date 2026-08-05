@@ -749,8 +749,8 @@ public class UserProfileReadService {
       Map<String, Object> map = new HashMap<>();
       if (userDetailsMap.get("first_login") == null) {
         map.put(JsonKey.CONSENT_USER_ID, userId);
-        map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
+        map.put(JsonKey.LAST_LOGIN, null);
         cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
         Map<String, Object> dataMap = new HashMap<>();
         Map<String, Object> requestMap = new HashMap<>();
@@ -759,12 +759,29 @@ public class UserProfileReadService {
         requestMap.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
         requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
         dataMap.put(JsonKey.EDATA, requestMap);
-        String topic = ProjectUtil.getConfigValue("kafka_user_first_login_event_topic");
-        InstructionEventGenerator.createFirstLoginDetailsEvent("", topic, dataMap);
-        String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
+        String firstLoginTopic = StringUtils.trimToEmpty(ProjectUtil.getConfigValue("kafka_user_first_login_event_topic"));
+        String onboardUserOnFirstLogin = StringUtils.trimToEmpty(ProjectUtil.getConfigValue(JsonKey.USER_PROFILE_UPDATE_TOPIC));
         Map<String, String> userUpdateMap = new HashMap<>();
         userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
-        InstructionEventGenerator.userUpdateEvent("", onboardUserOnFirstLogin, userUpdateMap);
+        try {
+          if (StringUtils.isNotBlank(firstLoginTopic)) {
+            InstructionEventGenerator.createFirstLoginDetailsEvent("", firstLoginTopic, dataMap);
+          } else {
+            logger.info("Skipping user first-login event push because kafka_user_first_login_event_topic is not configured.");
+          }
+          if (StringUtils.isNotBlank(onboardUserOnFirstLogin)) {
+            InstructionEventGenerator.userUpdateEvent("", onboardUserOnFirstLogin, userUpdateMap);
+          } else {
+            logger.info("Skipping user profile update event push because kafka_user_profile_update_topic is not configured.");
+          }
+        } catch (Exception e) {
+          logger.error(
+              "Failed to push Kafka events on first login for userId: "
+                  + userId
+                  + ". Continuing login response. Error: "
+                  + e.getMessage(),
+              e);
+        }
       } else {
             map.put(JsonKey.CONSENT_USER_ID, userId);
             map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));

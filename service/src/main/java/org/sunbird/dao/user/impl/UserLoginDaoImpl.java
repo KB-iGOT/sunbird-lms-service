@@ -39,7 +39,7 @@ public class UserLoginDaoImpl implements UserLoginDao {
             Timestamp currentTimestamp = Timestamp.from(Instant.now());
             userLoginMap.put(JsonKey.CONSENT_USER_ID, userId);
             userLoginMap.put(JsonKey.FIRST_LOGIN, currentTimestamp);
-            userLoginMap.put(JsonKey.LAST_LOGIN, currentTimestamp);
+            userLoginMap.put(JsonKey.LAST_LOGIN, null);
 
             cassandraOperation.insertRecord(
                     JsonKey.SUNBIRD,
