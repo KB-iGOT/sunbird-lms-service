@@ -1014,6 +1014,7 @@ public class UserRequestValidator extends BaseRequestValidator {
       case JsonKey.PARICHAY_USER_CREATE:
       case JsonKey.OILINDIA_USER_CREATE:
       case JsonKey.NTPC_USER_CREATE:
+      case JsonKey.BANK_USER_CREATE:
         break;
       default:
         ProjectCommonException.throwClientErrorException(
