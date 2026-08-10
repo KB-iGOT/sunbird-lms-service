@@ -519,7 +519,7 @@ public class SSOUserCreateActor extends UserBaseActor {
   private void createUserV5ForOAuthUser(Request actorMessage) throws JsonProcessingException {
     logger.debug(actorMessage.getRequestContext(), "SSOUserCreateActor:createV5User: starts : ");
     populatePublicRoles(actorMessage);
-    createBasicProfileDetailsForParichayUser(actorMessage);;
+    createBasicProfileDetailsForParichayUser(actorMessage);
     createSSOUser(actorMessage);
   }
 

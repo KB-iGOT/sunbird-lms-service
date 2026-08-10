@@ -89,6 +89,7 @@ public class RequestInterceptor {
     apiHeaderIgnoreMap.put("/v5/cb/user/parichay/create", var);
     apiHeaderIgnoreMap.put("/v5/cb/user/oilindia/create", var);
     apiHeaderIgnoreMap.put("/v5/cb/user/ntpc/create", var);
+    apiHeaderIgnoreMap.put("/v5/cb/user/bank/create", var);
     // public-role-only assignment API used by flows with no assigner token (signup, kafka
     // consumer, bulk migration)
     apiHeaderIgnoreMap.put("/v1/user/public/role/assign", var);
