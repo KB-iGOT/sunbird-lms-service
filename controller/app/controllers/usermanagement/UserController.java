@@ -311,7 +311,7 @@ public class UserController extends BaseController {
         return oAuthUserCreateV5(httpRequest, JsonKey.NTPC_USER_CREATE, DataCacheHandler.getConfigSettings().get(JsonKey.NTPC_ORG_CHANNEL));
     }
 
-    public CompletionStage<Result> bankCreateUserV5(Http.Request httpRequest) throws JsonProcessingException {
+    public CompletionStage<Result> createUserforBankV5(Http.Request httpRequest) throws JsonProcessingException {
         return oAuthUserCreateV5(httpRequest, JsonKey.BANK_USER_CREATE);
     }
 
