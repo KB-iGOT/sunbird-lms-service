@@ -80,6 +80,9 @@ public class TenantMigrationActor extends BaseActor {
       case "userTenantMigrate":
         migrateUser(request);
         break;
+      case "userTenantMigrateV2":
+        migrateUserV2(request);
+        break;
       case "userSelfDeclaredTenantMigrate":
         migrateSelfDeclaredUser(request);
         break;
@@ -226,6 +229,83 @@ public class TenantMigrationActor extends BaseActor {
     reqMap.put(JsonKey.TYPE, JsonKey.MIGRATE_USER);
     TelemetryUtil.telemetryProcessingCall(
         reqMap, targetObject, correlatedObject, request.getContext());
+  }
+
+  @SuppressWarnings("unchecked")
+  private void migrateUserV2(Request request) {
+    logger.info(request.getRequestContext(), "TenantMigrationActor:migrateUserV2 called.");
+    Map<String, Object> reqMap = new HashMap<>(request.getRequest());
+    Map<String, Object> targetObject = null;
+    List<Map<String, Object>> correlatedObject = new ArrayList<>();
+    Map<String, Object> userDetails = userService.getUserDetailsForES(
+                    (String) request.getRequest().get(JsonKey.USER_ID), request.getRequestContext());
+    if (null == request.getRequest().get(JsonKey.FORCE_MIGRATION) || !(boolean) request.getRequest().get(JsonKey.FORCE_MIGRATION)) {
+      tenantServiceImpl.validateUserCustodianOrgId((String) userDetails.get(JsonKey.ROOT_ORG_ID));
+    }
+    tenantServiceImpl.validateTargetOrgIdAndGetOrgDetailsV2(request);
+    Map<String, String> rollup = new HashMap<>();
+    rollup.put("l1", (String) request.getRequest().get(JsonKey.ROOT_ORG_ID));
+    request.getContext().put(JsonKey.ROLLUP, rollup);
+    int userFlagValue = UserFlagEnum.STATE_VALIDATED.getUserFlagValue();
+    if (userDetails.containsKey(JsonKey.FLAGS_VALUE)) {
+      userFlagValue += Integer.parseInt(String.valueOf(userDetails.get(JsonKey.FLAGS_VALUE)));
+    }
+    request.getRequest().put(JsonKey.FLAGS_VALUE, userFlagValue);
+    Map<String, Object> userUpdateRequest = createUserUpdateRequest(request, userDetails.get(JsonKey.PROFILE_DETAILS));
+    // Update user channel and rootOrgId
+    Response response = tenantServiceImpl.migrateUser(userUpdateRequest, request.getRequestContext());
+    if (null == response || null == response.get(JsonKey.RESPONSE) || (null != response.get(JsonKey.RESPONSE)
+            && !((String) response.get(JsonKey.RESPONSE)).equalsIgnoreCase(JsonKey.SUCCESS))) {
+      // throw exception for migration failed
+      ProjectCommonException.throwServerErrorException(ResponseCode.errorUserMigrationFailed);
+    }
+    if (null != userUpdateRequest.get(JsonKey.IS_DELETED) && (Boolean) userUpdateRequest.get(JsonKey.IS_DELETED)) {
+      tenantServiceImpl.deactivateUserFromKC((String) userUpdateRequest.get(JsonKey.ID), request.getRequestContext());
+    }
+    logger.info(request.getRequestContext(), "TenantMigrationActor:migrateUserV2 user record got updated.");
+    // Update user externalIds
+    Response userExternalIdsResponse = updateUserExternalIds(request);
+    // Update user org details
+    Response userOrgResponse = tenantServiceImpl.updateUserOrg(
+                    request, (List<Map<String, Object>>) userDetails.get(JsonKey.ORGANISATIONS));
+
+    // Revoke org consent
+    Map<String, Object> consentReqMap = new HashMap<>();
+    consentReqMap.put(JsonKey.USER_ID, (String) request.getRequest().get(JsonKey.USER_ID));
+    consentReqMap.put(JsonKey.CONSENT_CONSUMERID, request.getRequest().get(JsonKey.ROOT_ORG_ID));
+    consentReqMap.put(JsonKey.CONSENT_OBJECTID, request.getRequest().get(JsonKey.ROOT_ORG_ID));
+    consentReqMap.put(JsonKey.CONSENT_OBJECTTYPE, JsonKey.CONSENT_OBJECTTYPE_ORG);
+    consentReqMap.put(JsonKey.STATUS, JsonKey.CONSENT_STATUS_DELETED);
+    Response consentRes = userConsentService.updateConsent(consentReqMap, request.getRequestContext());
+
+    // Collect all the error message
+    List<Map<String, Object>> userOrgErrMsgList = new ArrayList<>();
+    if (MapUtils.isNotEmpty(userOrgResponse.getResult()) && CollectionUtils.isNotEmpty(
+            (List<Map<String, Object>>) userOrgResponse.getResult().get(JsonKey.ERRORS))) {
+      userOrgErrMsgList = (List<Map<String, Object>>) userOrgResponse.getResult().get(JsonKey.ERRORS);
+    }
+    List<Map<String, Object>> userExtIdErrMsgList = new ArrayList<>();
+    if (MapUtils.isNotEmpty(userExternalIdsResponse.getResult()) && CollectionUtils.isNotEmpty(
+            (List<Map<String, Object>>) userExternalIdsResponse.getResult().get(JsonKey.ERRORS))) {
+      userExtIdErrMsgList = (List<Map<String, Object>>) userExternalIdsResponse.getResult().get(JsonKey.ERRORS);
+    }
+    userOrgErrMsgList.addAll(userExtIdErrMsgList);
+    response.getResult().put(JsonKey.ERRORS, userOrgErrMsgList);
+    // send the response
+    sender().tell(response, self());
+    // save user data to ES
+    saveUserDetailsToEs((String) request.getRequest().get(JsonKey.USER_ID), request.getRequestContext());
+    boolean notify = true;
+    if (null != request.getRequest().get(JsonKey.NOTIFY_USER_MIGRATION)) {
+      notify = (boolean) request.getRequest().get(JsonKey.NOTIFY_USER_MIGRATION);
+    }
+    if (notify) {
+      notify(userDetails, request.getRequestContext());
+    }
+    targetObject = TelemetryUtil.generateTargetObject(
+                    (String) reqMap.get(JsonKey.USER_ID), TelemetryEnvKey.USER, JsonKey.UPDATE, null);
+    reqMap.put(JsonKey.TYPE, JsonKey.MIGRATE_USER);
+    TelemetryUtil.telemetryProcessingCall(reqMap, targetObject, correlatedObject, request.getContext());
   }
 
   private void notify(Map<String, Object> userDetail, RequestContext context) {
