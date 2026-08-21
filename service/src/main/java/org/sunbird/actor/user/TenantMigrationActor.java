@@ -80,6 +80,9 @@ public class TenantMigrationActor extends BaseActor {
       case "userTenantMigrate":
         migrateUser(request);
         break;
+      case "userTenantMigrateV2":
+        migrateUserV2(request);
+        break;
       case "userSelfDeclaredTenantMigrate":
         migrateSelfDeclaredUser(request);
         break;
@@ -230,6 +233,13 @@ public class TenantMigrationActor extends BaseActor {
     reqMap.put(JsonKey.TYPE, JsonKey.MIGRATE_USER);
     TelemetryUtil.telemetryProcessingCall(
         reqMap, targetObject, correlatedObject, request.getContext());
+  }
+
+  @SuppressWarnings("unchecked")
+  private void migrateUserV2(Request request) {
+    logger.info(request.getRequestContext(), "TenantMigrationActor:migrateUserV2 called.");
+    request.put(JsonKey.API_VERSION, JsonKey.USER_MIGRATE_V2);
+    migrateUser(request);
   }
 
   private void notify(Map<String, Object> userDetail, RequestContext context) {
