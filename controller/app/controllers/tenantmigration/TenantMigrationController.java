@@ -32,21 +32,4 @@ public class TenantMigrationController extends BaseController {
         true,
         httpRequest);
   }
-
-  /**
-   * Method to migrate user from one tenant to another (v2).
-   *
-   * @return Result
-   */
-  public CompletionStage<Result> userTenantMigrateV2(Http.Request httpRequest) {
-    return handleRequest(
-        tenantMigrationActor,
-        ActorOperations.USER_TENANT_MIGRATE_V2.getValue(),
-        httpRequest.body().asJson(),
-        null,
-        null,
-        null,
-        true,
-        httpRequest);
-  }
 }
