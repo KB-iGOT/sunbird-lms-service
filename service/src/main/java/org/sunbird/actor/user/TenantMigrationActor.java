@@ -80,6 +80,9 @@ public class TenantMigrationActor extends BaseActor {
       case "userTenantMigrate":
         migrateUser(request);
         break;
+      case "userTenantMigrateV2":
+        migrateUserV2(request);
+        break;
       case "userSelfDeclaredTenantMigrate":
         migrateSelfDeclaredUser(request);
         break;
@@ -143,14 +146,18 @@ public class TenantMigrationActor extends BaseActor {
             || !(boolean) request.getRequest().get(JsonKey.FORCE_MIGRATION)) {
       tenantServiceImpl.validateUserCustodianOrgId((String) userDetails.get(JsonKey.ROOT_ORG_ID));
     }
-    tenantServiceImpl.validateChannelAndGetRootOrgId(request);
+    if (JsonKey.USER_MIGRATE_V2.equalsIgnoreCase((String) request.getRequest().get(JsonKey.API_VERSION))) {
+      tenantServiceImpl.validateTargetOrgIdAndGetOrgDetailsV2(request);
+    } else {
+      tenantServiceImpl.validateChannelAndGetRootOrgId(request);
+      String orgId =
+          tenantServiceImpl.validateOrgExternalIdOrOrgIdAndGetOrgId(
+              request.getRequest(), request.getRequestContext());
+      request.getRequest().put(JsonKey.ORG_ID, orgId);
+    }
     Map<String, String> rollup = new HashMap<>();
     rollup.put("l1", (String) request.getRequest().get(JsonKey.ROOT_ORG_ID));
     request.getContext().put(JsonKey.ROLLUP, rollup);
-    String orgId =
-        tenantServiceImpl.validateOrgExternalIdOrOrgIdAndGetOrgId(
-            request.getRequest(), request.getRequestContext());
-    request.getRequest().put(JsonKey.ORG_ID, orgId);
     int userFlagValue = UserFlagEnum.STATE_VALIDATED.getUserFlagValue();
     if (userDetails.containsKey(JsonKey.FLAGS_VALUE)) {
       userFlagValue += Integer.parseInt(String.valueOf(userDetails.get(JsonKey.FLAGS_VALUE)));
@@ -226,6 +233,13 @@ public class TenantMigrationActor extends BaseActor {
     reqMap.put(JsonKey.TYPE, JsonKey.MIGRATE_USER);
     TelemetryUtil.telemetryProcessingCall(
         reqMap, targetObject, correlatedObject, request.getContext());
+  }
+
+  @SuppressWarnings("unchecked")
+  private void migrateUserV2(Request request) {
+    logger.info(request.getRequestContext(), "TenantMigrationActor:migrateUserV2 called.");
+    request.put(JsonKey.API_VERSION, JsonKey.USER_MIGRATE_V2);
+    migrateUser(request);
   }
 
   private void notify(Map<String, Object> userDetail, RequestContext context) {

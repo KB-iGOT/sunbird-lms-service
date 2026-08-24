@@ -93,6 +93,7 @@ POST    /v4/otp/verify                          @controllers.otp.OtpController.v
 
 #Tenant Migration
 PATCH   /private/user/v1/migrate  	            @controllers.tenantmigration.TenantMigrationController.userTenantMigrate(request: play.mvc.Http.Request)
+PATCH   /private/user/v2/migrate  	            @controllers.tenantmigration.TenantMigrationController.userTenantMigrateV2(request: play.mvc.Http.Request)
 
 #User Feed API
 GET     /v1/user/feed/:userId                   @controllers.feed.FeedController.getUserFeed(userId:String,request: play.mvc.Http.Request)

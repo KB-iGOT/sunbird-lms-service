@@ -764,6 +764,9 @@ public final class JsonKey {
     public static final String SPV_ROLES = "spv_roles";
     public static final String STATE_ADMIN = "STATE_ADMIN";
     public static final String STATE_ADMIN_ROLES = "state_admin_roles";
+    public static final String TARGET_ORG_ID = "targetOrgId";
+    public static final String API_VERSION = "apiVersion";
+    public static final String USER_MIGRATE_V2 = "userMigrateV2";
 
 
     private JsonKey() {

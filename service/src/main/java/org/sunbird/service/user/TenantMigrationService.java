@@ -8,6 +8,7 @@ import org.sunbird.response.Response;
 
 public interface TenantMigrationService {
     void validateChannelAndGetRootOrgId(Request request);
+    void validateTargetOrgIdAndGetOrgDetailsV2(Request request);
     void validateUserCustodianOrgId(String rootOrgId);
     String validateOrgExternalIdOrOrgIdAndGetOrgId(
             Map<String, Object> migrateReq, RequestContext context);

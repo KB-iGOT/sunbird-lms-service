@@ -84,6 +84,7 @@ public enum ActorOperations {
   GET_USER_TYPES("getUserTypes", "UTYPRED"),
 
   USER_TENANT_MIGRATE("userTenantMigrate", "USRMIG"),
+  USER_TENANT_MIGRATE_V2("userTenantMigrateV2", "USRMIGV2"),
   FREEUP_USER_IDENTITY("freeUpUserIdentity", "IDNTFREE"),
   RESET_PASSWORD("resetPassword", "PASSRST"),
   MERGE_USER("mergeUser", "USRMRG"),
