@@ -2,10 +2,8 @@ package org.sunbird.service.user.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -230,4 +228,52 @@ public class TenantMigrationServiceImpl implements TenantMigrationService {
           List<Map<String, Object>> userOrgList, RequestContext context) {
     userOrgService.softDeleteOldUserOrgMapping(userOrgList, context);
   }
+
+  public void validateTargetOrgIdAndGetOrgDetailsV2(Request request) {
+    String targetOrgId = (String) request.getRequest().get(JsonKey.TARGET_ORG_ID);
+    if (StringUtils.isBlank(targetOrgId)) {
+      ProjectCommonException.throwClientErrorException(ResponseCode.mandatoryParamsMissing,
+              MessageFormat.format(ResponseCode.mandatoryParamsMissing.getErrorMessage(), JsonKey.TARGET_ORG_ID));
+    }
+
+    OrgService orgService = OrgServiceImpl.getInstance();
+    Map<String, Object> filters = new HashMap<>();
+    filters.put(JsonKey.IDENTIFIER, targetOrgId);
+    filters.put(JsonKey.IS_TENANT, true);
+    List<Map<String, Object>> orgList = orgService.organisationSearch(filters, request.getRequestContext());
+    Map<String, Object> orgMap = Collections.emptyMap();
+    if (CollectionUtils.isNotEmpty(orgList)) {
+      orgMap = orgList.get(0);
+    } else {
+      orgMap = orgService.getOrgById(targetOrgId, request.getRequestContext());
+    }
+
+    if (MapUtils.isEmpty(orgMap)) {
+      ProjectCommonException.throwClientErrorException(ResponseCode.invalidParameterValue,
+              MessageFormat.format(ResponseCode.invalidParameterValue.getErrorMessage(), targetOrgId, JsonKey.TARGET_ORG_ID));
+    }
+
+    if (null != orgMap.get(JsonKey.STATUS) && (1 != (int) orgMap.get(JsonKey.STATUS))) {
+      ProjectCommonException.throwClientErrorException(ResponseCode.errorInactiveOrg,
+              ProjectUtil.formatMessage(ResponseCode.errorInactiveOrg.getErrorMessage(), JsonKey.TARGET_ORG_ID, targetOrgId));
+    }
+
+    String channel = (String) orgMap.get(JsonKey.CHANNEL);
+    String rootOrgId = (String) orgMap.get(JsonKey.ROOT_ORG_ID);
+    if (StringUtils.isBlank(rootOrgId)) {
+      rootOrgId = targetOrgId;
+    }
+
+    request.getRequest().put(JsonKey.CHANNEL, channel);
+    request.getRequest().put(JsonKey.ROOT_ORG_ID, rootOrgId);
+    request.getRequest().put(JsonKey.ORG_ID, targetOrgId);
+
+    if (StringUtils.isNotBlank(channel)) {
+      Map<String, String> ministryDetails = OrgServiceImpl.getInstance().getMinistryInfoFromChannel(channel, request.getRequestContext());
+      request.getRequest().put(JsonKey.MINISTRY_DETAILS, ministryDetails);
+    }
+
+    fetchLocationIds(request.getRequestContext(), request.getRequest(), orgMap);
+  }
+
 }
