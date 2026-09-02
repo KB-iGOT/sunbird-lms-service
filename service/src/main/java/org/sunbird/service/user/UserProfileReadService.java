@@ -15,6 +15,7 @@ import org.sunbird.exception.ResponseMessage;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.kafka.InstructionEventGenerator;
 import org.sunbird.kafka.KafkaClient;
+import org.sunbird.util.user.ProfileTokenGenerator;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
@@ -182,7 +183,7 @@ public class UserProfileReadService {
       }
     }
 
-
+    addProfileToken(result, userId, actorMessage.getRequestContext());
     calculateProfileCompletionPercentage(result,
             userId, actorMessage.getRequestContext());
     Response response = new Response();
@@ -717,6 +718,14 @@ public class UserProfileReadService {
       }
     }
     return retList;
+  }
+
+  private void addProfileToken(
+          Map<String, Object> result, String userId, RequestContext context) {
+    String profileToken = ProfileTokenGenerator.generate(result, userId, context);
+    if (StringUtils.isNotBlank(profileToken)) {
+      result.put(JsonKey.PROFILE_TOKEN, profileToken);
+    }
   }
 
   private void mapUserRoles(Map<String, Object> result) {

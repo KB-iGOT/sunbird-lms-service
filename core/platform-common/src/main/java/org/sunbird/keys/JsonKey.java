@@ -766,6 +766,15 @@ public final class JsonKey {
     public static final String SPV_ROLES = "spv_roles";
     public static final String STATE_ADMIN = "STATE_ADMIN";
     public static final String STATE_ADMIN_ROLES = "state_admin_roles";
+    public static final String CADRE_DETAILS = "cadreDetails";
+    public static final String CADRE_NAME = "cadreName";
+    public static final String CADRE_BATCH = "cadreBatch";
+    public static final String CIVIL_SERVICE_NAME = "civilServiceName";
+    public static final String SERVICE_TYPE = "serviceType";
+    public static final String CADRE = "cadre";
+    public static final String BATCH = "batch";
+    public static final String PROFILE_TOKEN = "profileToken";
+    public static final String PROFILE_TOKEN_KEY = "sunbird_profile_token_key";
 
 
     private JsonKey() {
