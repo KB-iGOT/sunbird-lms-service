@@ -1,7 +1,7 @@
 package org.sunbird.util.user;
 
 
-import com.typesafe.config.Config;
+
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import org.apache.commons.collections.CollectionUtils;
@@ -9,7 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.request.RequestContext;
-import org.sunbird.util.ConfigUtil;
+import org.sunbird.util.ProjectUtil;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -170,9 +170,6 @@ public class ProfileTokenGenerator {
 
     /** Reads the secret from service.conf, with the same-named environment variable winning. */
     private static String configuredSecret() {
-        Config config = ConfigUtil.getConfig();
-        return config.hasPath(JsonKey.PROFILE_TOKEN_KEY)
-                ? config.getString(JsonKey.PROFILE_TOKEN_KEY)
-                : null;
+        return ProjectUtil.getConfigValue(JsonKey.PROFILE_TOKEN_KEY);
     }
 }
