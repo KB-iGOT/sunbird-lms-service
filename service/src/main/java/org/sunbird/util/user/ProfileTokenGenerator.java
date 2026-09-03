@@ -19,6 +19,7 @@ import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,6 +136,7 @@ public class ProfileTokenGenerator {
             return Jwts.builder()
                     .setClaims(claims)
                     .setIssuer(ISSUER)
+                    .setIssuedAt(new Date())
                     .signWith(SIGNATURE_ALGORITHM, key())
                     .compact();
         } catch (Exception e) {
