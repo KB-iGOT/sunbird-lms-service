@@ -54,6 +54,7 @@ public class UserProfileReadService {
   private final CassandraOperation cassandraOperation = ServiceFactory.getInstance();
 
   public Response getUserProfileData(Request actorMessage) {
+    logger.info("UserProfileReadService: getUserProfile: Start");
     String id = (String) actorMessage.getRequest().get(JsonKey.USER_ID);
     String idType = (String) actorMessage.getContext().get(JsonKey.ID_TYPE);
     String provider = (String) actorMessage.getContext().get(JsonKey.PROVIDER);
