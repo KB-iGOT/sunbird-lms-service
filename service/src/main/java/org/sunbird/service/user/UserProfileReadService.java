@@ -771,18 +771,18 @@ public class UserProfileReadService {
         InstructionEventGenerator.createFirstLoginDetailsEvent("", topic, dataMap);
         String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
         Map<String, String> userUpdateMap = new HashMap<>();
-        userUpdateMap.put(JsonKey.USER_ID, (String) map.get(JsonKey.ID));
+        userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
         InstructionEventGenerator.userUpdateEvent("", onboardUserOnFirstLogin, userUpdateMap);
       } else {
-          map.put(JsonKey.CONSENT_USER_ID, userId);
-          map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
-          cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
-          map.put(JsonKey.FIRST_LOGIN, userDetailsMap.get(JsonKey.FIRST_LOGIN));
-      }
-        response.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
-        response.put(JsonKey.LAST_LOGIN, map.get(JsonKey.LAST_LOGIN));
-        response.put(JsonKey.CONSENT_USER_ID, userId);
-        response.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
+            map.put(JsonKey.CONSENT_USER_ID, userId);
+            map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
+            cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
+            map.put(JsonKey.FIRST_LOGIN,userDetailsMap.get(JsonKey.FIRST_LOGIN));
+        }
+        response.put(JsonKey.FIRST_LOGIN,map.get(JsonKey.FIRST_LOGIN));
+        response.put(JsonKey.LAST_LOGIN,map.get(JsonKey.LAST_LOGIN));
+        response.put(JsonKey.CONSENT_USER_ID,userId);
+        response.put(JsonKey.SELF_REGISTRATION,userDetailsMap.get(JsonKey.CREATEDBY) == null);
         return response;
     }
 
