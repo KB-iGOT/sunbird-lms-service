@@ -181,8 +181,7 @@ public class UserProfileReadService {
         result.put(JsonKey.MENTORING,mentorObj);
       }
     }
-
-
+    addProfileToken(result, userId, actorMessage.getRequestContext());
     calculateProfileCompletionPercentage(result,
             userId, actorMessage.getRequestContext());
     Response response = new Response();
@@ -719,6 +718,16 @@ public class UserProfileReadService {
     return retList;
   }
 
+  private void addProfileToken(
+          Map<String, Object> result, String userId, RequestContext context) {
+    logger.info("UserProfileReadService: getUserProfile: adding profile token");
+    String profileToken = ProfileTokenGenerator.generate(result, userId, context);
+    logger.info("UserProfileReadService: getUserProfile: profile token generated " +profileToken);
+    if (StringUtils.isNotBlank(profileToken)) {
+      result.put(JsonKey.PROFILE_TOKEN, profileToken);
+    }
+  }
+
   private void mapUserRoles(Map<String, Object> result) {
     List<Map<String, Object>> organisations = (List<Map<String, Object>>) result.get(JsonKey.ORGANISATIONS);
     List<String> roleList = new ArrayList<String>();
@@ -734,20 +743,12 @@ public class UserProfileReadService {
   }
 
     public Response getUserLoggedInDetails(Request actorMessage) throws Exception {
-        String userId = (String) actorMessage.getContext().get("requestedBy");
-        Map<String, Object> map1 = new HashMap<>();
-        map1.putIfAbsent(JsonKey.ID, userId);
-        Response response = cassandraOperation.getRecordsByProperties(JsonKey.SUNBIRD, JsonKey.USER, map1, actorMessage.getRequestContext());
-        Map<String, Object> userDetailsMap = new HashMap<>();
-        List<Map<String, Object>> list = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-        list.forEach(a -> a.forEach(userDetailsMap::putIfAbsent));
-        list.forEach(map ->
-                map.forEach((key, value) ->
-                        userDetailsMap.putIfAbsent(key.toLowerCase(), value)
-                )
-        );
+      String userId = (String) actorMessage.getContext().get("requestedBy");
+      Map<String, Object> userLoginDetailsMap = fetchUserLoginDetailsMap(userId, actorMessage.getRequestContext());
+      boolean selfRegistered = isSelfRegisteredUser(userId, actorMessage.getRequestContext());
+      Response response = new Response();
       Map<String, Object> map = new HashMap<>();
-      if (userDetailsMap.get("first_login") == null) {
+      if (userLoginDetailsMap.get("first_login") == null) {
         map.put(JsonKey.CONSENT_USER_ID, userId);
         map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
@@ -880,5 +881,35 @@ public class UserProfileReadService {
     return Optional.ofNullable(map.get(key))
             .map(Object::toString)
             .filter(s -> !s.trim().isEmpty());
+  }
+
+  private Map<String, Object> fetchUserLoginDetailsMap(String userId, RequestContext context) {
+    Map<String, Object> userLoginKeyMap = new HashMap<>();
+    userLoginKeyMap.putIfAbsent(JsonKey.CONSENT_USER_ID, userId);
+    Response userLoginResponse = cassandraOperation.getRecordsByProperties(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, userLoginKeyMap, context);
+    Map<String, Object> userLoginDetailsMap = new HashMap<>();
+    List<Map<String, Object>> userLoginList = (List<Map<String, Object>>) userLoginResponse.get(JsonKey.RESPONSE);
+    userLoginList.forEach(a -> a.forEach(userLoginDetailsMap::putIfAbsent));
+    userLoginList.forEach(loginRecord ->
+            loginRecord.forEach((key, value) ->
+                    userLoginDetailsMap.putIfAbsent(key.toLowerCase(), value)
+            )
+    );
+    return userLoginDetailsMap;
+  }
+
+  private boolean isSelfRegisteredUser(String userId, RequestContext context) {
+    Map<String, Object> userKeyMap = new HashMap<>();
+    userKeyMap.putIfAbsent(JsonKey.ID, userId);
+    Response userFetchResponse = cassandraOperation.getRecordsByProperties(JsonKey.SUNBIRD, JsonKey.USER, userKeyMap, context);
+    Map<String, Object> userDetailsMap = new HashMap<>();
+    List<Map<String, Object>> userList = (List<Map<String, Object>>) userFetchResponse.get(JsonKey.RESPONSE);
+    userList.forEach(a -> a.forEach(userDetailsMap::putIfAbsent));
+    userList.forEach(userRecord ->
+            userRecord.forEach((key, value) ->
+                    userDetailsMap.putIfAbsent(key.toLowerCase(), value)
+            )
+    );
+    return userDetailsMap.get(JsonKey.CREATEDBY) == null;
   }
 }

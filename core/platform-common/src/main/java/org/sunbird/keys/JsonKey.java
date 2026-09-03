@@ -767,6 +767,15 @@ public final class JsonKey {
     public static final String TARGET_ORG_ID = "targetOrgId";
     public static final String API_VERSION = "apiVersion";
     public static final String USER_MIGRATE_V2 = "userMigrateV2";
+    public static final String CADRE_DETAILS = "cadreDetails";
+    public static final String CADRE_NAME = "cadreName";
+    public static final String CADRE_BATCH = "cadreBatch";
+    public static final String CIVIL_SERVICE_NAME = "civilServiceName";
+    public static final String SERVICE_TYPE = "serviceType";
+    public static final String CADRE = "cadre";
+    public static final String BATCH = "batch";
+    public static final String PROFILE_TOKEN = "profileToken";
+    public static final String PROFILE_TOKEN_KEY = "sunbird_profile_token_key";
 
 
     private JsonKey() {
