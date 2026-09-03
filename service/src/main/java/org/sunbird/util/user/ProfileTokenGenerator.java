@@ -131,11 +131,16 @@ public class ProfileTokenGenerator {
 
     /** Signs the claims as a compact JWS. Never SignatureAlgorithm.NONE. */
     private static String sign(Map<String, Object> claims) throws GeneralSecurityException {
-        return Jwts.builder()
-                .setClaims(claims)
-                .setIssuer(ISSUER)
-                .signWith(SIGNATURE_ALGORITHM, key())
-                .compact();
+        try {
+            return Jwts.builder()
+                    .setClaims(claims)
+                    .setIssuer(ISSUER)
+                    .signWith(SIGNATURE_ALGORITHM, key())
+                    .compact();
+        } catch (Exception e) {
+            System.out.println("ProfileTokenGenerator:sign: unable to sign profileToken claims " + e.getMessage());
+            throw e;
+        }
     }
 
 
