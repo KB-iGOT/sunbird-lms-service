@@ -87,7 +87,6 @@ public class ProfileTokenGenerator {
             return sign(payload);
         } catch (GeneralSecurityException | RuntimeException e) {
             logger.error(
-                    context,
                     "ProfileTokenGenerator:generate: unable to build profileToken for user " + userId,
                     e);
             return null;
@@ -168,7 +167,10 @@ public class ProfileTokenGenerator {
         return derived;
     }
 
-    /** Reads the secret from service.conf, with the same-named environment variable winning. */
+    /**
+     * Reads the secret from externalresource.properties, with the same-named environment variable
+     * taking precedence.
+     */
     private static String configuredSecret() {
         return ProjectUtil.getConfigValue(JsonKey.PROFILE_TOKEN_KEY);
     }

@@ -182,8 +182,9 @@ public class UserProfileReadService {
         result.put(JsonKey.MENTORING,mentorObj);
       }
     }
-
+    logger.info("UserProfileReadService: getUserProfile: End");
     addProfileToken(result, userId, actorMessage.getRequestContext());
+    logger.info("UserProfileReadService: getUserProfile: calculating profile completion percentage");
     calculateProfileCompletionPercentage(result,
             userId, actorMessage.getRequestContext());
     Response response = new Response();
@@ -722,7 +723,9 @@ public class UserProfileReadService {
 
   private void addProfileToken(
           Map<String, Object> result, String userId, RequestContext context) {
+    logger.info("UserProfileReadService: getUserProfile: adding profile token");
     String profileToken = ProfileTokenGenerator.generate(result, userId, context);
+    logger.info("UserProfileReadService: getUserProfile: profile token generated " +profileToken);
     if (StringUtils.isNotBlank(profileToken)) {
       result.put(JsonKey.PROFILE_TOKEN, profileToken);
     }
