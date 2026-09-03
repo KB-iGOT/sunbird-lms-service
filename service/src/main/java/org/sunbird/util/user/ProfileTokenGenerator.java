@@ -29,18 +29,9 @@ public class ProfileTokenGenerator {
 
     private static final LoggerUtil logger = new LoggerUtil(ProfileTokenGenerator.class);
 
-    private static final String KEY_DIGEST = "SHA-256";
-    private static final String HMAC_ALGORITHM = "HmacSHA256";
     private static final SignatureAlgorithm SIGNATURE_ALGORITHM = SignatureAlgorithm.HS256;
-    private static final String ISSUER = "sunbird-lms-service";
-    private static final int MIN_SECRET_LENGTH = 32;
 
     private static final AtomicReference<SecretKey> TOKEN_KEY = new AtomicReference<>();
-
-    private static final String TOKEN_PROFILE_STATUS = "profilestatus";
-    private static final String TOKEN_SERVICE = "service";
-    private static final String TOKEN_USER = "user";
-    private static final String TOKEN_ROOT_ORG_ID = "rootorgid";
 
     private ProfileTokenGenerator() {}
 
@@ -55,9 +46,9 @@ public class ProfileTokenGenerator {
             Map<String, Object> rootOrg = asMap(userProfile.get(JsonKey.ROOT_ORG));
 
             Map<String, Object> payload = new LinkedHashMap<>();
-            payload.put(TOKEN_PROFILE_STATUS, asString(profileDetails.get(JsonKey.PROFILE_STATUS)));
+            payload.put(JsonKey.PROFILE_TOKEN_CLAIM_PROFILE_STATUS, asString(profileDetails.get(JsonKey.PROFILE_STATUS)));
             payload.put(
-                    TOKEN_SERVICE,
+                    JsonKey.SERVICE,
                     firstNotBlank(
                             personalDetails.get(JsonKey.SERVICE_TYPE), cadreDetails.get(JsonKey.CIVIL_SERVICE_NAME)));
             payload.put(
@@ -68,9 +59,9 @@ public class ProfileTokenGenerator {
                     firstNotBlank(personalDetails.get(JsonKey.CADRE), cadreDetails.get(JsonKey.CADRE_NAME)));
             payload.put(JsonKey.DESIGNATION, asString(professionalDetails.get(JsonKey.DESIGNATION)));
             payload.put(
-                    TOKEN_USER,
+                    JsonKey.USER,
                     StringUtils.isNotBlank(userId) ? userId : asString(userProfile.get(JsonKey.USER_ID)));
-            payload.put(TOKEN_ROOT_ORG_ID, asString(userProfile.get(JsonKey.ROOT_ORG_ID)));
+            payload.put(JsonKey.ROOTORG_ID, asString(userProfile.get(JsonKey.ROOT_ORG_ID)));
             payload.put(JsonKey.GROUP, asString(professionalDetails.get(JsonKey.GROUP)));
             payload.put(
                     JsonKey.MINISTRY_STATE_ID,
@@ -133,7 +124,7 @@ public class ProfileTokenGenerator {
         try {
             return Jwts.builder()
                     .setClaims(claims)
-                    .setIssuer(ISSUER)
+                    .setIssuer(JsonKey.PROFILE_TOKEN_ISSUER)
                     .setIssuedAt(new Date())
                     .signWith(SIGNATURE_ALGORITHM, key())
                     .compact();
@@ -152,17 +143,17 @@ public class ProfileTokenGenerator {
                 throw new InvalidKeyException(
                         JsonKey.PROFILE_TOKEN_KEY + " is not configured; profileToken cannot be generated");
             }
-            if (secret.trim().length() < MIN_SECRET_LENGTH) {
+            if (secret.trim().length() < JsonKey.PROFILE_TOKEN_MIN_SECRET_LENGTH) {
                 throw new InvalidKeyException(
                         JsonKey.PROFILE_TOKEN_KEY
                                 + " is shorter than "
-                                + MIN_SECRET_LENGTH
+                                + JsonKey.PROFILE_TOKEN_MIN_SECRET_LENGTH
                                 + " characters; use `openssl rand -base64 32`");
             }
             byte[] keyBytes =
-                    MessageDigest.getInstance(KEY_DIGEST).digest(secret.trim().getBytes(StandardCharsets.UTF_8));
+                    MessageDigest.getInstance(JsonKey.PROFILE_TOKEN_KEY_DIGEST).digest(secret.trim().getBytes(StandardCharsets.UTF_8));
             try {
-                derived = new SecretKeySpec(keyBytes, HMAC_ALGORITHM);
+                derived = new SecretKeySpec(keyBytes, JsonKey.PROFILE_TOKEN_HMAC_ALGORITHM);
             } finally {
                 Arrays.fill(keyBytes, (byte) 0);
             }

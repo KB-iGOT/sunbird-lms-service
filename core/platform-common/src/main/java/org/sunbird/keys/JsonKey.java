@@ -776,6 +776,11 @@ public final class JsonKey {
     public static final String BATCH = "batch";
     public static final String PROFILE_TOKEN = "profileToken";
     public static final String PROFILE_TOKEN_KEY = "sunbird_profile_token_key";
+    public static final String PROFILE_TOKEN_ISSUER = "sunbird-lms-service";
+    public static final String PROFILE_TOKEN_KEY_DIGEST = "SHA-256";
+    public static final String PROFILE_TOKEN_HMAC_ALGORITHM = "HmacSHA256";
+    public static final int PROFILE_TOKEN_MIN_SECRET_LENGTH = 32;
+    public static final String PROFILE_TOKEN_CLAIM_PROFILE_STATUS = "profilestatus";
 
 
     private JsonKey() {
