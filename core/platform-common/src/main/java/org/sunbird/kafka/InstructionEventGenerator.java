@@ -125,8 +125,13 @@ public class InstructionEventGenerator {
       eData.putAll((Map) data.get("edata"));
     }
 
+    Map<String, Object> innerData = new HashMap<>();
+    innerData.put("edata", eData);
+
     Map<String, Object> formattedData = new HashMap<>();
-    formattedData.put("edata", eData);
+    formattedData.put("eventType", "FIRST_LOGIN");
+    formattedData.put("data", innerData);
+    formattedData.put("version", 2);
 
     String jsonMessage = null;
     try {
