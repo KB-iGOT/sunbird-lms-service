@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
+import org.sunbird.util.ProjectUtil;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.telemetry.dto.TelemetryBJREvent;
 
@@ -132,7 +133,7 @@ public class InstructionEventGenerator {
     Map<String, Object> formattedData = new HashMap<>();
     formattedData.put(JsonKey.EVENT_TYPE, JsonKey.EVENT_TYPE_FIRST_LOGIN);
     formattedData.put(JsonKey.DATA, innerData);
-    formattedData.put(JsonKey.VERSION, 2);
+    formattedData.put(JsonKey.VERSION, Integer.parseInt(ProjectUtil.getConfigValue("kafka_event_envelope_version")));
 
     String jsonMessage = null;
     try {
