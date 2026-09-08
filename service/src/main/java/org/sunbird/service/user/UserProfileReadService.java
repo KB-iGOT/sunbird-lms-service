@@ -760,7 +760,7 @@ public class UserProfileReadService {
         requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
         dataMap.put(JsonKey.EDATA, requestMap);
         String topic = ProjectUtil.getConfigValue("kafka_user_first_login_event_topic");
-        InstructionEventGenerator.createFirstLoginDetailsEvent("", topic, dataMap);
+        InstructionEventGenerator.createFirstLoginDetailsEvent(userId, topic, dataMap);
         String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
         Map<String, String> userUpdateMap = new HashMap<>();
         userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
