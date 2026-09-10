@@ -769,6 +769,9 @@ public final class JsonKey {
     public static final String USER_MIGRATE_V2 = "userMigrateV2";
     public static final String EVENT_TYPE = "eventType";
     public static final String EVENT_TYPE_FIRST_LOGIN = "FIRST_LOGIN";
+    public static final String WALLET_BALANCE = "walletBalance";
+    public static final String TOTAL_EARNED = "total_earned";
+    public static final String TOTAL_REDEEMED = "total_redeemed";
 
     private JsonKey() {
     }
