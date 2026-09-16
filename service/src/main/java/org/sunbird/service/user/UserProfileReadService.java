@@ -9,6 +9,8 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.sunbird.actor.organisation.validator.OrgTypeValidator;
 import org.sunbird.cassandra.CassandraOperation;
+import org.sunbird.dao.userkarmacoinwallet.UserKarmaCoinWalletDao;
+import org.sunbird.dao.userkarmacoinwallet.impl.UserKarmaCoinWalletDaoImpl;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
 import org.sunbird.exception.ResponseMessage;
@@ -48,6 +50,7 @@ public class UserProfileReadService {
       UserSelfDeclarationServiceImpl.getInstance();
   private final UserExternalIdentityService userExternalIdentityService =
     UserExternalIdentityServiceImpl.getInstance();
+  private final UserKarmaCoinWalletDao userKarmaCoinWalletDao = UserKarmaCoinWalletDaoImpl.getInstance();
   private final ObjectMapper mapper = new ObjectMapper();
 
   private final CassandraOperation cassandraOperation = ServiceFactory.getInstance();
@@ -185,9 +188,17 @@ public class UserProfileReadService {
 
     calculateProfileCompletionPercentage(result,
             userId, actorMessage.getRequestContext());
+    addWalletBalance(result, userId, actorMessage.getRequestContext());
     Response response = new Response();
     response.put(JsonKey.RESPONSE, result);
     return response;
+  }
+
+  private void addWalletBalance(Map<String, Object> result, String userId, RequestContext context) {
+    Map<String, Object> wallet = userKarmaCoinWalletDao.getWallet(userId, context);
+    int totalEarned = wallet == null ? 0 : ((Number) wallet.getOrDefault(JsonKey.TOTAL_EARNED, 0)).intValue();
+    int totalRedeemed = wallet == null ? 0 : ((Number) wallet.getOrDefault(JsonKey.TOTAL_REDEEMED, 0)).intValue();
+    result.put(JsonKey.WALLET_BALANCE, totalEarned - totalRedeemed);
   }
 
   /**
@@ -759,8 +770,8 @@ public class UserProfileReadService {
         requestMap.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
         requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
         dataMap.put(JsonKey.EDATA, requestMap);
-        String topic = ProjectUtil.getConfigValue("kafka_user_first_login_event_topic");
-        InstructionEventGenerator.createFirstLoginDetailsEvent("", topic, dataMap);
+        String topic = ProjectUtil.getConfigValue("karma_points_unified_event_topic");
+        InstructionEventGenerator.createFirstLoginDetailsEvent(userId, topic, dataMap);
         String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
         Map<String, String> userUpdateMap = new HashMap<>();
         userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
