@@ -161,4 +161,24 @@ public class InstructionEventGenerator {
       throw new ProjectCommonException(ResponseCode.BE_JOB_REQUEST_EXCEPTION, "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode());
     }
   }
+
+  /**
+   * Karma points unified topic envelope, agreed contract:
+   * {"eventType": "<type>", "data": {"edata": {...}}, "version": <n>}. Used for SELF_REGISTRATION.
+   */
+  public static void createKarmaPointsEvent(
+          String key, String topic, String eventType, Map<String, Object> edata, int version) throws Exception {
+    Map<String, Object> innerData = new HashMap<>();
+    innerData.put(JsonKey.EDATA, edata);
+    Map<String, Object> event = new HashMap<>();
+    event.put(JsonKey.EVENT_TYPE, eventType);
+    event.put(JsonKey.DATA, innerData);
+    event.put(JsonKey.VERSION, version);
+    String jsonMessage = mapper.writeValueAsString(event);
+    if (StringUtils.isBlank(topic)) {
+      throw new ProjectCommonException(ResponseCode.BE_JOB_REQUEST_EXCEPTION, "Invalid topic id.", ResponseCode.CLIENT_ERROR.getResponseCode());
+    }
+    if (StringUtils.isNotBlank(key)) KafkaClient.send(key, jsonMessage, topic);
+    else KafkaClient.send(jsonMessage, topic);
+  }
 }
