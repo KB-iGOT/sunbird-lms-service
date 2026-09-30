@@ -229,6 +229,8 @@ public class SSOUserCreateActor extends UserBaseActor {
       }
       resp = userService.saveUserAttributes(
           userRequest, userProfileUpdateActor, request.getRequestContext());
+      publishSelfRegistrationKarmaEvent(
+          userId, (String) userMap.get(JsonKey.SOURCE_CREATION_TYPE), request.getRequestContext());
     } else {
       logger.info(
           request.getRequestContext(), "SSOUserCreateActor:processSSOUser: User creation failure");
