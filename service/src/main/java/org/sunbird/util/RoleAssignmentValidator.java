@@ -19,6 +19,8 @@ import org.sunbird.service.user.impl.UserRoleServiceImpl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class RoleAssignmentValidator {
@@ -29,7 +31,8 @@ public class RoleAssignmentValidator {
   private final SystemSettingsService systemSettingsService = new SystemSettingsService();
 
   public void validateRoleAssignment(String requestingUserId, String requestingUserOrgId, String targetOrgId, String targetUserId, List<String> rolesToAssign, RequestContext context) {
-    List<String> requestingUserRoles = validateRequestingUserRoles(requestingUserId, context);
+    List<String> requestingUserRoles = getRequestingUserRoles(requestingUserId, context);
+
     boolean isSpv = false;
     String configuredSpvRoles = ProjectUtil.getConfigValue(JsonKey.SPV_ROLES);
     List<String> spvRoles = StringUtils.isNotBlank(configuredSpvRoles)
@@ -40,8 +43,8 @@ public class RoleAssignmentValidator {
     }
 
     List<String> newRoles = getNewRoles(targetUserId, rolesToAssign, context);
-    if (!isSpv && CollectionUtils.isNotEmpty(newRoles)) {
-      validateRoleRestrictions(requestingUserRoles, newRoles);
+    if (CollectionUtils.isNotEmpty(newRoles)) {
+      validateRoleAssignmentPermissions(requestingUserRoles, newRoles);
     }
 
     Organisation targetOrg = orgService.getOrgObjById(targetOrgId, context);
@@ -80,7 +83,7 @@ public class RoleAssignmentValidator {
     return newRoles;
   }
 
-  private List<String> validateRequestingUserRoles(String requestingUserId, RequestContext context) {
+  private List<String> getRequestingUserRoles(String requestingUserId, RequestContext context) {
     List<Map<String, Object>> requestingUserRoles = userRoleService.getUserRoles(requestingUserId, null, context);
 
     if (CollectionUtils.isEmpty(requestingUserRoles)) {
@@ -89,24 +92,10 @@ public class RoleAssignmentValidator {
               ResponseCode.UNAUTHORIZED.getResponseCode());
     }
 
-    String configuredAdminRoleSuffixes = ProjectUtil.getConfigValue(JsonKey.ADMIN_ROLE_SUFFIXES);
-    List<String> adminRoleSuffixes = StringUtils.isNotBlank(configuredAdminRoleSuffixes)
-            ? List.of(configuredAdminRoleSuffixes.split(","))
-            : List.of(JsonKey.ADMIN_SUFFIX, JsonKey.LEADER_SUFFIX);
-    List<String> adminRoles = requestingUserRoles.stream()
+    return requestingUserRoles.stream()
             .map(roleMap -> (String) roleMap.get(JsonKey.ROLE))
-            .filter(role -> role != null &&
-                    adminRoleSuffixes.stream().anyMatch(role::endsWith))
+            .filter(Objects::nonNull)
             .collect(Collectors.toList());
-
-    if (CollectionUtils.isEmpty(adminRoles)) {
-      throw new ProjectCommonException(
-              ResponseCode.userNotAuthorizedAdminRolesRequired,
-              ResponseCode.userNotAuthorizedAdminRolesRequired.getErrorMessage(),
-              ResponseCode.UNAUTHORIZED.getResponseCode()
-      );
-    }
-    return adminRoles;
   }
 
   private void isAuthorizedForOrg(boolean isSpv, String targetOrgId, String requestingUserOrgId, Organisation targetOrg) {
@@ -285,32 +274,26 @@ public class RoleAssignmentValidator {
     }
   }
 
-  private void validateRoleRestrictions(List<String> requestingUserRoles, List<String> newRoles) {
-    String configuredStateAdminRoles = ProjectUtil.getConfigValue(JsonKey.STATE_ADMIN_ROLES);
-    List<String> stateAdminRoles = StringUtils.isNotBlank(configuredStateAdminRoles)
-            ? List.of(configuredStateAdminRoles.split(","))
-            : List.of(JsonKey.STATE_ADMIN);
-    if (requestingUserRoles.stream().anyMatch(stateAdminRoles::contains)) {
-      return;
-    }
+  /**
+   * A caller may assign role X only if at least one role they hold is mapped (via the
+   * role_assignment_matrix config) to X, or to the wildcard "*" (meaning: may assign any role).
+   * Roles a caller holds that aren't keys in the config grant no assignment permissions.
+   */
+  private void validateRoleAssignmentPermissions(List<String> requestingUserRoles, List<String> newRoles) {
+    Map<String, Object> roleAssignmentMatrix = ProjectUtil.loadFilters(JsonKey.ROLE_ASSIGNMENT_MATRIX);
 
-    Map<String, Object> restrictionsConfig = ProjectUtil.loadFilters(JsonKey.ROLE_ASSIGNMENT_RESTRICTIONS);
+    Set<String> allowedRolesToAssign = requestingUserRoles.stream()
+            .map(roleAssignmentMatrix::get)
+            .filter(Objects::nonNull)
+            .flatMap(allowedRoles -> ((List<String>) allowedRoles).stream())
+            .collect(Collectors.toSet());
 
-    List<String> restrictedRoles;
-    if (requestingUserRoles.contains(JsonKey.MDO_LEADER)) {
-      restrictedRoles = (List<String>) restrictionsConfig.get(JsonKey.MDO_LEADER);
-    } else if (requestingUserRoles.contains(JsonKey.MDO_ADMIN)) {
-      restrictedRoles = (List<String>) restrictionsConfig.get(JsonKey.MDO_ADMIN);
-    } else {
-      return;
-    }
-
-    if (CollectionUtils.isEmpty(restrictedRoles)) {
+    if (allowedRolesToAssign.contains(JsonKey.ROLE_WILDCARD)) {
       return;
     }
 
     List<String> disallowedRoles = newRoles.stream()
-            .filter(restrictedRoles::contains)
+            .filter(role -> !allowedRolesToAssign.contains(role))
             .collect(Collectors.toList());
 
     if (CollectionUtils.isNotEmpty(disallowedRoles)) {
