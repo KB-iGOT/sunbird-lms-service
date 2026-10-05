@@ -482,7 +482,7 @@ public final class JsonKey {
     public static final String OTP_EMAIL_WARD_LOGIN_TEMPLATE = "verifyEmailOtpTemplateWard";
     public static final String LIMIT_MANAGED_USER_CREATION = "limit_managed_user_creation";
     public static final String MANAGED_USER_LIMIT = "managed_user_limit";
-    public static final String ACCESS_TOKEN_PUBLICKEY_BASEPATH = "accesstoken.publickey.basepath";
+    public static final String ACCESS_TOKEN_PUBLICKEY_BASEPATH = "accesstoken_publickey_basepath";
     public static final String SHA_256_WITH_RSA = "SHA256withRSA";
     public static final String SUB = "sub";
     public static final String DOT_SEPARATOR = ".";
@@ -772,7 +772,17 @@ public final class JsonKey {
     public static final String WALLET_BALANCE = "walletBalance";
     public static final String TOTAL_EARNED = "total_earned";
     public static final String TOTAL_REDEEMED = "total_redeemed";
-    public static final String EVENT_TYPE_SELF_REGISTRATION = "SELF_REGISTRATION_KARMA_POINT";
+    public static final String KARMA_POINTS_REGISTRATION_EVENT_TYPES = "karma_points_registration_event_types";
+    public static final String KARMA_POINTS_EVENT_VERSION = "karma_points_event_version";
+    public static final String EVENT_TYPE_MOBILE_FIRST_LOGIN = "FIRST_LOGIN_MOBILE";
+    public static final String MOBILE_FIRST_LOGIN = "mobile_first_login";
+    public static final String MOBILE_LAST_LOGIN = "mobile_last_login";
+    public static final String IS_MOBILE_FIRST_LOGIN = "isMobileFirstLogin";
+    public static final String DEVICE_TYPE_KEY = "deviceType";
+    public static final String DEVICE_TYPE_MOBILE = "Mobile";
+    public static final String KARMA_POINTS_UNIFIED_EVENT_TOPIC = "karma_points_unified_event_topic";
+    public static final String KAFKA_EVENT_ENVELOPE_VERSION = "kafka_event_envelope_version";
+    public static final String KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION = "kafka_mobile_first_login_event_version";
 
     private JsonKey() {
     }

@@ -48,6 +48,9 @@ public class UserProfileReadActor extends BaseActor {
       case "getUserLoggedInDetails":
         getUserLoggedInDetails(request);
         break;
+      case "getUserMobileLoggedInDetails":
+        getUserMobileLoggedInDetails(request);
+        break;
       default:
         onReceiveUnsupportedOperation();
     }
@@ -110,5 +113,10 @@ public class UserProfileReadActor extends BaseActor {
           ResponseCode.resourceNotFound,
           MessageFormat.format(ResponseCode.resourceNotFound.getErrorMessage(), value));
     }
+  }
+
+  private void getUserMobileLoggedInDetails(Request actorMessage) throws Exception {
+    Response response = profileReadService.getUserMobileLoggedInDetails(actorMessage);
+    sender().tell(response, self());
   }
 }
