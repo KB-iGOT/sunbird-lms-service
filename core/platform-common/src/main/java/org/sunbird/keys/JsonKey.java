@@ -775,6 +775,7 @@ public final class JsonKey {
     public static final String SERVICE_TYPE = "serviceType";
     public static final String CADRE = "cadre";
     public static final String BATCH = "batch";
+    public static final String PROFILE_TOKEN = "profileToken";
     public static final String PROFILE_TOKEN_KEY = "sunbird_profile_token_key";
     public static final String PROFILE_TOKEN_ISSUER = "sunbird-lms-service";
     public static final String PROFILE_TOKEN_KEY_DIGEST = "SHA-256";
