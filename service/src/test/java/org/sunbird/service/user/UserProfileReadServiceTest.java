@@ -49,41 +49,41 @@ import scala.concurrent.Promise;
 
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({
-        UserUtil.class,
-        ServiceFactory.class,
-        CassandraOperationImpl.class,
-        DataCacheHandler.class,
-        UserDao.class,
-        UserDaoImpl.class,
-        UserOrgDao.class,
-        UserOrgDaoImpl.class,
-        UserUtility.class,
-        Util.class,
-        ElasticSearchRestHighImpl.class,
-        EsClientFactory.class,
-        ElasticSearchHelper.class,
-        UserRoleDao.class,
-        UserRoleDaoImpl.class,
-        UserExternalIdentityServiceImpl.class,
-        UserProfileReadService.class,
-        OrgTypeValidator.class
+  UserUtil.class,
+  ServiceFactory.class,
+  CassandraOperationImpl.class,
+  DataCacheHandler.class,
+  UserDao.class,
+  UserDaoImpl.class,
+  UserOrgDao.class,
+  UserOrgDaoImpl.class,
+  UserUtility.class,
+  Util.class,
+  ElasticSearchRestHighImpl.class,
+  EsClientFactory.class,
+  ElasticSearchHelper.class,
+  UserRoleDao.class,
+  UserRoleDaoImpl.class,
+  UserExternalIdentityServiceImpl.class,
+  UserProfileReadService.class,
+  OrgTypeValidator.class
 })
 @PowerMockIgnore({
-        "javax.management.*",
-        "javax.net.ssl.*",
-        "javax.security.*",
-        "jdk.internal.reflect.*",
-        "javax.crypto.*"
+  "javax.management.*",
+  "javax.net.ssl.*",
+  "javax.security.*",
+  "jdk.internal.reflect.*",
+  "javax.crypto.*"
 })
 public class UserProfileReadServiceTest {
 
   private String tncConfig =
-          "{\"latestVersion\":\"v1\",\"v1\":{\"url\":\"http://dev/terms.html\"},\"v2\":{\"url\":\"http://dev/terms.html\"},\"v4\":{\"url\":\"http://dev/terms.html\"}}";
+      "{\"latestVersion\":\"v1\",\"v1\":{\"url\":\"http://dev/terms.html\"},\"v2\":{\"url\":\"http://dev/terms.html\"},\"v4\":{\"url\":\"http://dev/terms.html\"}}";
   private String groupsConfig =
-          "{\"latestVersion\":\"v1\",\"v1\":{\"url\":\"http://dev/terms.html\"},\"v2\":{\"url\":\"http://dev/terms.html\"},\"v4\":{\"url\":\"http://dev/terms.html\"}}";
+      "{\"latestVersion\":\"v1\",\"v1\":{\"url\":\"http://dev/terms.html\"},\"v2\":{\"url\":\"http://dev/terms.html\"},\"v4\":{\"url\":\"http://dev/terms.html\"}}";
 
   private String orgAdminTnc =
-          "{\"latestVersion\":\"v1\",\"v1\":{\"url\":\"http://dev/terms.html\"},\"v2\":{\"url\":\"http://dev/terms.html\"},\"v4\":{\"url\":\"http://dev/terms.html\"}}";
+      "{\"latestVersion\":\"v1\",\"v1\":{\"url\":\"http://dev/terms.html\"},\"v2\":{\"url\":\"http://dev/terms.html\"},\"v4\":{\"url\":\"http://dev/terms.html\"}}";
 
   @Before
   public void beforeEachTest() {
@@ -111,7 +111,7 @@ public class UserProfileReadServiceTest {
     promise.success(esRespone);
 
     when(esSearch.search(Mockito.any(SearchDTO.class), Mockito.anyString(), Mockito.any()))
-            .thenReturn(promise.future());
+        .thenReturn(promise.future());
 
     PowerMockito.mockStatic(ServiceFactory.class);
     CassandraOperation cassandraOperationImpl = mock(CassandraOperation.class);
@@ -125,7 +125,7 @@ public class UserProfileReadServiceTest {
     response.put(JsonKey.RESPONSE, resp);
     when(cassandraOperationImpl.getRecordById(
             Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-            .thenReturn(response);
+        .thenReturn(response);
 
     Response response2 = new Response();
     List<Map<String, Object>> resp2 = new ArrayList<>();
@@ -153,7 +153,7 @@ public class UserProfileReadServiceTest {
     response2.put(JsonKey.RESPONSE, resp2);
     when(cassandraOperationImpl.getRecordById(
             Mockito.anyString(), Mockito.anyString(), Mockito.anyMap(), Mockito.any()))
-            .thenReturn(response2);
+        .thenReturn(response2);
 
     UserDao userDao = PowerMockito.mock(UserDao.class);
     PowerMockito.mockStatic(UserDaoImpl.class);
@@ -161,20 +161,20 @@ public class UserProfileReadServiceTest {
     PowerMockito.mockStatic(UserUtility.class);
     PowerMockito.mockStatic(Util.class);
     Mockito.when(UserUtility.decryptUserData(Mockito.anyMap()))
-            .thenReturn(getUserDbMap("1234567890"));
+        .thenReturn(getUserDbMap("1234567890"));
     Map<String, Object> userDetails = getValidUserResponse("1234567890");
     // Add wrong profile userType for test
     userDetails.put(JsonKey.PROFILE_USERTYPE, "{\"useType\":45}");
     String profileLocation = "[{\"id\":\"4567891231\",\"type\":\"state\"}]";
     userDetails.put(JsonKey.PROFILE_LOCATION, profileLocation);
     Mockito.when(userDao.getUserDetailsById(Mockito.anyString(), Mockito.any()))
-            .thenReturn(userDetails);
+        .thenReturn(userDetails);
 
     UserOrgDao userOrgDao = PowerMockito.mock(UserOrgDao.class);
     PowerMockito.mockStatic(UserOrgDaoImpl.class);
     Mockito.when(UserOrgDaoImpl.getInstance()).thenReturn(userOrgDao);
     Mockito.when(userOrgDao.getUserOrgListByUserId(Mockito.anyString(), Mockito.any()))
-            .thenReturn(response2);
+        .thenReturn(response2);
 
     Map<String, Object> org = new HashMap<>();
     org.put(JsonKey.ID, "4578963210");
@@ -238,18 +238,18 @@ public class UserProfileReadServiceTest {
     locnResponse.getResult().put(JsonKey.RESPONSE, locnList);
 
     Mockito.when(
-                    cassandraOperationImpl.getPropertiesValueById(
-                            Mockito.anyString(),
-                            Mockito.anyString(),
-                            Mockito.anyList(),
-                            Mockito.anyList(),
-                            Mockito.any()))
-            .thenReturn(orgRes)
-            .thenReturn(orgRes)
-            .thenReturn(orgRes)
-            .thenReturn(orgRes)
-            .thenReturn(locnResponse)
-            .thenReturn(locnResponse);
+            cassandraOperationImpl.getPropertiesValueById(
+                Mockito.anyString(),
+                Mockito.anyString(),
+                Mockito.anyList(),
+                Mockito.anyList(),
+                Mockito.any()))
+        .thenReturn(orgRes)
+        .thenReturn(orgRes)
+        .thenReturn(orgRes)
+        .thenReturn(orgRes)
+        .thenReturn(locnResponse)
+        .thenReturn(locnResponse);
 
     UserProfileReadService userProfileReadService = new UserProfileReadService();
 
@@ -283,7 +283,7 @@ public class UserProfileReadServiceTest {
 
     PowerMockito.mockStatic(UserUtil.class);
     when(UserUtil.getExternalIds(Mockito.anyString(), Mockito.anyBoolean(), Mockito.any()))
-            .thenReturn(externalIds);
+        .thenReturn(externalIds);
 
     PowerMockito.mockStatic(UserRoleDaoImpl.class);
     UserRoleDao userRoleDao = PowerMockito.mock(UserRoleDao.class);
@@ -300,10 +300,10 @@ public class UserProfileReadServiceTest {
     userRoleMap1.put("scope", "[{\"orgId\":\"4578963210\"}]");
     userRoleDetails.add(userRoleMap1);
     Mockito.when(
-                    userRoleDao.getUserRoles(Mockito.anyString(), nullable(String.class), Mockito.any()))
-            .thenReturn(userRoleDetails);
+            userRoleDao.getUserRoles(Mockito.anyString(), nullable(String.class), Mockito.any()))
+        .thenReturn(userRoleDetails);
     Response response1 =
-            userProfileReadService.getUserProfileData(getProfileReadRequest("1234567890"));
+        userProfileReadService.getUserProfileData(getProfileReadRequest("1234567890"));
     Assert.assertNotNull(response1);
   }
 
@@ -317,14 +317,14 @@ public class UserProfileReadServiceTest {
     response.put(JsonKey.RESPONSE, resp);
     when(cassandraOperationImpl.getRecordById(
             Mockito.anyString(), Mockito.anyString(), Mockito.anyString(), Mockito.any()))
-            .thenReturn(response);
+        .thenReturn(response);
     UserDao userDao = PowerMockito.mock(UserDao.class);
     PowerMockito.mockStatic(UserDaoImpl.class);
     Mockito.when(UserDaoImpl.getInstance()).thenReturn(userDao);
     PowerMockito.mockStatic(UserUtility.class);
     PowerMockito.mockStatic(Util.class);
     Mockito.when(UserUtility.decryptUserData(Mockito.anyMap()))
-            .thenReturn(getUserDbMap("1234567890"));
+        .thenReturn(getUserDbMap("1234567890"));
     Map<String, Object> user = getValidUserResponse("1234567890");
     user.put(JsonKey.IS_DELETED, true);
     Mockito.when(userDao.getUserDetailsById(Mockito.anyString(), Mockito.any())).thenReturn(user);
@@ -336,7 +336,7 @@ public class UserProfileReadServiceTest {
       Assert.assertEquals(ex.getErrorCode(), ResponseCode.userAccountlocked.getErrorCode());
     }
   }
-
+  
   @Test
   public void getUserIdByExternalIdTest() {
     UserProfileReadService userProfileReadService = new UserProfileReadService();
@@ -400,12 +400,12 @@ public class UserProfileReadServiceTest {
     groupTncMap.put("groupsTnc", tnc);
     user.setAllTncAccepted(groupTncMap);
     ArrayList<String> locationList =
-            new ArrayList<String>() {
-              {
-                add("location1");
-                add("location2");
-              }
-            };
+        new ArrayList<String>() {
+          {
+            add("location1");
+            add("location2");
+          }
+        };
     user.setLocationIds(locationList);
     ObjectMapper mapper1 = new ObjectMapper();
     Map<String, Object> result = mapper.convertValue(user, Map.class);
