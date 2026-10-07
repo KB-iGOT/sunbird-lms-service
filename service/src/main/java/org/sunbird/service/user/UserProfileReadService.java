@@ -37,6 +37,7 @@ import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.sunbird.util.user.ProfileTokenGenerator;
 
 public class UserProfileReadService {
 

@@ -768,6 +768,20 @@ public final class JsonKey {
     public static final String WALLET_BALANCE = "walletBalance";
     public static final String TOTAL_EARNED = "total_earned";
     public static final String TOTAL_REDEEMED = "total_redeemed";
+    public static final String CADRE_DETAILS = "cadreDetails";
+    public static final String CADRE_NAME = "cadreName";
+    public static final String CADRE_BATCH = "cadreBatch";
+    public static final String CIVIL_SERVICE_NAME = "civilServiceName";
+    public static final String SERVICE_TYPE = "serviceType";
+    public static final String CADRE = "cadre";
+    public static final String BATCH = "batch";
+    public static final String PROFILE_TOKEN = "profileToken";
+    public static final String PROFILE_TOKEN_KEY = "sunbird_profile_token_key";
+    public static final String PROFILE_TOKEN_ISSUER = "sunbird-lms-service";
+    public static final String PROFILE_TOKEN_KEY_DIGEST = "SHA-256";
+    public static final String PROFILE_TOKEN_HMAC_ALGORITHM = "HmacSHA256";
+    public static final int PROFILE_TOKEN_MIN_SECRET_LENGTH = 32;
+    public static final String PROFILE_TOKEN_CLAIM_PROFILE_STATUS = "profilestatus";
 
     private JsonKey() {
     }
