@@ -770,7 +770,7 @@ public class UserProfileReadService {
         requestMap.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
         requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
         dataMap.put(JsonKey.EDATA, requestMap);
-        String topic = ProjectUtil.getConfigValue("karma_points_unified_event_topic");
+        String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
         InstructionEventGenerator.createFirstLoginDetailsEvent(userId, topic, dataMap);
         String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
         Map<String, String> userUpdateMap = new HashMap<>();
@@ -891,5 +891,67 @@ public class UserProfileReadService {
     return Optional.ofNullable(map.get(key))
             .map(Object::toString)
             .filter(s -> !s.trim().isEmpty());
+  }
+
+  /**
+   * Records mobile app logins in sunbird.user_logins.
+   * If mobile_first_login is present, only mobile_last_login is updated.
+   * Otherwise both columns are set and a FIRST_LOGIN_MOBILE karma points event is published.
+   */
+  public Response getUserMobileLoggedInDetails(Request actorMessage) throws Exception {
+    RequestContext context = actorMessage.getRequestContext();
+    String userId = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
+    if (StringUtils.isBlank(userId)) {
+      throw new ProjectCommonException(
+              ResponseCode.unAuthorized,
+              ResponseCode.unAuthorized.getErrorMessage(),
+              ResponseCode.UNAUTHORIZED.getResponseCode());
+    }
+
+    Map<String, Object> loginRecord = new HashMap<>();
+    Response loginResponse =
+            cassandraOperation.getRecordsByProperty(
+            JsonKey.SUNBIRD, JsonKey.USER_LOGIN, JsonKey.CONSENT_USER_ID,
+            Collections.singletonList(userId), context);
+    List<Map<String, Object>> loginList =
+            (List<Map<String, Object>>) loginResponse.get(JsonKey.RESPONSE);
+    if (CollectionUtils.isNotEmpty(loginList)) {
+      loginRecord = loginList.get(0);
+    }
+
+    Timestamp now = new Timestamp(System.currentTimeMillis());
+    Map<String, Object> map = new HashMap<>();
+    map.put(JsonKey.CONSENT_USER_ID, userId);
+    map.put(JsonKey.MOBILE_LAST_LOGIN, now);
+
+    Object mobileFirstLogin = loginRecord.get(JsonKey.MOBILE_FIRST_LOGIN);
+    boolean isMobileFirstLogin = (mobileFirstLogin == null);
+    if (isMobileFirstLogin) {
+      map.put(JsonKey.MOBILE_FIRST_LOGIN, now);
+      cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
+      mobileFirstLogin = now;
+
+      Map<String, Object> eData = new HashMap<>();
+      eData.put(JsonKey.ID, userId);
+      eData.put(JsonKey.DEVICE_TYPE_KEY, JsonKey.DEVICE_TYPE_MOBILE);
+      eData.put(JsonKey.FIRST_LOGIN, now.getTime());
+      Map<String, Object> dataMap = new HashMap<>();
+      dataMap.put(JsonKey.EDATA, eData);
+      String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
+      InstructionEventGenerator.createFirstLoginDetailsEvent(
+              userId, topic, dataMap, JsonKey.EVENT_TYPE_MOBILE_FIRST_LOGIN,
+              Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION)));
+      logger.info(context, "getUserMobileLoggedInDetails: FIRST_LOGIN_MOBILE event sent for userId: " + userId);
+    } else {
+      cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
+    }
+
+    Response response = new Response();
+    response.put(JsonKey.RESPONSE, JsonKey.SUCCESS);
+    response.put(JsonKey.USER_ID, userId);
+    response.put(JsonKey.MOBILE_FIRST_LOGIN, mobileFirstLogin);
+    response.put(JsonKey.MOBILE_LAST_LOGIN, now);
+    response.put(JsonKey.IS_MOBILE_FIRST_LOGIN, isMobileFirstLogin);
+    return response;
   }
 }

@@ -108,7 +108,12 @@ public class InstructionEventGenerator {
   }
 
   public static void createFirstLoginDetailsEvent(String key, String topic, Map<String, Object> data) throws Exception {
-    String courseEnrolEvent = formEventData(data);
+    createFirstLoginDetailsEvent(key, topic, data, JsonKey.EVENT_TYPE_FIRST_LOGIN,
+        Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.KAFKA_EVENT_ENVELOPE_VERSION)));
+  }
+
+  public static void createFirstLoginDetailsEvent(String key, String topic, Map<String, Object> data, String eventType, int version) throws Exception {
+    String courseEnrolEvent = formEventData(data, eventType, version);
     if (StringUtils.isBlank(courseEnrolEvent)) {
       throw new ProjectCommonException(ResponseCode.BE_JOB_REQUEST_EXCEPTION, "Event is not generated properly.", ResponseCode.CLIENT_ERROR.getResponseCode());
     }
@@ -120,7 +125,7 @@ public class InstructionEventGenerator {
     }
   }
 
-  private static String formEventData(Map<String, Object> data) {
+  private static String formEventData(Map<String, Object> data, String eventType, int version) {
     Map<String, Object> eData = new HashMap<>();
 
     if (MapUtils.isNotEmpty((Map) data.get("edata"))) {
@@ -131,9 +136,9 @@ public class InstructionEventGenerator {
     innerData.put(JsonKey.EDATA, eData);
 
     Map<String, Object> formattedData = new HashMap<>();
-    formattedData.put(JsonKey.EVENT_TYPE, JsonKey.EVENT_TYPE_FIRST_LOGIN);
+    formattedData.put(JsonKey.EVENT_TYPE, eventType);
     formattedData.put(JsonKey.DATA, innerData);
-    formattedData.put(JsonKey.VERSION, Integer.parseInt(ProjectUtil.getConfigValue("kafka_event_envelope_version")));
+    formattedData.put(JsonKey.VERSION, version);
 
     String jsonMessage = null;
     try {

@@ -314,42 +314,62 @@ public abstract class UserBaseActor extends BaseActor {
   }
 
   /**
-   * KPI 1.1 (self-registration karma points): publishes SELF_REGISTRATION to the karma points unified
-   * topic once a user has been created, when the user's sourceCreationType is in
-   * karma_points_self_registration_eligible_source_types (self / bulk / custom registration).
-   * Agreed contract: {"eventType": "SELF_REGISTRATION_KARMA_POINT", "data": {"edata": {"userId": "..."}}, "version": 1}.
+   * KPI 1.1 (registration karma points): once a user has been created, publishes a registration
+   * event to the karma points unified topic. The event type depends on how the user was created,
+   * using the sourceCreationType -> eventType mapping in karma_points_registration_event_types:
+   * self registration -> SELF_REGISTRATION, custom registration -> CUSTOM_REGISTRATION,
+   * bulk creation -> BULK_REGISTRATION. Source types that aren't mapped publish nothing.
+   * Contract: {"eventType": "<type>", "data": {"edata": {"userId": "..."}}, "version": 1}.
    * Never throws: a publishing failure must not fail user creation.
    */
   protected void publishSelfRegistrationKarmaEvent(
       String userId, String sourceCreationType, RequestContext context) {
     try {
       if (StringUtils.isBlank(userId) || StringUtils.isBlank(sourceCreationType)) {
-        logger.info(context, "[KARMA_POINTS][SELF_REGISTRATION][skipped] Missing userId or sourceCreationType: userId="
+        logger.info(context, "[KARMA_POINTS][REGISTRATION][skipped] Missing userId or sourceCreationType: userId="
             + userId + ", sourceCreationType=" + sourceCreationType);
         return;
       }
-      String configured = ProjectUtil.getConfigValue("karma_points_self_registration_eligible_source_types");
-      boolean eligible = StringUtils.isNotBlank(configured)
-          && Arrays.stream(configured.split(",")).map(String::trim).anyMatch(t -> t.equalsIgnoreCase(sourceCreationType));
-      if (!eligible) {
-        logger.info(context, "[KARMA_POINTS][SELF_REGISTRATION][skipped] sourceCreationType not eligible: userId="
+      String eventType = getRegistrationKarmaEventType(sourceCreationType);
+      if (StringUtils.isBlank(eventType)) {
+        logger.info(context, "[KARMA_POINTS][REGISTRATION][skipped] sourceCreationType not eligible: userId="
             + userId + ", sourceCreationType=" + sourceCreationType);
         return;
       }
       Map<String, Object> edata = new HashMap<>();
       edata.put(JsonKey.USER_ID, userId);
-      String topic = ProjectUtil.getConfigValue("karma_points_unified_event_topic");
+      String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
       int version = 1;
-      String configuredVersion = ProjectUtil.getConfigValue("karma_points_event_version");
+      String configuredVersion = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_EVENT_VERSION);
       if (StringUtils.isNumeric(StringUtils.trimToEmpty(configuredVersion))) {
         version = Integer.parseInt(configuredVersion.trim());
       }
-      InstructionEventGenerator.createKarmaPointsEvent(
-          userId, topic, JsonKey.EVENT_TYPE_SELF_REGISTRATION, edata, version);
-      logger.info(context, "[KARMA_POINTS][SELF_REGISTRATION][published] userId=" + userId
+      InstructionEventGenerator.createKarmaPointsEvent(userId, topic, eventType, edata, version);
+      logger.info(context, "[KARMA_POINTS][" + eventType + "][published] userId=" + userId
           + ", sourceCreationType=" + sourceCreationType);
     } catch (Exception e) {
-      logger.error(context, "[KARMA_POINTS][SELF_REGISTRATION][failed] Could not publish event for userId=" + userId, e);
+      logger.error(context, "[KARMA_POINTS][REGISTRATION][failed] Could not publish event for userId=" + userId, e);
     }
+  }
+
+  /**
+   * Resolves the registration karma event type for a sourceCreationType from
+   * karma_points_registration_event_types ("sourceType:EVENT_TYPE,..."). Returns null when the
+   * source type isn't mapped.
+   */
+  protected String getRegistrationKarmaEventType(String sourceCreationType) {
+    String configured = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_REGISTRATION_EVENT_TYPES);
+    if (StringUtils.isBlank(configured) || StringUtils.isBlank(sourceCreationType)) {
+      return null;
+    }
+    for (String entry : configured.split(",")) {
+      String[] pair = entry.split(":");
+      if (pair.length == 2
+          && pair[0].trim().equalsIgnoreCase(sourceCreationType.trim())
+          && StringUtils.isNotBlank(pair[1])) {
+        return pair[1].trim();
+      }
+    }
+    return null;
   }
 }
