@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import org.sunbird.actor.core.BaseActor;
 import org.sunbird.actor.user.validator.UserCreateRequestValidator;
 import org.sunbird.exception.ProjectCommonException;
 import org.sunbird.exception.ResponseCode;
+import org.sunbird.kafka.InstructionEventGenerator;
 import org.sunbird.kafka.KafkaClient;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.model.location.Location;
@@ -29,6 +31,7 @@ import org.sunbird.service.user.UserLookupService;
 import org.sunbird.service.user.impl.UserLookUpServiceImpl;
 import org.sunbird.telemetry.util.TelemetryUtil;
 import org.sunbird.util.DataCacheHandler;
+import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.FormApiUtil;
 import org.sunbird.util.ProjectUtil;
 import org.sunbird.util.Util;
@@ -308,5 +311,65 @@ public abstract class UserBaseActor extends BaseActor {
                 userMap.get(JsonKey.LOCATION_CODES)));
       }
     }
+  }
+
+  /**
+   * KPI 1.1 (registration karma points): once a user has been created, publishes a registration
+   * event to the karma points unified topic. The event type depends on how the user was created,
+   * using the sourceCreationType -> eventType mapping in karma_points_registration_event_types:
+   * self registration -> SELF_REGISTRATION, custom registration -> CUSTOM_REGISTRATION,
+   * bulk creation -> BULK_REGISTRATION. Source types that aren't mapped publish nothing.
+   * Contract: {"eventType": "<type>", "data": {"edata": {"userId": "..."}}, "version": 1}.
+   * Never throws: a publishing failure must not fail user creation.
+   */
+  protected void publishSelfRegistrationKarmaEvent(
+      String userId, String sourceCreationType, RequestContext context) {
+    try {
+      if (StringUtils.isBlank(userId) || StringUtils.isBlank(sourceCreationType)) {
+        logger.info(context, "[KARMA_POINTS][REGISTRATION][skipped] Missing userId or sourceCreationType: userId="
+            + userId + ", sourceCreationType=" + sourceCreationType);
+        return;
+      }
+      String eventType = getRegistrationKarmaEventType(sourceCreationType);
+      if (StringUtils.isBlank(eventType)) {
+        logger.info(context, "[KARMA_POINTS][REGISTRATION][skipped] sourceCreationType not eligible: userId="
+            + userId + ", sourceCreationType=" + sourceCreationType);
+        return;
+      }
+      Map<String, Object> edata = new HashMap<>();
+      edata.put(JsonKey.USER_ID, userId);
+      String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
+      int version = 1;
+      String configuredVersion = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_EVENT_VERSION);
+      if (StringUtils.isNumeric(StringUtils.trimToEmpty(configuredVersion))) {
+        version = Integer.parseInt(configuredVersion.trim());
+      }
+      InstructionEventGenerator.createKarmaPointsEvent(userId, topic, eventType, edata, version);
+      logger.info(context, "[KARMA_POINTS][" + eventType + "][published] userId=" + userId
+          + ", sourceCreationType=" + sourceCreationType);
+    } catch (Exception e) {
+      logger.error(context, "[KARMA_POINTS][REGISTRATION][failed] Could not publish event for userId=" + userId, e);
+    }
+  }
+
+  /**
+   * Resolves the registration karma event type for a sourceCreationType from
+   * karma_points_registration_event_types ("sourceType:EVENT_TYPE,..."). Returns null when the
+   * source type isn't mapped.
+   */
+  protected String getRegistrationKarmaEventType(String sourceCreationType) {
+    String configured = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_REGISTRATION_EVENT_TYPES);
+    if (StringUtils.isBlank(configured) || StringUtils.isBlank(sourceCreationType)) {
+      return null;
+    }
+    for (String entry : configured.split(",")) {
+      String[] pair = entry.split(":");
+      if (pair.length == 2
+          && pair[0].trim().equalsIgnoreCase(sourceCreationType.trim())
+          && StringUtils.isNotBlank(pair[1])) {
+        return pair[1].trim();
+      }
+    }
+    return null;
   }
 }
