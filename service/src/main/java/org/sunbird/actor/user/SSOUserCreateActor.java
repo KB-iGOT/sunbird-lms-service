@@ -515,6 +515,7 @@ public class SSOUserCreateActor extends UserBaseActor {
     profileDetails.put(JsonKey.MINISTRY_STATE_ID, ministryDetails.get(JsonKey.MINISTRY_STATE_ID));
     profileDetails.put(JsonKey.MINISTRY_STATE_ORG_NAME, ministryDetails.get(JsonKey.MINISTRY_STATE_NAME));
     profileDetails.put(JsonKey.MINISTRY_STATE_TYPE, ministryDetails.get(JsonKey.MINISTRY_STATE_TYPE));
+    addIfNotEmpty(profileDetails, JsonKey.BP_CO_TRAINER, profileDetailsRequest.get(JsonKey.BP_CO_TRAINER));
     userMap.put(JsonKey.PROFILE_DETAILS, mapper.writeValueAsString(profileDetails));
   }
 
