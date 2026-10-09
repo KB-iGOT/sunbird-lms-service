@@ -779,6 +779,7 @@ public final class JsonKey {
     public static final String KARMA_POINTS_UNIFIED_EVENT_TOPIC = "karma_points_unified_event_topic";
     public static final String KAFKA_EVENT_ENVELOPE_VERSION = "kafka_event_envelope_version";
     public static final String KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION = "kafka_mobile_first_login_event_version";
+    public static final String BP_CO_TRAINER = "bpCoTrainer";
 
     private JsonKey() {
     }
