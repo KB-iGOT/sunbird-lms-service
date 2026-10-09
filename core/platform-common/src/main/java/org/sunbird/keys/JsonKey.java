@@ -782,6 +782,7 @@ public final class JsonKey {
     public static final String PROFILE_TOKEN_HMAC_ALGORITHM = "HmacSHA256";
     public static final int PROFILE_TOKEN_MIN_SECRET_LENGTH = 32;
     public static final String PROFILE_TOKEN_CLAIM_PROFILE_STATUS = "profilestatus";
+    public static final String PROFILE_TOKEN_EXPIRATION = "sunbird_profile_token_expiration";
 
     private JsonKey() {
     }

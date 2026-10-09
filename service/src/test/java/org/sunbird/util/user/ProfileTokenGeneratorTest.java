@@ -1,6 +1,7 @@
 package org.sunbird.util.user;
 
 import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
@@ -52,6 +53,7 @@ public class ProfileTokenGeneratorTest {
   private static final String SECRET = "unit-test-profile-token-secret-value-01";
   private static final String OTHER_SECRET = "a-completely-different-secret-value-002";
   private static final String USER_ID = "b1e9f3c4-0d6a-4f5e-9c2b-7a8d5e1f0a3b";
+  private static final long EXPIRATION_IN_SECONDS = 3600L;
 
   private final RequestContext context = new RequestContext();
 
@@ -59,6 +61,7 @@ public class ProfileTokenGeneratorTest {
   public void setUp() {
     PowerMockito.mockStatic(ProjectUtil.class);
     configureSecret(SECRET);
+    configureExpiration(String.valueOf(EXPIRATION_IN_SECONDS));
     // The generator caches the derived key in a static field; clear it so each test derives from
     // the secret that test configured.
     clearCachedKey();
@@ -73,6 +76,57 @@ public class ProfileTokenGeneratorTest {
     Assert.assertEquals(SignatureAlgorithm.HS256.getValue(), jws.getHeader().getAlgorithm());
     Assert.assertEquals(JsonKey.PROFILE_TOKEN_ISSUER, jws.getBody().getIssuer());
     Assert.assertNotNull(jws.getBody().getIssuedAt());
+  }
+
+  @Test
+  public void generateSetsExpiryFromTheConfiguredLifetime() {
+    configureExpiration("900");
+
+    Claims claims = claimsOf(ProfileTokenGenerator.generate(fullProfile(), USER_ID, context));
+
+    Assert.assertNotNull(claims.getExpiration());
+    Assert.assertEquals(
+        900L, (claims.getExpiration().getTime() - claims.getIssuedAt().getTime()) / 1000L);
+  }
+
+  /** No configured lifetime means no lifetime: the token is born expired rather than open-ended. */
+  @Test
+  public void generateExpiresImmediatelyWhenTheLifetimeIsNotConfigured() {
+    configureExpiration(null);
+
+    Claims claims =
+        expiredClaimsOf(ProfileTokenGenerator.generate(fullProfile(), USER_ID, context));
+
+    Assert.assertNotNull(claims.getExpiration());
+    Assert.assertEquals(claims.getIssuedAt(), claims.getExpiration());
+  }
+
+  @Test
+  public void generateExpiresImmediatelyWhenTheLifetimeIsNotAPositiveNumber() {
+    for (String badValue : Arrays.asList("not-a-number", StringUtils.EMPTY, "0", "-60")) {
+      configureExpiration(badValue);
+
+      Claims claims =
+          expiredClaimsOf(ProfileTokenGenerator.generate(fullProfile(), USER_ID, context));
+
+      Assert.assertEquals(
+          "lifetime for " + badValue, claims.getIssuedAt(), claims.getExpiration());
+    }
+  }
+
+  /** The lifetime is re-read per token, so a config change needs no restart. */
+  @Test
+  public void generatePicksUpALifetimeChangeWithoutRestart() {
+    configureExpiration("900");
+    Claims first = claimsOf(ProfileTokenGenerator.generate(fullProfile(), USER_ID, context));
+
+    configureExpiration("1800");
+    Claims second = claimsOf(ProfileTokenGenerator.generate(fullProfile(), USER_ID, context));
+
+    Assert.assertEquals(
+        900L, (first.getExpiration().getTime() - first.getIssuedAt().getTime()) / 1000L);
+    Assert.assertEquals(
+        1800L, (second.getExpiration().getTime() - second.getIssuedAt().getTime()) / 1000L);
   }
 
   @Test
@@ -252,6 +306,11 @@ public class ProfileTokenGeneratorTest {
     PowerMockito.when(ProjectUtil.getConfigValue(JsonKey.PROFILE_TOKEN_KEY)).thenReturn(secret);
   }
 
+  private static void configureExpiration(String seconds) {
+    PowerMockito.when(ProjectUtil.getConfigValue(JsonKey.PROFILE_TOKEN_EXPIRATION))
+        .thenReturn(seconds);
+  }
+
   @SuppressWarnings("unchecked")
   private static void clearCachedKey() {
     AtomicReference<SecretKey> cachedKey =
@@ -261,6 +320,19 @@ public class ProfileTokenGeneratorTest {
 
   private static Claims claimsOf(String token) {
     return parse(token, SECRET).getBody();
+  }
+
+  /**
+   * A zero-second token is already expired when it is parsed, so jjwt refuses it outright; the
+   * claims it carried are only reachable through the exception.
+   */
+  private static Claims expiredClaimsOf(String token) {
+    try {
+      parse(token, SECRET);
+      throw new AssertionError("expected the token to be expired already");
+    } catch (ExpiredJwtException e) {
+      return e.getClaims();
+    }
   }
 
   /** Verifies the token the way a consumer would: with the key derived from the same secret. */
