@@ -122,15 +122,33 @@ public class ProfileTokenGenerator {
     /** Signs the claims as a compact JWS. Never SignatureAlgorithm.NONE. */
     private static String sign(Map<String, Object> claims) throws GeneralSecurityException {
         try {
+            Date issuedAt = new Date();
             return Jwts.builder()
                     .setClaims(claims)
                     .setIssuer(JsonKey.PROFILE_TOKEN_ISSUER)
-                    .setIssuedAt(new Date())
+                    .setIssuedAt(issuedAt)
+                    .setExpiration(
+                            new Date(issuedAt.getTime() + expirationInSeconds() * 1000L))
                     .signWith(SIGNATURE_ALGORITHM, key())
                     .compact();
         } catch (Exception e) {
             System.out.println("ProfileTokenGenerator:sign: unable to sign profileToken claims " + e.getMessage());
             throw e;
+        }
+    }
+
+    private static long expirationInSeconds() {
+        String configured = ProjectUtil.getConfigValue(JsonKey.PROFILE_TOKEN_EXPIRATION);
+        if (StringUtils.isBlank(configured)) {
+            return 0L;
+        }
+        try {
+            return Math.max(0L, Long.parseLong(configured.trim()));
+        } catch (NumberFormatException e) {
+            logger.info(
+                    JsonKey.PROFILE_TOKEN_EXPIRATION
+                            + " is not a number; profileToken will expire immediately");
+            return 0L;
         }
     }
 
