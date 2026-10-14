@@ -94,7 +94,7 @@ public class RoleAssignmentValidatorTest {
                 + "  {\"name\": \"STATE\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"MDO_ADMIN\", \"ORG_ADMIN\"]},"
                 + "  {\"name\": \"Ministry\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"CONTENT_REVIEWER\", \"MDO_ADMIN\", \"ORG_ADMIN\"]},"
                 + "  {\"name\": \"Department\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"ORG_ADMIN\"]},"
-                + "  {\"name\": \"MDO\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"ORG_ADMIN\"]}"
+                + "  {\"name\": \"MDO\", \"roles\": [\"PUBLIC\", \"CONTENT_CREATOR\", \"ORG_ADMIN\", \"MDO_ADMIN\", \"MDO_LEADER\", \"PROGRAM_COORDINATOR\", \"BP_PROGRAM_TRAINER\"]}"
                 + "]"
                 + "}";
         orgTypeListSetting.setValue(orgTypeListJson);
@@ -137,8 +137,8 @@ public class RoleAssignmentValidatorTest {
     }
 
     /**
-     * Test: Requesting user has no admin role
-     * Expected: Should throw unauthorized exception
+     * Test: Requesting user holds a role with no entry (or no matching permission) in the role_assignment_matrix
+     * Expected: Should throw unauthorized/client exception naming the disallowed role(s)
      */
     @Test
     public void testValidateRoleAssignment_RequestingUserNotAdmin_ThrowsException() {
@@ -152,10 +152,10 @@ public class RoleAssignmentValidatorTest {
 
         try {
             validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
-            fail("Should throw exception for non-admin user");
+            fail("Should throw exception for user not permitted to assign the requested role");
         } catch (ProjectCommonException e) {
             // Expected exception
-            assertTrue("Should be unauthorized error", e.getMessage().contains("ADMIN"));
+            assertTrue("Should mention the disallowed role", e.getMessage().contains("PUBLIC"));
         }
     }
 
@@ -183,8 +183,9 @@ public class RoleAssignmentValidatorTest {
     }
 
     /**
-     * Test Case 1: Verify Non-Admin user receives proper error when trying to create user
-     * Expected: 401 unauthorized error with proper message
+     * Test Case 1: Verify a user whose role has no permission entry in role_assignment_matrix
+     * receives a proper error when trying to create a user with a role they can't grant
+     * Expected: 400 client error naming the disallowed role
      */
     @Test
     public void testCreateUserByNonAdmin_UnauthorizedError() {
@@ -198,10 +199,10 @@ public class RoleAssignmentValidatorTest {
 
         try {
             validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
-            fail("Should throw exception for non-admin user");
+            fail("Should throw exception for user not permitted to assign the requested role");
         } catch (ProjectCommonException e) {
-            assertEquals("Should be unauthorized error code", 401, e.getErrorResponseCode());
-            assertTrue("Should contain ADMIN in message", e.getMessage().contains("ADMIN"));
+            assertEquals("Should be client error code", 400, e.getErrorResponseCode());
+            assertTrue("Should mention the disallowed role", e.getMessage().contains("PUBLIC"));
         }
     }
 
@@ -357,12 +358,13 @@ public class RoleAssignmentValidatorTest {
     }
 
     /**
-     * Test Case 7: Verify user with ORG_ADMIN role can create users in own org
+     * Test Case 7: Verify user with CBP_ADMIN role can create users in own org, since
+     * role_assignment_matrix grants CBP_ADMIN permission to assign PUBLIC
      * Expected: Validation should pass
      */
     @Test
-    public void testOrgAdminCreateUserInOwnOrg_Success() {
-        String requestingUserId = "orgAdmin123";
+    public void testCbpAdminCreateUserInOwnOrg_Success() {
+        String requestingUserId = "cbpAdmin123";
         String requestingUserOrgId = "org123";
         String targetOrgId = "org123";
         String targetUserId = null; // New user creation
@@ -382,7 +384,7 @@ public class RoleAssignmentValidatorTest {
         try {
             validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
         } catch (Exception e) {
-            fail("ORG_ADMIN should be able to create user in own org: " + e.getMessage());
+            fail("CBP_ADMIN should be able to create user in own org: " + e.getMessage());
         }
     }
 
@@ -572,12 +574,109 @@ public class RoleAssignmentValidatorTest {
         }
     }
 
+    /**
+     * Test Case 14: Verify PROGRAM_COORDINATOR (role_assignment_matrix: only BP_PROGRAM_TRAINER,
+     * PROGRAM_INSTRUCTOR) can assign BP_PROGRAM_TRAINER, a role explicitly in its scope
+     * Expected: Validation should pass
+     */
+    @Test
+    public void testProgramCoordinatorAssignInScopeRole_Success() {
+        String requestingUserId = "programCoordinator123";
+        String requestingUserOrgId = "mdoOrg123";
+        String targetOrgId = "mdoOrg123";
+        String targetUserId = null;
+        List<String> rolesToAssign = Arrays.asList("BP_PROGRAM_TRAINER");
+
+        mockRequestingUserWithRole(requestingUserId, "PROGRAM_COORDINATOR");
+
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId(targetOrgId);
+        targetOrg.setOrganisationType(128); // MDO
+
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
+        try {
+            validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
+        } catch (Exception e) {
+            fail("PROGRAM_COORDINATOR should be able to assign BP_PROGRAM_TRAINER: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Test Case 15: Verify PROGRAM_COORDINATOR cannot assign a role outside its scope
+     * (e.g. MDO_ADMIN), even though the org type would otherwise permit it
+     * Expected: 400 client error naming the disallowed role
+     */
+    @Test
+    public void testProgramCoordinatorAssignOutOfScopeRole_ClientError() {
+        String requestingUserId = "programCoordinator123";
+        String requestingUserOrgId = "mdoOrg123";
+        String targetOrgId = "mdoOrg123";
+        String targetUserId = null;
+        List<String> rolesToAssign = Arrays.asList("MDO_ADMIN");
+
+        mockRequestingUserWithRole(requestingUserId, "PROGRAM_COORDINATOR");
+
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId(targetOrgId);
+        targetOrg.setOrganisationType(128); // MDO
+
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
+        try {
+            validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
+            fail("PROGRAM_COORDINATOR should not be able to assign MDO_ADMIN");
+        } catch (ProjectCommonException e) {
+            assertEquals("Should be client error code", 400, e.getErrorResponseCode());
+            assertTrue("Should mention the disallowed role", e.getMessage().contains("MDO_ADMIN"));
+        }
+    }
+
+    /**
+     * Test Case 16: Verify permissions union across multiple roles held by the requesting user -
+     * a user holding both PROGRAM_COORDINATOR (grants BP_PROGRAM_TRAINER) and MDO_LEADER
+     * (grants CONTENT_CREATOR) can assign both roles together, though neither role alone covers both
+     * Expected: Validation should pass
+     */
+    @Test
+    public void testMultiRolePermissionUnion_Success() {
+        String requestingUserId = "multiRoleUser123";
+        String requestingUserOrgId = "mdoOrg123";
+        String targetOrgId = "mdoOrg123";
+        String targetUserId = null;
+        List<String> rolesToAssign = Arrays.asList("BP_PROGRAM_TRAINER", "CONTENT_CREATOR");
+
+        List<Map<String, Object>> roles = new ArrayList<>();
+        Map<String, Object> role1 = new HashMap<>();
+        role1.put(JsonKey.ROLE, "PROGRAM_COORDINATOR");
+        Map<String, Object> role2 = new HashMap<>();
+        role2.put(JsonKey.ROLE, "MDO_LEADER");
+        roles.add(role1);
+        roles.add(role2);
+        when(userRoleService.getUserRoles(requestingUserId, null, context)).thenReturn(roles);
+
+        Organisation targetOrg = new Organisation();
+        targetOrg.setId(targetOrgId);
+        targetOrg.setMinistryOrStateId(targetOrgId);
+        targetOrg.setOrganisationType(128); // MDO
+
+        when(orgService.getOrgObjById(targetOrgId, context)).thenReturn(targetOrg);
+
+        try {
+            validator.validateRoleAssignment(requestingUserId, requestingUserOrgId, targetOrgId, targetUserId, rolesToAssign, context);
+        } catch (Exception e) {
+            fail("Union of permissions across held roles should allow both requested roles: " + e.getMessage());
+        }
+    }
+
     // Helper methods
 
     private void mockRequestingUserAsAdmin(String userId) {
         List<Map<String, Object>> roles = new ArrayList<>();
         Map<String, Object> roleMap = new HashMap<>();
-        roleMap.put(JsonKey.ROLE, "ORG_ADMIN");
+        roleMap.put(JsonKey.ROLE, "CBP_ADMIN"); // role_assignment_matrix grants this PUBLIC/CONTENT_CREATOR
         roles.add(roleMap);
 
         when(userRoleService.getUserRoles(userId, null, context)).thenReturn(roles);
@@ -586,7 +685,7 @@ public class RoleAssignmentValidatorTest {
     private void mockRequestingUserAsNonAdmin(String userId) {
         List<Map<String, Object>> roles = new ArrayList<>();
         Map<String, Object> roleMap = new HashMap<>();
-        roleMap.put(JsonKey.ROLE, "PUBLIC"); // Not an admin role
+        roleMap.put(JsonKey.ROLE, "PUBLIC"); // Has no entry in role_assignment_matrix
         roles.add(roleMap);
 
         when(userRoleService.getUserRoles(userId, null, context)).thenReturn(roles);

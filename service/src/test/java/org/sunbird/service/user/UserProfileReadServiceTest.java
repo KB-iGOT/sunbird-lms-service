@@ -66,7 +66,8 @@ import scala.concurrent.Promise;
   UserRoleDaoImpl.class,
   UserExternalIdentityServiceImpl.class,
   UserProfileReadService.class,
-  OrgTypeValidator.class
+  OrgTypeValidator.class,
+  org.sunbird.kafka.InstructionEventGenerator.class
 })
 @PowerMockIgnore({
   "javax.management.*",
@@ -438,5 +439,71 @@ public class UserProfileReadServiceTest {
     groupTncMap.put("groupsTnc", tnc);
     userDbMap.put(JsonKey.ALL_TNC_ACCEPTED, groupTncMap);
     return userDbMap;
+  }
+
+  // ---------- getUserMobileLoggedInDetails ----------
+
+  private CassandraOperation mockUserLogins(Map<String, Object> loginRow) {
+    PowerMockito.mockStatic(ServiceFactory.class);
+    CassandraOperation cassandra = mock(CassandraOperation.class);
+    when(ServiceFactory.getInstance()).thenReturn(cassandra);
+    Response r = new Response();
+    List<Map<String, Object>> list = new ArrayList<>();
+    if (loginRow != null) list.add(loginRow);
+    r.put(JsonKey.RESPONSE, list);
+    when(cassandra.getRecordsByProperty(
+            Mockito.anyString(), Mockito.eq(JsonKey.USER_LOGIN), Mockito.eq(JsonKey.CONSENT_USER_ID),
+            Mockito.anyList(), Mockito.any()))
+        .thenReturn(r);
+    return cassandra;
+  }
+
+  private Request mobileLoginRequest() {
+    Request request = new Request();
+    request.getContext().put(JsonKey.REQUESTED_BY, "user-1");
+    return request;
+  }
+
+  @Test
+  public void mobileFirstLoginUpdatesBothColumnsAndSendsEvent() throws Exception {
+    CassandraOperation cassandra = mockUserLogins(null);
+    PowerMockito.mockStatic(org.sunbird.kafka.InstructionEventGenerator.class);
+
+    Response response = new UserProfileReadService().getUserMobileLoggedInDetails(mobileLoginRequest());
+
+    Assert.assertEquals(true, response.get(JsonKey.IS_MOBILE_FIRST_LOGIN));
+    Mockito.verify(cassandra).upsertRecord(
+        Mockito.anyString(), Mockito.eq(JsonKey.USER_LOGIN),
+        Mockito.argThat(m -> m.get(JsonKey.MOBILE_FIRST_LOGIN) != null && m.get(JsonKey.MOBILE_LAST_LOGIN) != null),
+        Mockito.any());
+    PowerMockito.verifyStatic(org.sunbird.kafka.InstructionEventGenerator.class, Mockito.times(1));
+    org.sunbird.kafka.InstructionEventGenerator.createFirstLoginDetailsEvent(
+        Mockito.eq("user-1"), Mockito.any(), Mockito.anyMap(),
+        Mockito.eq(JsonKey.EVENT_TYPE_MOBILE_FIRST_LOGIN), Mockito.eq(1));
+  }
+
+  @Test
+  public void mobileSubsequentLoginUpdatesLastLoginOnly() throws Exception {
+    Map<String, Object> loginRow = new HashMap<>();
+    loginRow.put(JsonKey.MOBILE_FIRST_LOGIN, new java.sql.Timestamp(1000L));
+    CassandraOperation cassandra = mockUserLogins(loginRow);
+    PowerMockito.mockStatic(org.sunbird.kafka.InstructionEventGenerator.class);
+
+    Response response = new UserProfileReadService().getUserMobileLoggedInDetails(mobileLoginRequest());
+
+    Assert.assertEquals(false, response.get(JsonKey.IS_MOBILE_FIRST_LOGIN));
+    Mockito.verify(cassandra).upsertRecord(
+        Mockito.anyString(), Mockito.eq(JsonKey.USER_LOGIN),
+        Mockito.argThat(m -> !m.containsKey(JsonKey.MOBILE_FIRST_LOGIN) && m.get(JsonKey.MOBILE_LAST_LOGIN) != null),
+        Mockito.any());
+    PowerMockito.verifyStatic(org.sunbird.kafka.InstructionEventGenerator.class, Mockito.never());
+    org.sunbird.kafka.InstructionEventGenerator.createFirstLoginDetailsEvent(
+        Mockito.anyString(), Mockito.any(), Mockito.anyMap(), Mockito.anyString(), Mockito.anyInt());
+  }
+
+  @Test(expected = ProjectCommonException.class)
+  public void mobileLoginWithoutUserIdThrows() throws Exception {
+    mockUserLogins(null);
+    new UserProfileReadService().getUserMobileLoggedInDetails(new Request());
   }
 }
