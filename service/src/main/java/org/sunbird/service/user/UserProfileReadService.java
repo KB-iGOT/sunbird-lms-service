@@ -938,9 +938,9 @@ public class UserProfileReadService {
       Map<String, Object> dataMap = new HashMap<>();
       dataMap.put(JsonKey.EDATA, eData);
       String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
-      InstructionEventGenerator.createFirstLoginDetailsEvent(
-              userId, topic, dataMap, JsonKey.EVENT_TYPE_MOBILE_FIRST_LOGIN,
-              Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION)));
+      //InstructionEventGenerator.createFirstLoginDetailsEvent(
+      //        userId, topic, dataMap, JsonKey.EVENT_TYPE_MOBILE_FIRST_LOGIN,
+      //        Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION)));
       logger.info(context, "getUserMobileLoggedInDetails: FIRST_LOGIN_MOBILE event sent for userId: " + userId);
     } else {
       cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
