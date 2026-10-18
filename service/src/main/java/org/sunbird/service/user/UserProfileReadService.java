@@ -770,6 +770,8 @@ public class UserProfileReadService {
         requestMap.put(JsonKey.FIRST_LOGIN, map.get(JsonKey.FIRST_LOGIN));
         requestMap.put(JsonKey.SELF_REGISTRATION, userDetailsMap.get(JsonKey.CREATEDBY) == null);
         dataMap.put(JsonKey.EDATA, requestMap);
+        String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
+        InstructionEventGenerator.createFirstLoginDetailsEvent(userId, topic, dataMap);
         String onboardUserOnFirstLogin = ProjectUtil.getConfigValue("kafka_topic_name_user_profile_update");
         Map<String, String> userUpdateMap = new HashMap<>();
         userUpdateMap.put(JsonKey.USER_ID,(String)map.get(JsonKey.ID));
@@ -936,9 +938,9 @@ public class UserProfileReadService {
       Map<String, Object> dataMap = new HashMap<>();
       dataMap.put(JsonKey.EDATA, eData);
       String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
-      InstructionEventGenerator.createFirstLoginDetailsEvent(
-              userId, topic, dataMap, JsonKey.EVENT_TYPE_MOBILE_FIRST_LOGIN,
-              Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION)));
+      //InstructionEventGenerator.createFirstLoginDetailsEvent(
+      //        userId, topic, dataMap, JsonKey.EVENT_TYPE_MOBILE_FIRST_LOGIN,
+      //        Integer.parseInt(ProjectUtil.getConfigValue(JsonKey.KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION)));
       logger.info(context, "getUserMobileLoggedInDetails: FIRST_LOGIN_MOBILE event sent for userId: " + userId);
     } else {
       cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
