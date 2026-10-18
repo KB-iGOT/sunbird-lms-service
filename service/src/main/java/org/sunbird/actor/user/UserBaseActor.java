@@ -344,7 +344,7 @@ public abstract class UserBaseActor extends BaseActor {
       if (StringUtils.isNumeric(StringUtils.trimToEmpty(configuredVersion))) {
         version = Integer.parseInt(configuredVersion.trim());
       }
-      InstructionEventGenerator.createKarmaPointsEvent(userId, topic, eventType, edata, version);
+      //InstructionEventGenerator.createKarmaPointsEvent(userId, topic, eventType, edata, version);
       logger.info(context, "[KARMA_POINTS][" + eventType + "][published] userId=" + userId
           + ", sourceCreationType=" + sourceCreationType);
     } catch (Exception e) {
