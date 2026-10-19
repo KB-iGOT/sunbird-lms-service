@@ -72,6 +72,7 @@ public class ProfileTokenGenerator {
                     firstNotBlank(
                             profileDetails.get(JsonKey.MINISTRY_STATE_TYPE),
                             rootOrg.get(JsonKey.MINISTRY_STATE_TYPE)));
+            payload.put(JsonKey.SB_ORG_TYPE, asString(rootOrg.get(JsonKey.SB_ORG_TYPE)));
             payload.put(JsonKey.ROLES, roleNames(userProfile.get(JsonKey.ROLES)));
 
             return sign(payload);
