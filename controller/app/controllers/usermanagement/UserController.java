@@ -686,6 +686,13 @@ public class UserController extends BaseController {
                 httpRequest);
     }
 
+    public CompletionStage<Result> getUserMobileLoggedInDetails(Http.Request httpRequest) {
+        return handleGetUserProfileV3(
+                ActorOperations.GET_USER_MOBILE_LOGIN_V1.getValue(),
+                null,
+                httpRequest);
+    }
+
     public CompletionStage<Result> userPublicSearch(Http.Request httpRequest) {
         final String requestedFields = httpRequest.getQueryString(JsonKey.FIELDS);
         return handleSearchRequest(
