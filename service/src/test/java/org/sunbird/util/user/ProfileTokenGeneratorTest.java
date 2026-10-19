@@ -143,6 +143,7 @@ public class ProfileTokenGeneratorTest {
     Assert.assertEquals("Group A", claims.get(JsonKey.GROUP));
     Assert.assertEquals("ministry-001", claims.get(JsonKey.MINISTRY_STATE_ID));
     Assert.assertEquals("ministry", claims.get(JsonKey.MINISTRY_STATE_TYPE));
+    Assert.assertEquals("mdo", claims.get(JsonKey.SB_ORG_TYPE));
   }
 
   @Test
@@ -247,6 +248,7 @@ public class ProfileTokenGeneratorTest {
     Assert.assertEquals(USER_ID, claims.get(JsonKey.USER));
     Assert.assertEquals(StringUtils.EMPTY, claims.get(JsonKey.DESIGNATION));
     Assert.assertEquals(StringUtils.EMPTY, claims.get(JsonKey.ROOTORG_ID));
+    Assert.assertEquals(StringUtils.EMPTY, claims.get(JsonKey.SB_ORG_TYPE));
     Assert.assertEquals(new ArrayList<String>(), claims.get(JsonKey.ROLES));
   }
 
@@ -386,6 +388,7 @@ public class ProfileTokenGeneratorTest {
     Map<String, Object> rootOrg = new HashMap<>();
     rootOrg.put(JsonKey.MINISTRY_STATE_ID, "root-org-ministry-009");
     rootOrg.put(JsonKey.MINISTRY_STATE_TYPE, "state");
+    rootOrg.put(JsonKey.SB_ORG_TYPE, "mdo");
 
     Map<String, Object> profile = new HashMap<>();
     profile.put(JsonKey.USER_ID, USER_ID);
