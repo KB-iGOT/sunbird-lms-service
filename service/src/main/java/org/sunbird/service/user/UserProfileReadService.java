@@ -37,6 +37,7 @@ import java.text.MessageFormat;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.sunbird.util.user.ProfileTokenGenerator;
 
 public class UserProfileReadService {
 
@@ -186,6 +187,7 @@ public class UserProfileReadService {
     }
 
 
+    addProfileToken(result, userId, actorMessage.getRequestContext());
     calculateProfileCompletionPercentage(result,
             userId, actorMessage.getRequestContext());
     addWalletBalance(result, userId, actorMessage.getRequestContext());
@@ -728,6 +730,14 @@ public class UserProfileReadService {
       }
     }
     return retList;
+  }
+
+  private void addProfileToken(
+      Map<String, Object> result, String userId, RequestContext context) {
+    String profileToken = ProfileTokenGenerator.generate(result, userId, context);
+    if (StringUtils.isNotBlank(profileToken)) {
+      result.put(JsonKey.PROFILE_TOKEN, profileToken);
+    }
   }
 
   private void mapUserRoles(Map<String, Object> result) {
