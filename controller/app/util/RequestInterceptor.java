@@ -72,6 +72,7 @@ public class RequestInterceptor {
     apiHeaderIgnoreMap.put("/v1/user/get/email", var);
     apiHeaderIgnoreMap.put("/v1/user/get/phone", var);
     apiHeaderIgnoreMap.put("/v1/system/settings/get", var);
+    apiHeaderIgnoreMap.put("/v2/system/settings/get", var);
     apiHeaderIgnoreMap.put("/v1/system/settings/list", var);
     apiHeaderIgnoreMap.put("/private/user/v1/search", var);
     apiHeaderIgnoreMap.put("/private/user/v1/migrate", var);
