@@ -780,6 +780,8 @@ public final class JsonKey {
     public static final String KAFKA_EVENT_ENVELOPE_VERSION = "kafka_event_envelope_version";
     public static final String KAFKA_MOBILE_FIRST_LOGIN_EVENT_VERSION = "kafka_mobile_first_login_event_version";
     public static final String BP_CO_TRAINER = "bpCoTrainer";
+    public static final String EVENT_TYPE_VERIFIED_PROFILE = "VERIFIED_PROFILE";
+    public static final String PROFILE_STATUS_VERIFIED = "VERIFIED";
 
     private JsonKey() {
     }

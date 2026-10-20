@@ -2,6 +2,7 @@ package org.sunbird.actor.user;
 
 import akka.actor.ActorRef;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.io.IOException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -339,12 +340,7 @@ public abstract class UserBaseActor extends BaseActor {
       Map<String, Object> edata = new HashMap<>();
       edata.put(JsonKey.USER_ID, userId);
       String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
-      int version = 1;
-      String configuredVersion = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_EVENT_VERSION);
-      if (StringUtils.isNumeric(StringUtils.trimToEmpty(configuredVersion))) {
-        version = Integer.parseInt(configuredVersion.trim());
-      }
-      InstructionEventGenerator.createKarmaPointsEvent(userId, topic, eventType, edata, version);
+      InstructionEventGenerator.createKarmaPointsEvent(userId, topic, eventType, edata, getKarmaPointsEventVersion());
       logger.info(context, "[KARMA_POINTS][" + eventType + "][published] userId=" + userId
           + ", sourceCreationType=" + sourceCreationType);
     } catch (Exception e) {
@@ -371,5 +367,68 @@ public abstract class UserBaseActor extends BaseActor {
       }
     }
     return null;
+  }
+
+  /**
+   * KPI 1.4 (verified profile karma points): users can be created with profileStatus VERIFIED
+   * (e.g. admin create with group and designation, bulk create). Once such a user has been created,
+   * publishes VERIFIED_PROFILE to the karma points unified topic. Users created NOT-VERIFIED are
+   * awarded later, when the MDO admin approves (sunbird-cb-workflow / sunbird-cb-ext).
+   * Contract: {"eventType": "VERIFIED_PROFILE", "data": {"edata": {"userId": "..."}}, "version": 1}.
+   * Never throws: a publishing failure must not fail user creation.
+   *
+   * @param profileDetails the created user's profileDetails, as a JSON string or a map
+   */
+  protected void publishVerifiedProfileKarmaEventIfVerified(
+      String userId, Object profileDetails, RequestContext context) {
+    try {
+      String profileStatus = getProfileStatus(profileDetails);
+      if (StringUtils.isBlank(userId) || !JsonKey.PROFILE_STATUS_VERIFIED.equalsIgnoreCase(profileStatus)) {
+        logger.debug(context, "[KARMA_POINTS][VERIFIED_PROFILE][skipped] Profile not VERIFIED at creation: userId="
+            + userId + ", profileStatus=" + profileStatus);
+        return;
+      }
+      Map<String, Object> edata = new HashMap<>();
+      edata.put(JsonKey.USER_ID, userId);
+      String topic = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_UNIFIED_EVENT_TOPIC);
+      InstructionEventGenerator.createKarmaPointsEvent(
+          userId, topic, JsonKey.EVENT_TYPE_VERIFIED_PROFILE, edata, getKarmaPointsEventVersion());
+      logger.info(context, "[KARMA_POINTS][VERIFIED_PROFILE][published] userId=" + userId + " (created VERIFIED)");
+    } catch (Exception e) {
+      logger.error(context, "[KARMA_POINTS][VERIFIED_PROFILE][failed] Could not publish event for userId=" + userId, e);
+    }
+  }
+
+  /**
+   * Reads profileStatus from profileDetails given as a JSON string or a map. Returns null when
+   * profileDetails is null/blank/unreadable, the profileStatus key is missing, or its value is null/blank.
+   */
+  @SuppressWarnings("unchecked")
+  protected String getProfileStatus(Object profileDetails) {
+    Map<String, Object> details = null;
+    if (profileDetails instanceof Map) {
+      details = (Map<String, Object>) profileDetails;
+    } else if (profileDetails instanceof String && StringUtils.isNotBlank((String) profileDetails)) {
+      try {
+        details = mapper.readValue((String) profileDetails, Map.class);
+      } catch (IOException e) {
+        logger.info("[KARMA_POINTS][VERIFIED_PROFILE] Unreadable profileDetails, treating profileStatus as missing: "
+            + e.getMessage());
+        return null;
+      }
+    }
+    if (MapUtils.isEmpty(details) || !details.containsKey(JsonKey.PROFILE_STATUS)) {
+      return null;
+    }
+    Object profileStatus = details.get(JsonKey.PROFILE_STATUS);
+    return profileStatus == null ? null : StringUtils.trimToNull(String.valueOf(profileStatus));
+  }
+
+  private int getKarmaPointsEventVersion() {
+    String configuredVersion = ProjectUtil.getConfigValue(JsonKey.KARMA_POINTS_EVENT_VERSION);
+    if (StringUtils.isNumeric(StringUtils.trimToEmpty(configuredVersion))) {
+      return Integer.parseInt(configuredVersion.trim());
+    }
+    return 1;
   }
 }

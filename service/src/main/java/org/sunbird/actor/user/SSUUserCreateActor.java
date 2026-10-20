@@ -94,6 +94,8 @@ public class SSUUserCreateActor extends UserBaseActor {
     Map<String, Object> esResponse = new HashMap<>();
     if (JsonKey.SUCCESS.equalsIgnoreCase((String) response.get(JsonKey.RESPONSE))) {
       saveUserOrgInfo(userMap, actorMessage.getRequestContext());
+      publishVerifiedProfileKarmaEventIfVerified(
+          (String) userMap.get(JsonKey.ID), userMap.get(JsonKey.PROFILE_DETAILS), actorMessage.getRequestContext());
       esResponse =
           userService.getUserDetailsForES(
               (String) userMap.get(JsonKey.ID), actorMessage.getRequestContext());
