@@ -78,16 +78,22 @@ public class OrgController extends BaseController {
   }
 
   public CompletionStage<Result> getOrgDetails(Http.Request httpRequest) {
+    // Org details are identical for every caller (no auth-gated or requester-specific fields —
+    // see OrganisationManagementActor.getOrgDetails) and change rarely, so this response is safe
+    // to cache at an edge/CDN layer keyed purely on request body (orgId/externalId+provider).
+    // This header is what a shared Nginx/CDN cache in front of this service would key off of;
+    // the actual proxy_cache config still needs to be added at the infra layer.
     return handleRequest(
-        organisationManagementActor,
-        ActorOperations.GET_ORG_DETAILS.getValue(),
-        httpRequest.body().asJson(),
-        orgRequest -> {
-          new OrgRequestValidator().validateOrgReference((Request) orgRequest);
-          return null;
-        },
-        getAllRequestHeaders(httpRequest),
-        httpRequest);
+            organisationManagementActor,
+            ActorOperations.GET_ORG_DETAILS.getValue(),
+            httpRequest.body().asJson(),
+            orgRequest -> {
+              new OrgRequestValidator().validateOrgReference((Request) orgRequest);
+              return null;
+            },
+            getAllRequestHeaders(httpRequest),
+            httpRequest)
+        .thenApply(result -> result.withHeader("Cache-Control", "public, max-age=3600"));
   }
 
   public CompletionStage<Result> search(Http.Request httpRequest) {
