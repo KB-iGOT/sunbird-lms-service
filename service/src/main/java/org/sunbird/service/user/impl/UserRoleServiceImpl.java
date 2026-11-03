@@ -19,6 +19,7 @@ import org.sunbird.exception.ResponseCode;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.request.RequestContext;
+import org.sunbird.service.user.UserProfileReadService;
 import org.sunbird.service.user.UserRoleService;
 import org.sunbird.util.ProjectUtil;
 
@@ -41,6 +42,7 @@ public class UserRoleServiceImpl implements UserRoleService {
     List<Map> scopeList = new LinkedList();
     String scopeListString = createRoleScope(scopeList, userRequest);
     userRequest.put(JsonKey.SCOPE_STR, scopeListString);
+    boolean roleDataChanged = false;
     String roleOperation = (String) userRequest.get(JsonKey.ROLE_OPERATION);
     if (StringUtils.isNotEmpty(roleOperation) && !JsonKey.CREATE.equals(roleOperation)) {
       List<Map<String, String>> dbUserRoleListToDelete = new ArrayList<>();
@@ -54,10 +56,12 @@ public class UserRoleServiceImpl implements UserRoleService {
             SerializationUtils.clone(new ArrayList<>(dbUserRoleListToUpdate));
         userRoleListResponse.addAll(newUserReqMap);
         userRoleDao.updateRoleScope(dbUserRoleListToUpdate, context);
+        roleDataChanged = true;
       }
       // Delete existing roles of user, if the same is not in request
       if (CollectionUtils.isNotEmpty(dbUserRoleListToDelete)) {
         userRoleDao.deleteUserRole(dbUserRoleListToDelete, context);
+        roleDataChanged = true;
       }
     } else {
       userRolesToInsert = (List<String>) userRequest.get(JsonKey.ROLES);
@@ -69,6 +73,7 @@ public class UserRoleServiceImpl implements UserRoleService {
       if (CollectionUtils.isNotEmpty(userRoleListToInsert)) {
         userRoleDao.assignUserRole(userRoleListToInsert, context);
         userRoleListResponse.addAll(userRoleListToInsert);
+        roleDataChanged = true;
       }
     }
     if (CollectionUtils.isNotEmpty(userRoleListResponse)) {
@@ -76,6 +81,11 @@ public class UserRoleServiceImpl implements UserRoleService {
           map -> {
             map.put(JsonKey.SCOPE, scopeList);
           });
+    }
+    if (roleDataChanged) {
+      // Role data just changed (update, delete and/or insert) — drop the cached /user/read
+      // response so the next read reflects the new roles instead of serving a stale profile.
+      UserProfileReadService.invalidateProfileCache((String) userRequest.get(JsonKey.USER_ID));
     }
     // Return updated role list to save to ES
     return userRoleListResponse;
@@ -254,6 +264,13 @@ public class UserRoleServiceImpl implements UserRoleService {
     // Insert roles to DB
     if (CollectionUtils.isNotEmpty(userRoleListToInsert)) {
       userRoleDao.assignUserRole(userRoleListToInsert, context);
+    }
+    if (CollectionUtils.isNotEmpty(userRoleListToUpdate)
+        || CollectionUtils.isNotEmpty(userRoleListToDelete)
+        || CollectionUtils.isNotEmpty(userRoleListToInsert)) {
+      // Role data just changed — drop the cached /user/read response so the next read reflects
+      // the new roles instead of serving a stale cached profile.
+      UserProfileReadService.invalidateProfileCache(userId);
     }
     // Return updated role list to save to ES
     List<Map<String, Object>> roleListResponse = new ArrayList<>();

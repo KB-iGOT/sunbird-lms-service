@@ -693,6 +693,7 @@ public final class JsonKey {
     public static final String PROFESSIONAL_DETAILS = "professionalDetails";
     public static final String USER_PUBLIC_SEARCH_API_FIELDS = "user_public_search_api_fields";
     public static final String USER_CREATION_REDIS_TTL = "userCreationRedisTTL";
+    public static final String USER_PROFILE_READ_REDIS_TTL = "userProfileReadRedisTTL";
     public static final String USER_BASIC_PROFILE_READ_FIELDS = "user_basic_profile_read_fields";
     public static final String PROFILE_COMPLETION_REQUIRED_FIELDS = "profileCompletionRequiredFields";
     public static final String USERID_KEY = "userid";

@@ -13,6 +13,7 @@ import org.sunbird.model.user.UserOrg;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.service.user.UserOrgService;
+import org.sunbird.service.user.UserProfileReadService;
 import org.sunbird.util.ProjectUtil;
 
 public class UserOrgServiceImpl implements UserOrgService {
@@ -41,6 +42,9 @@ public class UserOrgServiceImpl implements UserOrgService {
     }
     try {
       userOrgDao.insertRecord(reqMap, context);
+      // Org membership just changed — drop the cached /user/read response so the next read
+      // reflects the new org list instead of serving a stale cached profile.
+      UserProfileReadService.invalidateProfileCache((String) userMap.get(JsonKey.ID));
     } catch (Exception e) {
       logger.error(context, e.getMessage(), e);
     }
@@ -53,6 +57,11 @@ public class UserOrgServiceImpl implements UserOrgService {
 
   public void deleteUserOrgMapping(List<Map<String, Object>> userOrgList, RequestContext context) {
     userOrgDao.deleteUserOrgMapping(userOrgList, context);
+    // Org membership just changed for every affected user — drop each cached /user/read response.
+    userOrgList.forEach(
+        userOrgMap ->
+            UserProfileReadService.invalidateProfileCache(
+                (String) userOrgMap.get(JsonKey.USER_ID)));
   }
 
   public void softDeleteOldUserOrgMapping(List<Map<String, Object>> userOrgList, RequestContext context) {
@@ -73,6 +82,8 @@ public class UserOrgServiceImpl implements UserOrgService {
           ObjectMapper mapper = new ObjectMapper();
           UserOrg userOrg = mapper.convertValue(reqMap, UserOrg.class);
           userOrgDao.updateUserOrg(userOrg, context);
+          // Org membership just changed — drop the cached /user/read response.
+          UserProfileReadService.invalidateProfileCache((String) res.get(JsonKey.USER_ID));
         } catch (Exception e) {
           logger.error(context, "upsertUserOrgData exception : " + e.getMessage(), e);
         }
@@ -106,6 +117,8 @@ public class UserOrgServiceImpl implements UserOrgService {
         ObjectMapper mapper = new ObjectMapper();
         UserOrg userOrg = mapper.convertValue(reqMap, UserOrg.class);
         userOrgDao.updateUserOrg(userOrg, context);
+        // Org membership just changed — drop the cached /user/read response.
+        UserProfileReadService.invalidateProfileCache((String) userMap.get(JsonKey.ID));
       } catch (Exception e) {
         logger.error(context, "upsertUserOrgData exception : " + e.getMessage(), e);
       }

@@ -36,6 +36,7 @@ import org.sunbird.service.organisation.OrgService;
 import org.sunbird.service.organisation.impl.OrgServiceImpl;
 import org.sunbird.service.user.AssociationMechanism;
 import org.sunbird.service.user.ExtendedUserProfileService;
+import org.sunbird.service.user.UserProfileReadService;
 import org.sunbird.service.user.UserService;
 import org.sunbird.service.user.impl.ExtendedUserProfileServiceImpl;
 import org.sunbird.service.user.impl.UserServiceImpl;
@@ -291,6 +292,9 @@ public class UserUpdateActor extends UserBaseActor {
       sendResetPasswordLink(requestMap, actorMessage.getRequestContext());
     }
     if (null != resp) {
+      // Profile data just changed — drop the cached /user/read response (all read-version
+      // variants) so the next read recomputes instead of serving stale data.
+      UserProfileReadService.invalidateProfileCache(user.getUserId());
       Map<String, Object> completeUserDetails = new HashMap<>(userDbRecord);
       completeUserDetails.putAll(requestMap);
       saveUserDetailsToEs(completeUserDetails, actorMessage.getRequestContext());
