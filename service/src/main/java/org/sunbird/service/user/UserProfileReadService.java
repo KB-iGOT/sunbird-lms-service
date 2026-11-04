@@ -31,7 +31,7 @@ import org.sunbird.service.user.impl.*;
 import org.sunbird.util.*;
 import org.sunbird.util.user.UserTncUtil;
 import org.sunbird.util.user.UserUtil;
-import org.sunbird.redis.RedisCacheUtil;
+import org.sunbird.redis.UserProfileRedisCacheUtil;
 
 import java.sql.Timestamp;
 import java.text.MessageFormat;
@@ -87,12 +87,17 @@ public class UserProfileReadService {
     String requestFields = (String) actorMessage.getContext().get(JsonKey.FIELDS);
     boolean withTokens =
         Boolean.parseBoolean((String) actorMessage.getContext().get(JsonKey.WITH_TOKENS));
-    // Cache-aside only for the common case: a default read with no extra `fields`, no managed
+    // Cache-aside only for the common case: a V5 default read with no extra `fields`, no managed
     // token, not an NGO request and not a private read (private reads re-attach raw encoded
-    // email/phone that aren't part of the cached, decryption-agnostic core). Those excluded
-    // variants still compute fresh every time, same as before this change.
+    // email/phone that aren't part of the cached, decryption-agnostic core). V3/V4 are legacy
+    // read versions — left uncached per review — and those excluded variants still compute
+    // fresh every time, same as before this change.
     boolean cacheEligible =
-        !isNgo && !isPrivate && !withTokens && StringUtils.isBlank(requestFields);
+        !isNgo
+            && !isPrivate
+            && !withTokens
+            && StringUtils.isBlank(requestFields)
+            && readVersion.equalsIgnoreCase(ActorOperations.GET_USER_PROFILE_V5.getValue());
     String cacheKey = PROFILE_CACHE_KEY_PREFIX + userId + ":" + readVersion;
 
     Map<String, Object> result = null;
@@ -246,7 +251,7 @@ public class UserProfileReadService {
    */
   private Map<String, Object> getCachedProfileCore(String cacheKey, RequestContext context) {
     try {
-      String cached = RedisCacheUtil.get(cacheKey, null, 0);
+      String cached = UserProfileRedisCacheUtil.get(cacheKey, null, 0);
       if (StringUtils.isBlank(cached)) {
         return null;
       }
@@ -267,7 +272,7 @@ public class UserProfileReadService {
       int ttl =
           Integer.parseInt(
               PropertiesCache.getInstance().getProperty(JsonKey.USER_PROFILE_READ_REDIS_TTL));
-      RedisCacheUtil.set(cacheKey, mapper.writeValueAsString(result), ttl);
+      UserProfileRedisCacheUtil.set(cacheKey, mapper.writeValueAsString(result), ttl);
     } catch (Exception e) {
       logger.error(
           context, "UserProfileReadService: cache write failed for key " + cacheKey, e);
@@ -275,18 +280,16 @@ public class UserProfileReadService {
   }
 
   /**
-   * Deletes the cached profile core for a user across every read-version variant
-   * (getUserProfileV3/V4/V5 each cache under their own key suffix). Called whenever profile, role
-   * or org-membership data for the user changes.
+   * Deletes the cached profile core for a user. Only the V5 read version is ever cached (see
+   * {@link #getUserProfileData}), so only its key needs clearing here. Called whenever profile,
+   * role or org-membership data for the user changes.
    */
   public static void invalidateProfileCache(String userId) {
     if (StringUtils.isBlank(userId)) {
       return;
     }
     try {
-      RedisCacheUtil.delete(
-          PROFILE_CACHE_KEY_PREFIX + userId + ":" + ActorOperations.GET_USER_PROFILE_V3.getValue(),
-          PROFILE_CACHE_KEY_PREFIX + userId + ":" + ActorOperations.GET_USER_PROFILE_V4.getValue(),
+      UserProfileRedisCacheUtil.delete(
           PROFILE_CACHE_KEY_PREFIX + userId + ":" + ActorOperations.GET_USER_PROFILE_V5.getValue());
     } catch (Exception e) {
       new LoggerUtil(UserProfileReadService.class)
@@ -484,6 +487,18 @@ public class UserProfileReadService {
         String organisationId = (String) userOrg.get(JsonKey.ORGANISATION_ID);
         if (MapUtils.isNotEmpty(userOrgRoles) && userOrgRoles.containsKey(organisationId)) {
           userOrg.put(JsonKey.ROLES, userOrgRoles.get(organisationId));
+        }
+        // Enrich with org details via the same cache-aside getOrgById used by /v1/org/read and
+        // the root-org lookup above (org_details:<organisationId> in Redis), instead of this
+        // list staying bare membership rows (orgId/roles only).
+        Map<String, Object> orgInfo = orgService.getOrgById(organisationId, requestContext);
+        if (MapUtils.isNotEmpty(orgInfo)) {
+          userOrg.put(JsonKey.ORG_NAME, orgInfo.get(JsonKey.ORG_NAME));
+          userOrg.put(JsonKey.CHANNEL, orgInfo.get(JsonKey.CHANNEL));
+          userOrg.put(JsonKey.HASHTAGID, orgInfo.get(JsonKey.HASHTAGID));
+          userOrg.put(JsonKey.ORG_LOCATION, orgInfo.get(JsonKey.ORG_LOCATION));
+          userOrg.put(JsonKey.LOCATION_IDS, orgInfo.get(JsonKey.LOCATION_IDS));
+          userOrg.put(JsonKey.EXTERNAL_ID, orgInfo.get(JsonKey.EXTERNAL_ID));
         }
         usrOrgList.add(userOrg);
       }

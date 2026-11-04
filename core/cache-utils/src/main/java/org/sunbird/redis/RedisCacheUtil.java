@@ -167,6 +167,32 @@ public class RedisCacheUtil {
         }
     }
 
+    /**
+     * Same as {@link #set(String, String, int)} but against an explicit DB index rather than the
+     * class-wide default — lets a caller (e.g. org-details caching in OrgDaoImpl) share this same
+     * connection pool/host/port while keeping its keys in their own logical DB.
+     */
+    public static void set(String key, String data, int ttl, int dbIndex) {
+        try (Jedis jedis = getConnection(dbIndex)) {
+            jedis.del(key);
+            jedis.set(key, data);
+            if (ttl > 0) jedis.expire(key, ttl);
+        } catch (Exception e) {
+            logger.error("Redis set failed for key: " + key, e);
+            throw e;
+        }
+    }
+
+    /** Same as {@link #delete(String...)} but against an explicit DB index. */
+    public static void delete(int dbIndex, String... keys) {
+        try (Jedis jedis = getConnection(dbIndex)) {
+            jedis.del(keys);
+        } catch (Exception e) {
+            logger.error("Redis delete failed for keys: " + Arrays.toString(keys), e);
+            throw e;
+        }
+    }
+
     public static void deleteByPattern(String pattern) {
         if (StringUtils.isNotBlank(pattern) && !StringUtils.equalsIgnoreCase(pattern, "*")) {
             try (Jedis jedis = getConnection()) {

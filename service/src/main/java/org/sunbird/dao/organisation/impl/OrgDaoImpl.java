@@ -46,6 +46,15 @@ public class OrgDaoImpl implements OrgDao {
    */
   private static final String ORG_DETAILS_CACHE_KEY_PREFIX = "org_details:";
 
+  /**
+   * Logical Redis DB index for org-details cache data (see {@link JsonKey#ORG_DETAILS_REDIS_INDEX}
+   * / externalresource.properties). Uses the SAME RedisCacheUtil connection pool/host/port as
+   * other generic-cache consumers (e.g. SSO dedup in SSOUserCreateActor) — this only keeps
+   * org-details keys in their own DB index instead of sharing index 0 with everything else.
+   */
+  private static final int ORG_REDIS_INDEX =
+      Integer.parseInt(PropertiesCache.getInstance().getProperty(JsonKey.ORG_DETAILS_REDIS_INDEX));
+
   public static OrgDao getInstance() {
     if (orgDao == null) {
       orgDao = new OrgDaoImpl();
@@ -58,8 +67,7 @@ public class OrgDaoImpl implements OrgDao {
     if (StringUtils.isBlank(orgId)) {
       return Collections.emptyMap();
     }
-    String cacheKey = ORG_DETAILS_CACHE_KEY_PREFIX + orgId;
-    Map<String, Object> cached = getCachedOrgDetails(cacheKey, context);
+    Map<String, Object> cached = getCachedOrgDetails(orgId, context);
     if (cached != null) {
       return cached;
     }
@@ -71,19 +79,24 @@ public class OrgDaoImpl implements OrgDao {
       Map<String, Object> orgMap = responseList.get(0);
       enrichOrgDetails(orgMap, context);
       enrichOrgDetailsWithCustomFields(orgMap, context);
-      cacheOrgDetails(cacheKey, orgMap, context);
+      cacheOrgDetails(orgId, orgMap, context);
       return orgMap;
     }
     return Collections.emptyMap();
+  }
+
+  private static String buildOrgCacheKey(String orgId) {
+    return ORG_DETAILS_CACHE_KEY_PREFIX + orgId;
   }
 
   /**
    * Never throws — a Redis failure just falls back to the Cassandra read as if it were a cache
    * miss, so a Redis outage degrades this read path back to its pre-caching behaviour.
    */
-  private Map<String, Object> getCachedOrgDetails(String cacheKey, RequestContext context) {
+  private Map<String, Object> getCachedOrgDetails(String orgId, RequestContext context) {
+    String cacheKey = buildOrgCacheKey(orgId);
     try {
-      String cached = RedisCacheUtil.get(cacheKey, null, 0);
+      String cached = RedisCacheUtil.getUsingIndex(cacheKey, null, 0, ORG_REDIS_INDEX);
       if (StringUtils.isBlank(cached)) {
         return null;
       }
@@ -95,13 +108,24 @@ public class OrgDaoImpl implements OrgDao {
   }
 
   /** Best-effort — a write failure here only means the next read re-computes from Cassandra. */
-  private void cacheOrgDetails(String cacheKey, Map<String, Object> orgMap, RequestContext context) {
+  private void cacheOrgDetails(String orgId, Map<String, Object> orgMap, RequestContext context) {
+    String cacheKey = buildOrgCacheKey(orgId);
     try {
       int ttl =
           Integer.parseInt(PropertiesCache.getInstance().getProperty(JsonKey.ORG_DETAILS_REDIS_TTL));
-      RedisCacheUtil.set(cacheKey, mapper.writeValueAsString(orgMap), ttl);
+      RedisCacheUtil.set(cacheKey, mapper.writeValueAsString(orgMap), ttl, ORG_REDIS_INDEX);
     } catch (Exception e) {
       logger.error(context, "OrgDaoImpl: cache write failed for key " + cacheKey, e);
+    }
+  }
+
+  /** Best-effort — a failure here just means the next read serves a stale cached org. */
+  private void invalidateOrgCache(String orgId, RequestContext context) {
+    String cacheKey = buildOrgCacheKey(orgId);
+    try {
+      RedisCacheUtil.delete(ORG_REDIS_INDEX, cacheKey);
+    } catch (Exception e) {
+      logger.error(context, "OrgDaoImpl: cache invalidation failed for orgId " + orgId, e);
     }
   }
 
@@ -200,11 +224,7 @@ public class OrgDaoImpl implements OrgDao {
     // (org update, status update, key rotation) since they all route through this method.
     String orgId = (String) orgMap.get(JsonKey.ID);
     if (StringUtils.isNotBlank(orgId)) {
-      try {
-        RedisCacheUtil.delete(ORG_DETAILS_CACHE_KEY_PREFIX + orgId);
-      } catch (Exception e) {
-        logger.error(context, "OrgDaoImpl: cache invalidation failed for orgId " + orgId, e);
-      }
+      invalidateOrgCache(orgId, context);
     }
     return response;
   }
