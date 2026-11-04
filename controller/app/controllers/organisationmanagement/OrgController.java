@@ -78,6 +78,8 @@ public class OrgController extends BaseController {
   }
 
   public CompletionStage<Result> getOrgDetails(Http.Request httpRequest) {
+    // No Cache-Control header here — edge caching for this endpoint is already handled by the
+    // Nginx cache layer in front of this service, so adding one at the app level was redundant.
     return handleRequest(
         organisationManagementActor,
         ActorOperations.GET_ORG_DETAILS.getValue(),
