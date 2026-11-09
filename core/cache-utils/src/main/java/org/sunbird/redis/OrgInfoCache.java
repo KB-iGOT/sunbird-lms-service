@@ -55,6 +55,7 @@ public final class OrgInfoCache {
   private static volatile boolean initialised = false;
   private static volatile boolean enabled = false;
   private static volatile int ttlSeconds = DEFAULT_TTL_SECONDS;
+  private static volatile boolean wrongTypeReported = false;
 
   private OrgInfoCache() {}
 
@@ -72,7 +73,7 @@ public final class OrgInfoCache {
       String json = jedis.get(key(orgId));
       return json == null ? null : mapper.readValue(json, MAP_TYPE);
     } catch (Exception e) {
-      logger.error("OrgInfoCache:get failed for orgId " + orgId + ": " + e.getMessage(), e);
+      logFailure("get", orgId, e);
       return null;
     }
   }
@@ -93,7 +94,7 @@ public final class OrgInfoCache {
         }
       }
     } catch (Exception e) {
-      logger.error("OrgInfoCache:getAll failed: " + e.getMessage(), e);
+      logFailure("mget", orgIds.get(0), e);
       return Collections.emptyMap();
     }
     return result;
@@ -107,7 +108,7 @@ public final class OrgInfoCache {
     try (Jedis jedis = pool.getResource()) {
       jedis.setex(key(orgId), ttlSeconds, mapper.writeValueAsString(rawOrgRow));
     } catch (Exception e) {
-      logger.error("OrgInfoCache:put failed for orgId " + orgId + ": " + e.getMessage(), e);
+      logFailure("setex", orgId, e);
     }
   }
 
@@ -119,12 +120,27 @@ public final class OrgInfoCache {
     try (Jedis jedis = pool.getResource()) {
       jedis.del(key(orgId));
     } catch (Exception e) {
-      logger.error("OrgInfoCache:evict failed for orgId " + orgId + ": " + e.getMessage(), e);
+      logFailure("del", orgId, e);
     }
   }
 
   private static String key(String orgId) {
     return KEY_PREFIX + orgId;
+  }
+
+  /** WRONGTYPE = another writer owns this key name with a different type; report once, not per call. */
+  private static void logFailure(String op, String orgId, Exception e) {
+    String msg = e.getMessage();
+    if (msg != null && msg.startsWith("WRONGTYPE")) {
+      if (!wrongTypeReported) {
+        wrongTypeReported = true;
+        logger.error(
+            "OrgInfoCache: key namespace '" + KEY_PREFIX + "*' clashes with a non-string key ("
+                + key(orgId) + "); treating as cache miss. Further WRONGTYPE errors suppressed.", e);
+      }
+      return;
+    }
+    logger.error("OrgInfoCache: " + op + " failed for " + key(orgId) + ": " + msg, e);
   }
 
   private static void init() {
@@ -208,6 +224,7 @@ public final class OrgInfoCache {
       initialised = false;
       enabled = false;
       ttlSeconds = DEFAULT_TTL_SECONDS;
+      wrongTypeReported = false;
     }
   }
 }

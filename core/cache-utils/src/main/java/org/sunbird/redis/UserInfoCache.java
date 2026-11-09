@@ -16,7 +16,7 @@ import redis.clients.jedis.JedisPoolConfig;
 import redis.clients.jedis.Pipeline;
 
 /**
- * One Redis hash per user, key {@code user:{userId}}, holding the raw Cassandra rows the user read
+ * One Redis hash per user, key {@code userprofile:{userId}}, holding the raw Cassandra rows the user read
  * APIs need, one field per source table:
  *
  * <pre>
@@ -36,7 +36,8 @@ import redis.clients.jedis.Pipeline;
  */
 public final class UserInfoCache {
 
-  public static final String KEY_PREFIX = "user:";
+  /** Deliberately not the bare {@code user:} namespace, which other jobs already use for strings. */
+  public static final String KEY_PREFIX = "userprofile:";
   public static final String FIELD_INFO = "info";
   public static final String FIELD_ROLES = "roles";
   public static final String FIELD_ORG = "org";
@@ -68,6 +69,7 @@ public final class UserInfoCache {
   private static volatile boolean initialised = false;
   private static volatile boolean enabled = false;
   private static volatile int ttlSeconds = DEFAULT_TTL_SECONDS;
+  private static volatile boolean wrongTypeReported = false;
 
   private UserInfoCache() {}
 
@@ -119,7 +121,7 @@ public final class UserInfoCache {
       }
       return result;
     } catch (Exception e) {
-      logger.error("UserInfoCache: hmget failed for " + key(userId) + ": " + e.getMessage(), e);
+      logFailure("hmget", userId, e);
       return Collections.emptyMap();
     }
   }
@@ -140,7 +142,7 @@ public final class UserInfoCache {
       p.expire(key(userId), ttlSeconds);
       p.sync();
     } catch (Exception e) {
-      logger.error("UserInfoCache: hset failed for " + key(userId) + "/" + field + ": " + e.getMessage(), e);
+      logFailure("hset " + field, userId, e);
     }
   }
 
@@ -152,7 +154,7 @@ public final class UserInfoCache {
     try (Jedis jedis = pool.getResource()) {
       jedis.hdel(key(userId), fields);
     } catch (Exception e) {
-      logger.error("UserInfoCache: hdel failed for " + key(userId) + ": " + e.getMessage(), e);
+      logFailure("hdel", userId, e);
     }
   }
 
@@ -170,6 +172,24 @@ public final class UserInfoCache {
 
   private static String key(String userId) {
     return KEY_PREFIX + userId;
+  }
+
+  /**
+   * A WRONGTYPE reply means another writer owns this key name with a different Redis type: a
+   * configuration problem, not a per-request one, so report it once instead of on every call.
+   */
+  private static void logFailure(String op, String userId, Exception e) {
+    String msg = e.getMessage();
+    if (msg != null && msg.startsWith("WRONGTYPE")) {
+      if (!wrongTypeReported) {
+        wrongTypeReported = true;
+        logger.error(
+            "UserInfoCache: key namespace '" + KEY_PREFIX + "*' clashes with a non-hash key ("
+                + key(userId) + "); treating as cache miss. Further WRONGTYPE errors suppressed.", e);
+      }
+      return;
+    }
+    logger.error("UserInfoCache: " + op + " failed for " + key(userId) + ": " + msg, e);
   }
 
   private static void init() {
@@ -253,6 +273,7 @@ public final class UserInfoCache {
       initialised = false;
       enabled = false;
       ttlSeconds = DEFAULT_TTL_SECONDS;
+      wrongTypeReported = false;
     }
   }
 }
