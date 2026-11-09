@@ -8,6 +8,7 @@ import org.sunbird.datasecurity.DataMaskingService;
 import org.sunbird.datasecurity.DecryptionService;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.keys.JsonKey;
+import org.sunbird.redis.UserInfoCache;
 import org.sunbird.request.Request;
 import org.sunbird.response.Response;
 
@@ -104,25 +105,33 @@ public final class Util {
     if (JsonKey.USER.equalsIgnoreCase((String) request.getContext().get(JsonKey.ACTOR_TYPE))) {
       String requestedByUserId = (String) request.getContext().get(JsonKey.REQUESTED_BY);
       if (StringUtils.isNotBlank(requestedByUserId)) {
-        Util.DbInfo usrDbInfo = dbInfoMap.get(JsonKey.USER_DB);
-        Response userResponse =
-            cassandraOperation.getRecordById(
-                usrDbInfo.getKeySpace(),
-                usrDbInfo.getTableName(),
-                (String) request.getContext().get(JsonKey.REQUESTED_BY),
-                request.getRequestContext());
-        List<Map<String, Object>> userList =
-            (List<Map<String, Object>>) userResponse.get(JsonKey.RESPONSE);
-        if (CollectionUtils.isNotEmpty(userList)) {
-          Map<String, Object> result = userList.get(0);
-          if (result != null) {
-            String rootOrgId = (String) result.get(JsonKey.ROOT_ORG_ID);
-            if (StringUtils.isNotBlank(rootOrgId)) {
-              Map<String, String> rollup = new HashMap<>();
+        // Only rootOrgId is needed here (telemetry rollup), but this runs on every user API call,
+        // so serve it from the per-user cache; a miss reads Cassandra as before and warms the
+        // cache so the actor's own user read that follows is a hit.
+        Map<String, Object> result =
+            UserInfoCache.getRow(requestedByUserId, UserInfoCache.FIELD_INFO);
+        if (result == null) {
+          Util.DbInfo usrDbInfo = dbInfoMap.get(JsonKey.USER_DB);
+          Response userResponse =
+              cassandraOperation.getRecordById(
+                  usrDbInfo.getKeySpace(),
+                  usrDbInfo.getTableName(),
+                  requestedByUserId,
+                  request.getRequestContext());
+          List<Map<String, Object>> userList =
+              (List<Map<String, Object>>) userResponse.get(JsonKey.RESPONSE);
+          if (CollectionUtils.isNotEmpty(userList)) {
+            result = userList.get(0);
+            UserInfoCache.put(requestedByUserId, UserInfoCache.FIELD_INFO, result);
+          }
+        }
+        if (result != null) {
+          String rootOrgId = (String) result.get(JsonKey.ROOT_ORG_ID);
+          if (StringUtils.isNotBlank(rootOrgId)) {
+            Map<String, String> rollup = new HashMap<>();
 
-              rollup.put("l1", rootOrgId);
-              requestContext.put(JsonKey.ROLLUP, rollup);
-            }
+            rollup.put("l1", rootOrgId);
+            requestContext.put(JsonKey.ROLLUP, rollup);
           }
         }
       }
