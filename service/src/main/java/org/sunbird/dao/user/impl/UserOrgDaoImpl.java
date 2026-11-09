@@ -1,6 +1,8 @@
 package org.sunbird.dao.user.impl;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import org.sunbird.dao.user.UserOrgDao;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.model.user.UserOrg;
+import org.sunbird.redis.UserInfoCache;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 
@@ -41,14 +44,19 @@ public final class UserOrgDaoImpl implements UserOrgDao {
     Map<String, Object> request = mapper.convertValue(userOrg, Map.class);
     compositeKey.put(JsonKey.USER_ID, request.remove(JsonKey.USER_ID));
     compositeKey.put(JsonKey.ORGANISATION_ID, request.remove(JsonKey.ORGANISATION_ID));
-    return cassandraOperation.updateRecord(
-        JsonKey.SUNBIRD, TABLE_NAME, request, compositeKey, context);
+    Response response =
+        cassandraOperation.updateRecord(JsonKey.SUNBIRD, TABLE_NAME, request, compositeKey, context);
+    UserInfoCache.evictFields((String) compositeKey.get(JsonKey.USER_ID), UserInfoCache.FIELD_ORG);
+    return response;
   }
 
   @Override
   public Response createUserOrg(UserOrg userOrg, RequestContext context) {
-    return cassandraOperation.insertRecord(
-        JsonKey.SUNBIRD, TABLE_NAME, mapper.convertValue(userOrg, Map.class), context);
+    Response response =
+        cassandraOperation.insertRecord(
+            JsonKey.SUNBIRD, TABLE_NAME, mapper.convertValue(userOrg, Map.class), context);
+    UserInfoCache.evictFields(userOrg.getUserId(), UserInfoCache.FIELD_ORG);
+    return response;
   }
 
   @Override
@@ -60,18 +68,41 @@ public final class UserOrgDaoImpl implements UserOrgDao {
 
   @Override
   public Response getUserOrgDetails(String userId, String organisationId, RequestContext context) {
+    // The user:{id}/org field holds the single mapping row for the user's rootOrgId. It is only
+    // used when the caller asks for one specific org AND the cached row is for that org; any other
+    // request goes to Cassandra unchanged.
+    boolean singleOrg = StringUtils.isNotEmpty(organisationId);
+    if (singleOrg) {
+      Map<String, Object> cached = UserInfoCache.getRow(userId, UserInfoCache.FIELD_ORG);
+      if (cached != null && organisationId.equals(cached.get(JsonKey.ORGANISATION_ID))) {
+        Response response = new Response();
+        response.put(JsonKey.RESPONSE, new ArrayList<>(Collections.singletonList(cached)));
+        return response;
+      }
+    }
     Map<String, Object> searchMap = new LinkedHashMap<>(2);
     searchMap.put(JsonKey.USER_ID, userId);
-    if (StringUtils.isNotEmpty(organisationId)) {
+    if (singleOrg) {
       searchMap.put(JsonKey.ORGANISATION_ID, organisationId);
     }
-    return cassandraOperation.getRecordsByCompositeKey(
-        JsonKey.SUNBIRD, JsonKey.USER_ORG, searchMap, context);
+    Response response =
+        cassandraOperation.getRecordsByCompositeKey(
+            JsonKey.SUNBIRD, JsonKey.USER_ORG, searchMap, context);
+    if (singleOrg) {
+      List<Map<String, Object>> rows = (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+      if (rows != null && rows.size() == 1) {
+        UserInfoCache.put(userId, UserInfoCache.FIELD_ORG, rows.get(0));
+      }
+    }
+    return response;
   }
 
   @Override
   public Response insertRecord(Map reqMap, RequestContext context) {
-    return cassandraOperation.insertRecord(JsonKey.SUNBIRD, JsonKey.USER_ORG, reqMap, context);
+    Response response =
+        cassandraOperation.insertRecord(JsonKey.SUNBIRD, JsonKey.USER_ORG, reqMap, context);
+    UserInfoCache.evictFields((String) reqMap.get(JsonKey.USER_ID), UserInfoCache.FIELD_ORG);
+    return response;
   }
 
   public void deleteUserOrgMapping(List<Map<String, Object>> userOrgList, RequestContext context) {
@@ -80,6 +111,7 @@ public final class UserOrgDaoImpl implements UserOrgDao {
       compositeKey.put(JsonKey.USER_ID, (String) userOrg.get(JsonKey.USER_ID));
       compositeKey.put(JsonKey.ORGANISATION_ID, (String) userOrg.get(JsonKey.ORGANISATION_ID));
       cassandraOperation.deleteRecord(JsonKey.SUNBIRD, JsonKey.USER_ORG, compositeKey, context);
+      UserInfoCache.evictFields(compositeKey.get(JsonKey.USER_ID), UserInfoCache.FIELD_ORG);
     }
   }
 }

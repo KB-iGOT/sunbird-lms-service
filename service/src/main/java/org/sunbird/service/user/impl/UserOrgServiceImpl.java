@@ -51,6 +51,13 @@ public class UserOrgServiceImpl implements UserOrgService {
     return (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
   }
 
+  @Override
+  public List<Map<String, Object>> getUserOrgDetails(
+      String userId, String organisationId, RequestContext context) {
+    Response response = userOrgDao.getUserOrgDetails(userId, organisationId, context);
+    return (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+  }
+
   public void deleteUserOrgMapping(List<Map<String, Object>> userOrgList, RequestContext context) {
     userOrgDao.deleteUserOrgMapping(userOrgList, context);
   }

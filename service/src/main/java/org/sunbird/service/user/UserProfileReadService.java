@@ -20,6 +20,7 @@ import org.sunbird.kafka.KafkaClient;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
+import org.sunbird.redis.UserInfoCache;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
@@ -101,7 +102,10 @@ public class UserProfileReadService {
     result.put(
         JsonKey.ORGANISATIONS,
         fetchUserOrgList(
-            (String) result.get(JsonKey.ID), userOrgRoles, actorMessage.getRequestContext()));
+            (String) result.get(JsonKey.ID),
+            (String) result.get(JsonKey.ROOT_ORG_ID),
+            userOrgRoles,
+            actorMessage.getRequestContext()));
     String requestedById =
         (String) actorMessage.getContext().getOrDefault(JsonKey.REQUESTED_BY, "");
     String managedForId = (String) actorMessage.getContext().getOrDefault(JsonKey.MANAGED_FOR, "");
@@ -124,9 +128,14 @@ public class UserProfileReadService {
     if (StringUtils.isNotBlank(userId)
         && (userId.equalsIgnoreCase(requestedById) || userId.equalsIgnoreCase(managedForId))
         && StringUtils.isBlank(requestFields)) {
+      // usr_external_identity / user_declarations are empty in some deployments; when the flag is
+      // off the default self-read skips both reads and returns the same empty list. Explicit
+      // ?fields=externalIds|declarations and ?provider= lookups are NOT gated by this flag.
       result.put(
           JsonKey.EXTERNAL_IDS,
-          fetchUserExternalIdentity(userId, result, true, actorMessage.getRequestContext()));
+          isUserReadExternalIdsEnabled()
+              ? fetchUserExternalIdentity(userId, result, true, actorMessage.getRequestContext())
+              : new ArrayList<>());
     }
     if (StringUtils.isNotBlank((String) actorMessage.getContext().get(JsonKey.FIELDS))) {
       addExtraFieldsInUserProfileResponse(result, requestFields, actorMessage.getRequestContext());
@@ -372,10 +381,27 @@ public class UserProfileReadService {
   }
 
   private List<Map<String, Object>> fetchUserOrgList(
-      String userId, Map<String, List<String>> userOrgRoles, RequestContext requestContext) {
+      String userId,
+      String rootOrgId,
+      Map<String, List<String>> userOrgRoles,
+      RequestContext requestContext) {
     List<Map<String, Object>> usrOrgList = new ArrayList<>();
+    // A user belongs to exactly one organisation (user.rootOrgId), so read that single mapping row
+    // by its full key instead of the whole user_organisation partition (history rows are
+    // isDeleted=true and were being discarded below anyway). Falls back to the partition read
+    // when rootOrgId is missing so odd data behaves as before.
     List<Map<String, Object>> userOrgList =
-        userOrgService.getUserOrgListByUserId(userId, requestContext);
+        StringUtils.isNotBlank(rootOrgId)
+            ? userOrgService.getUserOrgDetails(userId, rootOrgId, requestContext)
+            : userOrgService.getUserOrgListByUserId(userId, requestContext);
+    if (userOrgList == null) {
+      userOrgList = new ArrayList<>();
+    }
+    if (StringUtils.isNotBlank(rootOrgId) && userOrgList.isEmpty()) {
+      logger.info(
+          requestContext,
+          "fetchUserOrgList: no user_organisation row for userId " + userId + " rootOrgId " + rootOrgId);
+    }
     for (Map<String, Object> userOrg : userOrgList) {
       Boolean isDeleted = (Boolean) userOrg.get(JsonKey.IS_DELETED);
       if (null == isDeleted || (!isDeleted.booleanValue())) {
@@ -486,6 +512,11 @@ public class UserProfileReadService {
             e);
       }
     }
+  }
+
+  private boolean isUserReadExternalIdsEnabled() {
+    String value = ProjectUtil.getConfigValue(JsonKey.USER_READ_EXTERNAL_IDS_ENABLED);
+    return StringUtils.isBlank(value) || Boolean.parseBoolean(value.trim());
   }
 
   public List<Map<String, String>> fetchUserExternalIdentity(
@@ -763,6 +794,7 @@ public class UserProfileReadService {
         map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
+        UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
         Map<String, Object> dataMap = new HashMap<>();
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put(JsonKey.ID, map.get(JsonKey.CONSENT_USER_ID));
@@ -778,6 +810,7 @@ public class UserProfileReadService {
             map.put(JsonKey.CONSENT_USER_ID, userId);
             map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
             cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
+        UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
             map.put(JsonKey.FIRST_LOGIN,userDetailsMap.get(JsonKey.FIRST_LOGIN));
         }
         response.put(JsonKey.FIRST_LOGIN,map.get(JsonKey.FIRST_LOGIN));
@@ -927,6 +960,7 @@ public class UserProfileReadService {
     if (isMobileFirstLogin) {
       map.put(JsonKey.MOBILE_FIRST_LOGIN, now);
       cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
+      UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
       mobileFirstLogin = now;
 
       Map<String, Object> eData = new HashMap<>();
@@ -942,6 +976,7 @@ public class UserProfileReadService {
       logger.info(context, "getUserMobileLoggedInDetails: FIRST_LOGIN_MOBILE event sent for userId: " + userId);
     } else {
       cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
+      UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
     }
 
     Response response = new Response();

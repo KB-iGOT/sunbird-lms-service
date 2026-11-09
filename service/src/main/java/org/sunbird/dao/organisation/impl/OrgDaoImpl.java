@@ -18,6 +18,7 @@ import org.sunbird.exception.ResponseCode;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
+import org.sunbird.redis.OrgInfoCache;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.util.ProjectUtil;
@@ -43,12 +44,20 @@ public class OrgDaoImpl implements OrgDao {
   @Override
   public Map<String, Object> getOrgById(String orgId, RequestContext context) {
     if (StringUtils.isNotBlank(orgId)) {
-      Response response =
-          cassandraOperation.getRecordById(KEYSPACE_NAME, ORG_TABLE_NAME, orgId, context);
-      List<Map<String, Object>> responseList =
-          (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-      if (CollectionUtils.isNotEmpty(responseList)) {
-        Map<String, Object> orgMap = responseList.get(0);
+      // Read-through on the RAW row (org:{orgId}); enrichment always runs afterwards so a cache
+      // hit and a Cassandra read produce an identical map.
+      Map<String, Object> orgMap = OrgInfoCache.get(orgId);
+      if (orgMap == null) {
+        Response response =
+            cassandraOperation.getRecordById(KEYSPACE_NAME, ORG_TABLE_NAME, orgId, context);
+        List<Map<String, Object>> responseList =
+            (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+        if (CollectionUtils.isNotEmpty(responseList)) {
+          orgMap = responseList.get(0);
+          OrgInfoCache.put(orgId, orgMap);
+        }
+      }
+      if (orgMap != null) {
         enrichOrgDetails(orgMap, context);
         enrichOrgDetailsWithCustomFields(orgMap, context);
         return orgMap;
@@ -66,6 +75,11 @@ public class OrgDaoImpl implements OrgDao {
   public List<Map<String, Object>> getOrgByIds(
       List<String> orgIds, List<String> fields, RequestContext context) {
     if (CollectionUtils.isNotEmpty(orgIds)) {
+      // Only full-row reads go through the cache; a projected read (fields given) keeps the
+      // Cassandra path so its column set is exactly what the caller asked for.
+      if (CollectionUtils.isEmpty(fields)) {
+        return getFullOrgsByIds(orgIds, context);
+      }
       Response response =
           cassandraOperation.getPropertiesValueById(
               KEYSPACE_NAME, ORG_TABLE_NAME, orgIds, fields, context);
@@ -77,6 +91,35 @@ public class OrgDaoImpl implements OrgDao {
       }
     }
     return Collections.emptyList();
+  }
+
+  private List<Map<String, Object>> getFullOrgsByIds(List<String> orgIds, RequestContext context) {
+    Map<String, Map<String, Object>> cached = OrgInfoCache.getAll(orgIds);
+    List<String> missing = new ArrayList<>();
+    for (String orgId : orgIds) {
+      if (!cached.containsKey(orgId)) {
+        missing.add(orgId);
+      }
+    }
+    List<Map<String, Object>> result = new ArrayList<>(cached.values());
+    if (!missing.isEmpty()) {
+      Response response =
+          cassandraOperation.getPropertiesValueById(
+              KEYSPACE_NAME, ORG_TABLE_NAME, missing, Collections.emptyList(), context);
+      List<Map<String, Object>> responseList =
+          (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+      if (CollectionUtils.isNotEmpty(responseList)) {
+        for (Map<String, Object> orgMap : responseList) {
+          OrgInfoCache.put((String) orgMap.get(JsonKey.ID), orgMap);
+          result.add(orgMap);
+        }
+      }
+    }
+    if (result.isEmpty()) {
+      return Collections.emptyList();
+    }
+    result.forEach(orgMap -> enrichOrgDetails(orgMap, context));
+    return result;
   }
 
   @Override
@@ -132,7 +175,10 @@ public class OrgDaoImpl implements OrgDao {
     } catch (JsonProcessingException e) {
       ProjectCommonException.throwServerErrorException(ResponseCode.SERVER_ERROR);
     }
-    return cassandraOperation.insertRecord(KEYSPACE_NAME, ORG_TABLE_NAME, orgMap, context);
+    Response response =
+        cassandraOperation.insertRecord(KEYSPACE_NAME, ORG_TABLE_NAME, orgMap, context);
+    OrgInfoCache.evict((String) orgMap.get(JsonKey.ID));
+    return response;
   }
 
   @Override
@@ -146,7 +192,10 @@ public class OrgDaoImpl implements OrgDao {
     } catch (JsonProcessingException e) {
       ProjectCommonException.throwServerErrorException(ResponseCode.SERVER_ERROR);
     }
-    return cassandraOperation.updateRecord(KEYSPACE_NAME, ORG_TABLE_NAME, orgMap, context);
+    Response response =
+        cassandraOperation.updateRecord(KEYSPACE_NAME, ORG_TABLE_NAME, orgMap, context);
+    OrgInfoCache.evict((String) orgMap.get(JsonKey.ID));
+    return response;
   }
 
   @Override

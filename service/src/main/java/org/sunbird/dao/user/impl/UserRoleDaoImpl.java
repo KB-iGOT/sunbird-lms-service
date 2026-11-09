@@ -10,6 +10,7 @@ import org.sunbird.dao.user.UserRoleDao;
 import org.sunbird.helper.ServiceFactory;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
+import org.sunbird.redis.UserInfoCache;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
 import org.sunbird.util.ProjectUtil;
@@ -35,7 +36,21 @@ public final class UserRoleDaoImpl implements UserRoleDao {
 
   @Override
   public Response assignUserRole(List<Map<String, Object>> userRoleMap, RequestContext context) {
-    return cassandraOperation.batchInsert(JsonKey.SUNBIRD, TABLE_NAME, userRoleMap, context);
+    Response response =
+        cassandraOperation.batchInsert(JsonKey.SUNBIRD, TABLE_NAME, userRoleMap, context);
+    evictRolesCache(userRoleMap);
+    return response;
+  }
+
+  private void evictRolesCache(List<? extends Map<String, ?>> userRoleMap) {
+    if (userRoleMap == null) {
+      return;
+    }
+    userRoleMap.stream()
+        .map(m -> (String) m.get(JsonKey.USER_ID))
+        .filter(StringUtils::isNotBlank)
+        .distinct()
+        .forEach(userId -> UserInfoCache.evictFields(userId, UserInfoCache.FIELD_ROLES));
   }
 
   @Override
@@ -48,6 +63,8 @@ public final class UserRoleDaoImpl implements UserRoleDao {
       result =
           cassandraOperation.updateRecord(
               JsonKey.SUNBIRD, TABLE_NAME, dataMap, compositeKey, context);
+      UserInfoCache.evictFields(
+          (String) compositeKey.get(JsonKey.USER_ID), UserInfoCache.FIELD_ROLES);
     }
     return result;
   }
@@ -57,21 +74,32 @@ public final class UserRoleDaoImpl implements UserRoleDao {
     for (Map<String, String> dataMap : userRoleMap) {
       cassandraOperation.deleteRecord(JsonKey.SUNBIRD, TABLE_NAME, dataMap, context);
     }
+    evictRolesCache(userRoleMap);
   }
 
   @Override
   public List<Map<String, Object>> getUserRoles(
       String userId, String role, RequestContext context) {
+    boolean wholeList = StringUtils.isEmpty(role);
+    if (wholeList) {
+      // Read-through on the user's full role list (user:{id} / roles).
+      List<Map<String, Object>> cached = UserInfoCache.getRows(userId, UserInfoCache.FIELD_ROLES);
+      if (cached != null) {
+        return cached;
+      }
+    }
     Map compositeKeyMap = new HashMap<String, Object>();
     compositeKeyMap.put(JsonKey.USER_ID, userId);
-    if (StringUtils.isNotEmpty(role)) {
+    if (!wholeList) {
       compositeKeyMap.put(JsonKey.ROLE, role);
     }
     Response existingRecord =
         cassandraOperation.getRecordById(JsonKey.SUNBIRD, TABLE_NAME, compositeKeyMap, context);
     List<Map<String, Object>> responseList =
         (List<Map<String, Object>>) existingRecord.get(JsonKey.RESPONSE);
-
+    if (wholeList && responseList != null) {
+      UserInfoCache.put(userId, UserInfoCache.FIELD_ROLES, responseList);
+    }
     return responseList;
   }
 

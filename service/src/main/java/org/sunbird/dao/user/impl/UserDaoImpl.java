@@ -21,6 +21,7 @@ import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.model.user.User;
 import org.sunbird.request.RequestContext;
+import org.sunbird.redis.UserInfoCache;
 import org.sunbird.response.Response;
 import org.sunbird.util.ProjectUtil;
 import scala.concurrent.Future;
@@ -55,12 +56,17 @@ public class UserDaoImpl implements UserDao {
   @Override
   public Response updateUser(User user, RequestContext context) {
     Map<String, Object> map = mapper.convertValue(user, Map.class);
-    return cassandraOperation.updateRecord(KEY_SPACE_NAME, TABLE_NAME, map, context);
+    Response response = cassandraOperation.updateRecord(KEY_SPACE_NAME, TABLE_NAME, map, context);
+    UserInfoCache.evictFields((String) map.get(JsonKey.ID), UserInfoCache.FIELD_INFO);
+    return response;
   }
 
   @Override
   public Response updateUser(Map<String, Object> userMap, RequestContext context) {
-    return cassandraOperation.updateRecord(KEY_SPACE_NAME, TABLE_NAME, userMap, context);
+    Response response =
+        cassandraOperation.updateRecord(KEY_SPACE_NAME, TABLE_NAME, userMap, context);
+    UserInfoCache.evictFields((String) userMap.get(JsonKey.ID), UserInfoCache.FIELD_INFO);
+    return response;
   }
 
   @Override
@@ -74,12 +80,20 @@ public class UserDaoImpl implements UserDao {
 
   @Override
   public Map<String, Object> getUserDetailsById(String userId, RequestContext context) {
-    Response response =
-        cassandraOperation.getRecordById(KEY_SPACE_NAME, TABLE_NAME, userId, context);
-    List<Map<String, Object>> responseList =
-        (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
-    if (CollectionUtils.isNotEmpty(responseList)) {
-      Map<String, Object> userDetail = responseList.get(0);
+    // Read-through on the raw user row (user:{id} / info); last_login enrichment below is applied
+    // on both the hit and the miss path so the returned map is identical either way.
+    Map<String, Object> userDetail = UserInfoCache.getRow(userId, UserInfoCache.FIELD_INFO);
+    if (userDetail == null) {
+      Response response =
+          cassandraOperation.getRecordById(KEY_SPACE_NAME, TABLE_NAME, userId, context);
+      List<Map<String, Object>> responseList =
+          (List<Map<String, Object>>) response.get(JsonKey.RESPONSE);
+      if (CollectionUtils.isNotEmpty(responseList)) {
+        userDetail = responseList.get(0);
+        UserInfoCache.put(userId, UserInfoCache.FIELD_INFO, userDetail);
+      }
+    }
+    if (userDetail != null) {
       // Enrich user details with last_login information
       Map<String, Object> loginInfo = getLastLoginInfoById(userId, context);
       if (MapUtils.isNotEmpty(loginInfo)) {
@@ -105,6 +119,10 @@ public class UserDaoImpl implements UserDao {
    * @return Map containing last_login, last_login_ip, login_count, etc.
    */
   public Map<String, Object> getLastLoginInfoById(String userId, RequestContext context) {
+    Map<String, Object> cached = UserInfoCache.getRow(userId, UserInfoCache.FIELD_LOGIN);
+    if (cached != null) {
+      return cached;
+    }
     try {
       Response response =
               cassandraOperation.getRecordsByProperty(KEY_SPACE_NAME, JsonKey.USER_LOGIN, JsonKey.CONSENT_USER_ID, Collections.singletonList(userId), context);
@@ -114,6 +132,7 @@ public class UserDaoImpl implements UserDao {
         logger.debug(
                 context,
                 "getLastLoginInfoById: Successfully retrieved login info for user: " + userId);
+        UserInfoCache.put(userId, UserInfoCache.FIELD_LOGIN, responseList.get(0));
         return responseList.get(0);
       }
     } catch (Exception e) {
