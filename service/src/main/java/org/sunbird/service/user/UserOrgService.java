@@ -9,6 +9,10 @@ public interface UserOrgService {
 
   List<Map<String, Object>> getUserOrgListByUserId(String userId, RequestContext context);
 
+  /** The user_organisation rows for one (userId, organisationId); normally zero or one row. */
+  List<Map<String, Object>> getUserOrgDetails(
+      String userId, String organisationId, RequestContext context);
+
   void deleteUserOrgMapping(List<Map<String, Object>> userOrgList, RequestContext context);
 
   void upsertUserOrgData(Map<String, Object> userMap, RequestContext context);

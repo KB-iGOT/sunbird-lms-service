@@ -20,6 +20,7 @@ import org.sunbird.kafka.KafkaClient;
 import org.sunbird.keys.JsonKey;
 import org.sunbird.logging.LoggerUtil;
 import org.sunbird.operations.ActorOperations;
+import org.sunbird.redis.UserInfoCache;
 import org.sunbird.request.Request;
 import org.sunbird.request.RequestContext;
 import org.sunbird.response.Response;
@@ -100,8 +101,12 @@ public class UserProfileReadService {
     }
     result.put(
         JsonKey.ORGANISATIONS,
-        fetchUserOrgList(
-            (String) result.get(JsonKey.ID), userOrgRoles, actorMessage.getRequestContext()));
+        decorateUserOrgList(
+            fetchUserOrgRows(
+                (String) result.get(JsonKey.ID),
+                (String) result.get(JsonKey.ROOT_ORG_ID),
+                actorMessage.getRequestContext()),
+            userOrgRoles));
     String requestedById =
         (String) actorMessage.getContext().getOrDefault(JsonKey.REQUESTED_BY, "");
     String managedForId = (String) actorMessage.getContext().getOrDefault(JsonKey.MANAGED_FOR, "");
@@ -124,9 +129,14 @@ public class UserProfileReadService {
     if (StringUtils.isNotBlank(userId)
         && (userId.equalsIgnoreCase(requestedById) || userId.equalsIgnoreCase(managedForId))
         && StringUtils.isBlank(requestFields)) {
+      // usr_external_identity / user_declarations are empty in some deployments; when the flag is
+      // off the default self-read skips both reads and returns the same empty list. Explicit
+      // ?fields=externalIds|declarations and ?provider= lookups are NOT gated by this flag.
       result.put(
           JsonKey.EXTERNAL_IDS,
-          fetchUserExternalIdentity(userId, result, true, actorMessage.getRequestContext()));
+          isUserReadExternalIdsEnabled()
+              ? fetchUserExternalIdentity(userId, result, true, actorMessage.getRequestContext())
+              : new ArrayList<>());
     }
     if (StringUtils.isNotBlank((String) actorMessage.getContext().get(JsonKey.FIELDS))) {
       addExtraFieldsInUserProfileResponse(result, requestFields, actorMessage.getRequestContext());
@@ -371,11 +381,39 @@ public class UserProfileReadService {
     return result;
   }
 
-  private List<Map<String, Object>> fetchUserOrgList(
-      String userId, Map<String, List<String>> userOrgRoles, RequestContext requestContext) {
+  /** Read side of the organisations[] build: the user_organisation rows, nothing else. */
+  private List<Map<String, Object>> fetchUserOrgRows(
+      String userId, String rootOrgId, RequestContext requestContext) {
+    // A user belongs to exactly one organisation (user.rootOrgId), so first read just that mapping
+    // row by its full key (cacheable, no partition scan). The top-level "roles" of the response is
+    // derived from organisations[*].roles, so if that row is missing or carries a different
+    // organisationId than rootOrgId (legacy data, incomplete migration) we MUST fall back to the
+    // partition read the API always did, otherwise roles disappear and every role-checked API
+    // downstream (uiproxy) returns 403.
+    List<Map<String, Object>> userOrgList = null;
+    if (StringUtils.isNotBlank(rootOrgId)) {
+      userOrgList = userOrgService.getUserOrgDetails(userId, rootOrgId, requestContext);
+      if (CollectionUtils.isEmpty(userOrgList)) {
+        logger.info(
+            requestContext,
+            "fetchUserOrgList: no user_organisation row for userId " + userId + " and rootOrgId "
+                + rootOrgId + ", falling back to full mapping read");
+        userOrgList = null;
+      }
+    }
+    if (userOrgList == null) {
+      userOrgList = userOrgService.getUserOrgListByUserId(userId, requestContext);
+    }
+    if (userOrgList == null) {
+      userOrgList = new ArrayList<>();
+    }
+    return userOrgList;
+  }
+
+  /** Post-processing side of the organisations[] build: drop deleted rows, flags, roles merge. */
+  private List<Map<String, Object>> decorateUserOrgList(
+      List<Map<String, Object>> userOrgList, Map<String, List<String>> userOrgRoles) {
     List<Map<String, Object>> usrOrgList = new ArrayList<>();
-    List<Map<String, Object>> userOrgList =
-        userOrgService.getUserOrgListByUserId(userId, requestContext);
     for (Map<String, Object> userOrg : userOrgList) {
       Boolean isDeleted = (Boolean) userOrg.get(JsonKey.IS_DELETED);
       if (null == isDeleted || (!isDeleted.booleanValue())) {
@@ -486,6 +524,11 @@ public class UserProfileReadService {
             e);
       }
     }
+  }
+
+  private boolean isUserReadExternalIdsEnabled() {
+    String value = ProjectUtil.getConfigValue(JsonKey.USER_READ_EXTERNAL_IDS_ENABLED);
+    return StringUtils.isBlank(value) || Boolean.parseBoolean(value.trim());
   }
 
   public List<Map<String, String>> fetchUserExternalIdentity(
@@ -763,6 +806,7 @@ public class UserProfileReadService {
         map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         map.put(JsonKey.FIRST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
         cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
+        UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
         Map<String, Object> dataMap = new HashMap<>();
         Map<String, Object> requestMap = new HashMap<>();
         requestMap.put(JsonKey.ID, map.get(JsonKey.CONSENT_USER_ID));
@@ -778,6 +822,7 @@ public class UserProfileReadService {
             map.put(JsonKey.CONSENT_USER_ID, userId);
             map.put(JsonKey.LAST_LOGIN, new Timestamp(Calendar.getInstance().getTime().getTime()));
             cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, actorMessage.getRequestContext());
+        UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
             map.put(JsonKey.FIRST_LOGIN,userDetailsMap.get(JsonKey.FIRST_LOGIN));
         }
         response.put(JsonKey.FIRST_LOGIN,map.get(JsonKey.FIRST_LOGIN));
@@ -834,11 +879,17 @@ public class UserProfileReadService {
             .filter(Map.class::isInstance)
             .map(Map.class::cast)
             .orElse(Collections.emptyMap());
+    // One read of the user's user_extended_profile contextTypes (cached) replaces one Cassandra
+    // query per extended field; "filled" still means "a row exists for that contextType".
+    Set<String> extendedContextTypes = null;
     for (String field : requiredFields) {
       boolean isFilled;
       try {
         if (requiredExtendedUserFields.contains(field)) {
-          isFilled = fetchExtendedUserDetailsFromDatabase(userId, field, requestContext) || (JsonKey.SERVICE_HISTORY.equalsIgnoreCase(field) &&
+          if (extendedContextTypes == null) {
+            extendedContextTypes = fetchExtendedProfileContextTypes(userId, requestContext);
+          }
+          isFilled = extendedContextTypes.contains(field) || (JsonKey.SERVICE_HISTORY.equalsIgnoreCase(field) &&
                   Optional.ofNullable(profileData.get(JsonKey.PROFILE_DETAILS))
                           .filter(Map.class::isInstance)
                           .map(Map.class::cast)
@@ -870,13 +921,39 @@ public class UserProfileReadService {
     profileData.put(JsonKey.PROFILE_COMPLETION_PERCENTAGE,Math.min(100.0, Math.round(totalCompletion * 10.0) / 10.0));
   }
 
-  private boolean fetchExtendedUserDetailsFromDatabase(String userId, String contextTypeValue, RequestContext requestContext) {
-    Response cassandraResponse =   cassandraOperation.getRecordsByProperties(
-            JsonKey.SUNBIRD, JsonKey.TABLE_USER_EXTENDED_PROFILE,
-            Map.of(JsonKey.USERID_KEY, userId, JsonKey.CONTEXT_TYPE, contextTypeValue),
-            new ArrayList<>(), requestContext);
-    List<Map<String, Object>> recordList = (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
-    return !CollectionUtils.isEmpty(recordList);
+  /**
+   * All contextType values that have a row in user_extended_profile for the user. Served from the
+   * per-user cache ({@code extctx}); on a miss, a single partition read selecting only the
+   * contextType column, cached afterwards. cb-ext-userprofile-service evicts the field whenever it
+   * writes an extended-profile row.
+   */
+  private Set<String> fetchExtendedProfileContextTypes(String userId, RequestContext requestContext) {
+    List<String> cached = UserInfoCache.getStrings(userId, UserInfoCache.FIELD_EXT_CTX);
+    if (cached != null) {
+      return new HashSet<>(cached);
+    }
+    Set<String> contextTypes = new HashSet<>();
+    Response cassandraResponse =
+        cassandraOperation.getRecordsByProperties(
+            JsonKey.SUNBIRD,
+            JsonKey.TABLE_USER_EXTENDED_PROFILE,
+            Map.of(JsonKey.USERID_KEY, userId),
+            Collections.singletonList(JsonKey.CONTEXT_TYPE),
+            requestContext);
+    List<Map<String, Object>> rows =
+        (List<Map<String, Object>>) cassandraResponse.getResult().get(JsonKey.RESPONSE);
+    if (rows != null) {
+      for (Map<String, Object> row : rows) {
+        // column name casing depends on the Cassandra util's column mapping; match leniently
+        for (Map.Entry<String, Object> e : row.entrySet()) {
+          if (JsonKey.CONTEXT_TYPE.equalsIgnoreCase(e.getKey()) && e.getValue() != null) {
+            contextTypes.add(e.getValue().toString());
+          }
+        }
+      }
+    }
+    UserInfoCache.put(userId, UserInfoCache.FIELD_EXT_CTX, new ArrayList<>(contextTypes));
+    return contextTypes;
   }
 
   private Optional<Map<String, Object>> asMap(Object obj) {
@@ -927,6 +1004,7 @@ public class UserProfileReadService {
     if (isMobileFirstLogin) {
       map.put(JsonKey.MOBILE_FIRST_LOGIN, now);
       cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
+      UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
       mobileFirstLogin = now;
 
       Map<String, Object> eData = new HashMap<>();
@@ -942,6 +1020,7 @@ public class UserProfileReadService {
       logger.info(context, "getUserMobileLoggedInDetails: FIRST_LOGIN_MOBILE event sent for userId: " + userId);
     } else {
       cassandraOperation.upsertRecord(JsonKey.SUNBIRD, JsonKey.USER_LOGIN, map, context);
+      UserInfoCache.evictFields(userId, UserInfoCache.FIELD_LOGIN);
     }
 
     Response response = new Response();
