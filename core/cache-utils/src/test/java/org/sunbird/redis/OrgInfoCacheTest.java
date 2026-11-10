@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Covers the contract that matters for every environment without org.info.redis.host: the cache is
+ * Covers the contract that matters for every environment without org_info_redis_host: the cache is
  * disabled and every call is a safe no-op / miss, so OrgDaoImpl behaves exactly as before.
  */
 class OrgInfoCacheTest {
@@ -29,7 +29,7 @@ class OrgInfoCacheTest {
 
   @Test
   void disabledWhenHostNotConfigured() {
-    // org.info.redis.host is blank in externalresource.properties and unset in the test env
+    // org_info_redis_host is blank in externalresource.properties and unset in the test env
     assertFalse(OrgInfoCache.isEnabled());
   }
 

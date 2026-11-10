@@ -19,11 +19,11 @@ import redis.clients.jedis.JedisPoolConfig;
  * Read-through cache for raw {@code sunbird.organisation} rows, keyed {@code org:{orgId}}.
  *
  * <p>Configured via {@link ProjectUtil#getConfigValue} (env var first, then
- * externalresource.properties) using the {@code org.info.redis.*} keys. These are deliberately
- * separate from {@code user.profile.redis.*} so the org cache can be moved to its own Redis server
+ * externalresource.properties) using the {@code org_info_redis_*} keys. These are deliberately
+ * separate from {@code user_profile_redis_*} so the org cache can be moved to its own Redis server
  * without a code change, even though both point to the same server today.
  *
- * <p>Disabled (every call is a no-op / miss) when {@code org.info.redis.host} is blank, so unit
+ * <p>Disabled (every call is a no-op / miss) when {@code org_info_redis_host} is blank, so unit
  * tests and environments without the config behave exactly as before. Every Redis failure is
  * logged and treated as a miss; callers must never see an exception from here.
  */
@@ -31,13 +31,13 @@ public final class OrgInfoCache {
 
   public static final String KEY_PREFIX = "org:";
 
-  public static final String HOST = "org.info.redis.host";
-  public static final String PORT = "org.info.redis.port";
-  public static final String INDEX = "org.info.redis.index";
-  public static final String PASSWORD_ENABLED = "org.info.redis.password.enabled";
-  public static final String USERNAME = "org.info.redis.username";
-  public static final String PASSWORD = "org.info.redis.password";
-  public static final String TTL = "org.info.redis.ttl";
+  public static final String HOST = "org_info_redis_host";
+  public static final String PORT = "org_info_redis_port";
+  public static final String INDEX = "org_info_redis_index";
+  public static final String PASSWORD_ENABLED = "org_info_redis_password_enabled";
+  public static final String USERNAME = "org_info_redis_username";
+  public static final String PASSWORD = "org_info_redis_password";
+  public static final String TTL = "org_info_redis_ttl";
 
   private static final int DEFAULT_PORT = 6379;
   private static final int DEFAULT_INDEX = 0;

@@ -24,6 +24,8 @@ import redis.clients.jedis.Pipeline;
  *   roles  -> sunbird.user_roles rows (list)         (evict on role assign/update/delete)
  *   org    -> sunbird.user_organisation row for the user's rootOrgId   (evict on user_org writes)
  *   login  -> sunbird.user_login row                 (evict on login upsert)
+ *   extctx -> contextType values that have a row in sunbird.user_extended_profile
+ *             (written by lms, evicted by cb-ext-userprofile-service on extended-profile writes)
  * </pre>
  *
  * Values are the rows exactly as {@code CassandraOperation} returns them (before any enrichment),
@@ -31,8 +33,8 @@ import redis.clients.jedis.Pipeline;
  * user keeps the keyspace to one entry per user and lets a whole user be fetched with one HMGET.
  * TTL is per key (Redis has no per-field TTL before 7.4) and is refreshed on every field write.
  *
- * <p>Config via {@link ProjectUtil#getConfigValue} ({@code user.profile.redis.*}); deliberately
- * separate from {@code org.info.redis.*}. Disabled when the host is blank; every failure is a miss.
+ * <p>Config via {@link ProjectUtil#getConfigValue} ({@code user_profile_redis_*}); deliberately
+ * separate from {@code org_info_redis_*}. Disabled when the host is blank; every failure is a miss.
  */
 public final class UserInfoCache {
 
@@ -42,14 +44,15 @@ public final class UserInfoCache {
   public static final String FIELD_ROLES = "roles";
   public static final String FIELD_ORG = "org";
   public static final String FIELD_LOGIN = "login";
+  public static final String FIELD_EXT_CTX = "extctx";
 
-  public static final String HOST = "user.profile.redis.host";
-  public static final String PORT = "user.profile.redis.port";
-  public static final String INDEX = "user.profile.redis.index";
-  public static final String PASSWORD_ENABLED = "user.profile.redis.password.enabled";
-  public static final String USERNAME = "user.profile.redis.username";
-  public static final String PASSWORD = "user.profile.redis.password";
-  public static final String TTL = "user.profile.redis.ttl";
+  public static final String HOST = "user_profile_redis_host";
+  public static final String PORT = "user_profile_redis_port";
+  public static final String INDEX = "user_profile_redis_index";
+  public static final String PASSWORD_ENABLED = "user_profile_redis_password_enabled";
+  public static final String USERNAME = "user_profile_redis_username";
+  public static final String PASSWORD = "user_profile_redis_password";
+  public static final String TTL = "user_profile_redis_ttl";
 
   private static final int DEFAULT_PORT = 6379;
   private static final int DEFAULT_INDEX = 0;
@@ -64,6 +67,7 @@ public final class UserInfoCache {
   private static final TypeReference<Map<String, Object>> MAP_TYPE = new TypeReference<>() {};
   private static final TypeReference<List<Map<String, Object>>> LIST_TYPE =
       new TypeReference<>() {};
+  private static final TypeReference<List<String>> STRING_LIST_TYPE = new TypeReference<>() {};
 
   private static volatile JedisPool pool;
   private static volatile boolean initialised = false;
@@ -102,6 +106,20 @@ public final class UserInfoCache {
       return mapper.readValue(json, LIST_TYPE);
     } catch (Exception e) {
       logger.error("UserInfoCache: bad list json for " + key(userId) + "/" + field, e);
+      return null;
+    }
+  }
+
+  /** @return the string list stored under {@code field}, or {@code null} on miss / disabled / error. */
+  public static List<String> getStrings(String userId, String field) {
+    String json = getRaw(userId, field);
+    if (json == null) {
+      return null;
+    }
+    try {
+      return mapper.readValue(json, STRING_LIST_TYPE);
+    } catch (Exception e) {
+      logger.error("UserInfoCache: bad string list json for " + key(userId) + "/" + field, e);
       return null;
     }
   }

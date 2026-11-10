@@ -10,7 +10,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-/** Without user.profile.redis.host the cache must be disabled and every call a safe no-op / miss. */
+/** Without user_profile_redis_host the cache must be disabled and every call a safe no-op / miss. */
 class UserInfoCacheTest {
 
   @BeforeEach
