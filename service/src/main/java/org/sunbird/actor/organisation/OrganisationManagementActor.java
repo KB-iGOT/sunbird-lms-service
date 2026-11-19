@@ -322,8 +322,16 @@ public class OrganisationManagementActor extends BaseActor {
       }
 
       String updatedBy = (String) actorMessage.getContext().get(JsonKey.REQUESTED_BY);
+      if (StringUtils.isBlank(updatedBy)) {
+        // Tokenless (/private) call: fall back to the caller-supplied userId for
+        // updatedby/telemetry actor attribution.
+        updatedBy = (String) request.get(JsonKey.USER_ID);
+      }
       if (!(StringUtils.isBlank(updatedBy))) {
         updateOrgDao.put(JsonKey.UPDATED_BY, updatedBy);
+        actorMessage.getContext().put(JsonKey.REQUESTED_BY, updatedBy);
+        actorMessage.getContext().put(JsonKey.ACTOR_ID, updatedBy);
+        actorMessage.getContext().put(JsonKey.ACTOR_TYPE, StringUtils.capitalize(JsonKey.USER));
       }
       updateOrgDao.put(JsonKey.UPDATED_DATE, ProjectUtil.getFormattedDate());
       updateOrgDao.put(JsonKey.ID, dbOrgDetails.get(JsonKey.ID));
