@@ -64,6 +64,7 @@ public class Organisation implements Serializable {
   private Boolean isCca;
   private String parentPathId;
   private String hierarchyLevel;
+  private Boolean allowsServiceBasedTargeting;
 
   public String getId() {
     return id;
@@ -426,5 +427,14 @@ public class Organisation implements Serializable {
 
   public void setHierarchyLevel(String hierarchyLevel) {
     this.hierarchyLevel = hierarchyLevel;
+  }
+
+  @JsonProperty(value = "allowServiceBasedTargeting")
+  public Boolean getAllowsServiceBasedTargeting() {
+    return allowsServiceBasedTargeting;
+  }
+
+  public void setAllowsServiceBasedTargeting(Boolean allowsServiceBasedTargeting) {
+    this.allowsServiceBasedTargeting = allowsServiceBasedTargeting;
   }
 }
