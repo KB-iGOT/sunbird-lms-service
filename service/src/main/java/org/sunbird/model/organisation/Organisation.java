@@ -429,7 +429,7 @@ public class Organisation implements Serializable {
     this.hierarchyLevel = hierarchyLevel;
   }
 
-  @JsonProperty(value = "allowServiceBasedTargeting")
+  @JsonProperty(value = "allowservicebasedtargeting")
   public Boolean getAllowsServiceBasedTargeting() {
     return allowsServiceBasedTargeting;
   }
