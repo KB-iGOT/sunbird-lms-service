@@ -783,7 +783,7 @@ public final class JsonKey {
     public static final String BP_CO_TRAINER = "bpCoTrainer";
     public static final String EVENT_TYPE_VERIFIED_PROFILE = "VERIFIED_PROFILE";
     public static final String PROFILE_STATUS_VERIFIED = "VERIFIED";
-    public static final String ALLOW_SERVICE_BASED_TARGETING = "allowServiceBasedTargeting";
+    public static final String ALLOW_SERVICE_BASED_TARGETING = "allowservicebasedtargeting";
 
     private JsonKey() {
     }
